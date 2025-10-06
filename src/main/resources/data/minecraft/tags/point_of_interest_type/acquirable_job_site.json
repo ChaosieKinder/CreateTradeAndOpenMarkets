@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "tradeandopenmarkets:banker_poi",
+      "required": false
+    }
+  ]
+}

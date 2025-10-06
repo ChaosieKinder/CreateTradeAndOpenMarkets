@@ -1,0 +1,90 @@
+package net.errantchaosie.tradeandopenmarkets;
+
+import com.tterrag.registrate.Registrate;
+import com.tterrag.registrate.util.nullness.NonNullSupplier;
+import net.errantchaosie.tradeandopenmarkets.block.SafeBlock;
+import net.errantchaosie.tradeandopenmarkets.block.entity.SafeBlockEntity;
+import net.errantchaosie.tradeandopenmarkets.registry.*;
+import net.errantchaosie.tradeandopenmarkets.screen.SafeMenu;
+import net.errantchaosie.tradeandopenmarkets.screen.SafeScreen;
+import net.minecraft.client.renderer.ItemBlockRenderTypes;
+import net.minecraft.client.renderer.RenderType;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
+import org.slf4j.Logger;
+
+import com.mojang.logging.LogUtils;
+
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.item.CreativeModeTabs;
+import net.minecraft.world.level.block.Blocks;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.config.ModConfig;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
+import net.neoforged.neoforge.event.server.ServerStartingEvent;
+
+// The value here should match an entry in the META-INF/neoforge.mods.toml file
+@Mod(TradeAndOpenMarketsMod.MOD_ID)
+public class TradeAndOpenMarketsMod {
+    // Define mod id in a common place for everything to reference
+    public static final String MOD_ID = "tradeandopenmarkets";
+
+    // Directly reference a slf4j logger
+    public static final Logger LOGGER = LogUtils.getLogger();
+
+    public static final Registrate REGISTRATE = Registrate.create(MOD_ID);
+
+    // The constructor for the mod class is the first code that is run when your mod is loaded.
+    // FML will recognize some parameter types like IEventBus or ModContainer and pass them in automatically.
+    public TradeAndOpenMarketsMod(IEventBus modEventBus, ModContainer modContainer) {
+        // Register the commonSetup method for modloading
+        modEventBus.addListener(this::commonSetup);
+
+        // Register ourselves for server and other game events we are interested in.
+        // Note that this is necessary if and only if we want *this* class (ExampleMod) to respond directly to events.
+        // Do not add this line if there are no @SubscribeEvent-annotated functions in this class, like onServerStarting() below.
+        NeoForge.EVENT_BUS.register(this);
+
+        REGISTRATE.registerEventListeners(modEventBus);
+
+        TAOMCreativeModeTabs.register(modEventBus);
+        TAOMItems.register(modEventBus);
+        TAOMBlocks.register(modEventBus);
+        TAOMBlockEntities.register(modEventBus);
+        TAOMVillagers.register(modEventBus);
+        TAOMSounds.register(modEventBus);
+        TAOMMenus.register(modEventBus);
+        // Register the item to a creative tab
+        //modEventBus.addListener(this::addCreative);
+        //modEventBus.addListener(this::clientSetup);
+
+        // Register our mod's ModConfigSpec so that FML can create and load the config file for us
+        modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
+    }
+
+    private void commonSetup(FMLCommonSetupEvent event) {
+        // Some common setup code
+
+    }
+
+    //@SubscribeEvent
+    //private void clientSetup(final FMLClientSetupEvent event) {
+    //    ItemBlockRenderTypes.setRenderLayer(TAOMBlocks.SAFE_BLOCK.get(), RenderType.translucent());
+    //}
+
+    // Add the example block item to the building blocks tab
+    //private void addCreative(BuildCreativeModeTabContentsEvent event) {
+//
+    //}
+
+    // You can use SubscribeEvent and let the Event Bus discover methods to call
+    @SubscribeEvent
+    public void onServerStarting(ServerStartingEvent event) {
+        // Do something when the server starts
+    }
+}
