@@ -1,9 +1,7 @@
-package net.errantchaosie.tradeandopenmarkets.registry;
+package net.errantchaosie.tradeandopenmarkets.block.entity;
 
-import com.tterrag.registrate.util.entry.BlockEntityEntry;
 import net.errantchaosie.tradeandopenmarkets.TradeAndOpenMarketsMod;
-import net.errantchaosie.tradeandopenmarkets.block.SafeBlock;
-import net.errantchaosie.tradeandopenmarkets.block.entity.SafeBlockEntity;
+import net.errantchaosie.tradeandopenmarkets.block.TAOMBlocks;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.bus.api.IEventBus;
@@ -25,6 +23,17 @@ public final class TAOMBlockEntities {
                             SafeBlockEntity::new,
                             // works whether SAFE_BLOCK is a BlockEntry or a RegistryObject
                             TAOMBlocks.SAFE_BLOCK.get()
+                    ).build(null)
+            );
+
+    // Register your BE type (note the 2-arg factory expected by vanilla)
+    public static final Supplier<BlockEntityType<CoinBlockEntity>> COIN_BLOCKENTITY =
+            BLOCK_ENTITIES.register("coin_blockentity", () ->
+                    BlockEntityType.Builder.of(
+                            // uses the 2-arg ctor shown below
+                            CoinBlockEntity::new,
+                            // works whether SAFE_BLOCK is a BlockEntry or a RegistryObject
+                            TAOMBlocks.COIN_BLOCK.get()
                     ).build(null)
             );
 

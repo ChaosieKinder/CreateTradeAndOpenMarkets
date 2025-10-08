@@ -1,22 +1,17 @@
-package net.errantchaosie.tradeandopenmarkets.screen;
+package net.errantchaosie.tradeandopenmarkets.screen.safe;
 
-import com.tterrag.registrate.util.entry.MenuEntry;
-import net.errantchaosie.tradeandopenmarkets.TradeAndOpenMarketsMod;
-import net.errantchaosie.tradeandopenmarkets.block.SafeBlock;
 import net.errantchaosie.tradeandopenmarkets.block.entity.SafeBlockEntity;
-import net.errantchaosie.tradeandopenmarkets.registry.TAOMBlocks;
-import net.errantchaosie.tradeandopenmarkets.registry.TAOMMenus;
+import net.errantchaosie.tradeandopenmarkets.block.TAOMBlocks;
+import net.errantchaosie.tradeandopenmarkets.screen.TAOMMenus;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerLevelAccess;
-import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
 import net.neoforged.neoforge.items.SlotItemHandler;
 
 public class SafeMenu extends AbstractContainerMenu {

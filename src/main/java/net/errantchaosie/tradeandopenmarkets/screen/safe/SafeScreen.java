@@ -1,11 +1,7 @@
-package net.errantchaosie.tradeandopenmarkets.screen;
+package net.errantchaosie.tradeandopenmarkets.screen.safe;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.tterrag.registrate.util.entry.BlockEntityEntry;
-import com.tterrag.registrate.util.entry.MenuEntry;
 import net.errantchaosie.tradeandopenmarkets.TradeAndOpenMarketsMod;
-import net.errantchaosie.tradeandopenmarkets.block.SafeBlock;
-import net.errantchaosie.tradeandopenmarkets.block.entity.SafeBlockEntity;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.GameRenderer;

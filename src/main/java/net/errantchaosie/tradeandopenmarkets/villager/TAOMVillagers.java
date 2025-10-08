@@ -1,17 +1,15 @@
-package net.errantchaosie.tradeandopenmarkets.registry;
+package net.errantchaosie.tradeandopenmarkets.villager;
 
 import com.google.common.collect.ImmutableSet;
-import com.simibubi.create.content.logistics.packagePort.frogport.FrogportSounds;
 import net.errantchaosie.tradeandopenmarkets.TradeAndOpenMarketsMod;
-import net.errantchaosie.tradeandopenmarkets.block.SafeBlock;
+import net.errantchaosie.tradeandopenmarkets.block.TAOMBlocks;
+import net.errantchaosie.tradeandopenmarkets.registry.TAOMSounds;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.ai.village.poi.PoiType;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredRegister;
-
-import javax.annotation.concurrent.Immutable;
 
 public class TAOMVillagers {
     public static final DeferredRegister<PoiType> POI_TYPES =

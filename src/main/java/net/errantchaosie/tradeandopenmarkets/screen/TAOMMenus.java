@@ -1,7 +1,7 @@
-package net.errantchaosie.tradeandopenmarkets.registry;
+package net.errantchaosie.tradeandopenmarkets.screen;
 
 import net.errantchaosie.tradeandopenmarkets.TradeAndOpenMarketsMod;
-import net.errantchaosie.tradeandopenmarkets.screen.SafeMenu;
+import net.errantchaosie.tradeandopenmarkets.screen.safe.SafeMenu;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;

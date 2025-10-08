@@ -1,23 +1,16 @@
 package net.errantchaosie.tradeandopenmarkets;
 
 import com.tterrag.registrate.Registrate;
-import com.tterrag.registrate.util.nullness.NonNullSupplier;
-import net.errantchaosie.tradeandopenmarkets.block.SafeBlock;
-import net.errantchaosie.tradeandopenmarkets.block.entity.SafeBlockEntity;
+import net.errantchaosie.tradeandopenmarkets.block.TAOMBlocks;
+import net.errantchaosie.tradeandopenmarkets.block.entity.TAOMBlockEntities;
+import net.errantchaosie.tradeandopenmarkets.item.TAOMItems;
 import net.errantchaosie.tradeandopenmarkets.registry.*;
-import net.errantchaosie.tradeandopenmarkets.screen.SafeMenu;
-import net.errantchaosie.tradeandopenmarkets.screen.SafeScreen;
-import net.minecraft.client.renderer.ItemBlockRenderTypes;
-import net.minecraft.client.renderer.RenderType;
-import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
-import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
+import net.errantchaosie.tradeandopenmarkets.screen.TAOMMenus;
+import net.errantchaosie.tradeandopenmarkets.villager.TAOMVillagers;
 import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
 
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.world.item.CreativeModeTabs;
-import net.minecraft.world.level.block.Blocks;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.Mod;
@@ -25,7 +18,6 @@ import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
 
 // The value here should match an entry in the META-INF/neoforge.mods.toml file

@@ -1,11 +1,6 @@
 package net.errantchaosie.tradeandopenmarkets.block.entity;
 
-import com.tterrag.registrate.util.entry.BlockEntityEntry;
-import net.errantchaosie.tradeandopenmarkets.TradeAndOpenMarketsMod;
-import net.errantchaosie.tradeandopenmarkets.block.SafeBlock;
-import net.errantchaosie.tradeandopenmarkets.registry.TAOMBlockEntities;
-import net.errantchaosie.tradeandopenmarkets.registry.TAOMMenus;
-import net.errantchaosie.tradeandopenmarkets.screen.SafeMenu;
+import net.errantchaosie.tradeandopenmarkets.screen.safe.SafeMenu;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -18,7 +13,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.items.ItemStackHandler;
 import org.jetbrains.annotations.Nullable;

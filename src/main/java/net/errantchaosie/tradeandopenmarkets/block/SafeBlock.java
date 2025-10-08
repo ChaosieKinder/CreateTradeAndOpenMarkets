@@ -1,10 +1,7 @@
 package net.errantchaosie.tradeandopenmarkets.block;
 
 import com.mojang.serialization.MapCodec;
-import com.tterrag.registrate.util.entry.BlockEntry;
-import net.errantchaosie.tradeandopenmarkets.TradeAndOpenMarketsMod;
 import net.errantchaosie.tradeandopenmarkets.block.entity.SafeBlockEntity;
-import net.errantchaosie.tradeandopenmarkets.registry.TAOMBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;

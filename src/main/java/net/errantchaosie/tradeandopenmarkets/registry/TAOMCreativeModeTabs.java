@@ -1,7 +1,8 @@
 package net.errantchaosie.tradeandopenmarkets.registry;
 
 import net.errantchaosie.tradeandopenmarkets.TradeAndOpenMarketsMod;
-import net.errantchaosie.tradeandopenmarkets.block.SafeBlock;
+import net.errantchaosie.tradeandopenmarkets.block.TAOMBlocks;
+import net.errantchaosie.tradeandopenmarkets.item.TAOMItems;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.CreativeModeTab;
@@ -19,7 +20,11 @@ public class TAOMCreativeModeTabs {
             () -> CreativeModeTab.builder().icon(() -> new ItemStack(TAOMBlocks.SAFE_BLOCK.get().asItem()))
                     .title(Component.translatable("creativetab.tradeandopenmarkets.items_tab"))
                     .displayItems((itemDisplayParameters, output) -> {
-                        output.accept(TAOMItems.COIN_ITEM);
+                        output.accept(TAOMItems.COIN_COPPER.get());
+                        output.accept(TAOMItems.COIN_BRONZE.get());
+                        output.accept(TAOMItems.COIN_SILVER.get());
+                        output.accept(TAOMItems.COIN_ELECTRUM.get());
+                        output.accept(TAOMItems.COIN_EMERALD.get());
                         output.accept(TAOMBlocks.SAFE_BLOCK.get());
                     }).build());
 
