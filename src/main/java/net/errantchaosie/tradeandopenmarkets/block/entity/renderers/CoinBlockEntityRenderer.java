@@ -76,7 +76,8 @@ public class CoinBlockEntityRenderer implements BlockEntityRenderer<CoinBlockEnt
 
 
         // Optionally “thicken” full stacks (two coins per layer for full 10)
-        //thickenFullStacks(stacks, coinHeight);
+        if(coinHeight > 10)
+            thickenFullStacks(stacks, coinHeight);
 
         // Generate ring positions (center, then 6, 12, 18, …)
         List<Slot> slots = ringSlots(stacks.size());
