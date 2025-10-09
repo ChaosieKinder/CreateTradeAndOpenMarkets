@@ -1,0 +1,9 @@
+{
+  "render_type": "translucent",
+  "textures": {
+    "particle": "tradeandopenmarkets:block/coin_block"
+  },
+  "elements": [
+  ],
+  "ambientocclusion": false
+}

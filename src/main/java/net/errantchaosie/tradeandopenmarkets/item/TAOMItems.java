@@ -11,20 +11,20 @@ public class TAOMItems {
 
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(TradeAndOpenMarketsMod.MOD_ID);
 
-    public static final DeferredItem<Item> COIN_COPPER = ITEMS.register("coin_copper",
-            () -> new CoinCopper(new Item.Properties()));
+    public static final DeferredItem<Item> COIN_COPPER   = ITEMS.register("coin_copper",
+            () -> new CoinItemBase(new Item.Properties(), CoinItemBase.Denomination.COPPER));
 
-    public static final DeferredItem<Item> COIN_BRONZE = ITEMS.register("coin_bronze",
-            () -> new CoinBronze(new Item.Properties()));
+    public static final DeferredItem<Item> COIN_BRONZE   = ITEMS.register("coin_bronze",
+            () -> new CoinItemBase(new Item.Properties(), CoinItemBase.Denomination.BRONZE));
 
-    public static final DeferredItem<Item> COIN_SILVER = ITEMS.register("coin_silver",
-            () -> new CoinSilver(new Item.Properties()));
+    public static final DeferredItem<Item> COIN_SILVER   = ITEMS.register("coin_silver",
+            () -> new CoinItemBase(new Item.Properties(), CoinItemBase.Denomination.SILVER));
 
     public static final DeferredItem<Item> COIN_ELECTRUM = ITEMS.register("coin_electrum",
-            () -> new CoinElectrum(new Item.Properties()));
+            () -> new CoinItemBase(new Item.Properties(), CoinItemBase.Denomination.ELECTRUM));
 
-    public static final DeferredItem<Item> COIN_EMERALD = ITEMS.register("coin_emerald",
-            () -> new CoinEmerald(new Item.Properties()));
+    public static final DeferredItem<Item> COIN_EMERALD  = ITEMS.register("coin_emerald",
+            () -> new CoinItemBase(new Item.Properties(), CoinItemBase.Denomination.EMERALD));
 
     public static void register(IEventBus modEventBus) {
         ITEMS.register(modEventBus);

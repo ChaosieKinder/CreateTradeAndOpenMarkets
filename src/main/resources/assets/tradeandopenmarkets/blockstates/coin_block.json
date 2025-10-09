@@ -1,0 +1,5 @@
+{
+  "variants": {
+    "": { "model": "tradeandopenmarkets:block/coin_block" }
+  }
+}

@@ -32,14 +32,6 @@ public class TradeAndOpenMarketsModClient {
     }
 
     @SubscribeEvent
-    static void onClientSetup(FMLClientSetupEvent event) {
-        // Some client setup code
-        net.minecraft.client.renderer.ItemBlockRenderTypes.setRenderLayer(
-                TAOMBlocks.COIN_BLOCK.get(), net.minecraft.client.renderer.RenderType.translucent()
-        );
-    }
-
-    @SubscribeEvent
     public static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(
                 TAOMBlockEntities.COIN_BLOCKENTITY.get(),
