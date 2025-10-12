@@ -1,17 +1,16 @@
 package net.errantchaosie.tradeandopenmarkets;
 
-import net.errantchaosie.tradeandopenmarkets.block.TAOMBlocks;
 import net.errantchaosie.tradeandopenmarkets.block.entity.TAOMBlockEntities;
 import net.errantchaosie.tradeandopenmarkets.block.entity.renderers.CoinBlockEntityRenderer;
 import net.errantchaosie.tradeandopenmarkets.screen.TAOMMenus;
 import net.errantchaosie.tradeandopenmarkets.screen.safe.SafeScreen;
+import net.errantchaosie.tradeandopenmarkets.screen.wallet.WalletScreen;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
@@ -42,6 +41,7 @@ public class TradeAndOpenMarketsModClient {
     @SubscribeEvent
     public static void registerScreens(RegisterMenuScreensEvent event) {
         event.register(TAOMMenus.SAFE_MENU.get(), SafeScreen::new);
+        event.register(TAOMMenus.WALLET_MENU.get(), WalletScreen::new);
     }
 
 }

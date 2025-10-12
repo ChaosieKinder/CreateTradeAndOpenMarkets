@@ -1,8 +1,9 @@
 package net.errantchaosie.tradeandopenmarkets.block.entity.renderers;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.logging.LogUtils;
 import net.errantchaosie.tradeandopenmarkets.block.entity.CoinBlockEntity;
-import net.errantchaosie.tradeandopenmarkets.component.CurrencyInfo;
+import net.errantchaosie.tradeandopenmarkets.component.CurrencyData;
 import net.errantchaosie.tradeandopenmarkets.item.TAOMItems;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
@@ -13,6 +14,8 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
+import org.jline.utils.Log;
+import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -61,10 +64,8 @@ public class CoinBlockEntityRenderer implements BlockEntityRenderer<CoinBlockEnt
         var level = be.getLevel();
         var info  = be.getCurrency();
         if (level == null || info == null) return;
-
-        int total = info.coinsCopper() + info.coinsBronze() + info.coinsSilver() + info.coinsElectrum() + info.coinsEmerald();
+        int total = info.totalCount();
         if (total <= 0) return;
-
         var coinHeight = 0;
 
         // Build stack descriptors (largest denomination toward center)
@@ -74,6 +75,7 @@ public class CoinBlockEntityRenderer implements BlockEntityRenderer<CoinBlockEnt
             stacks = getStacks(info, coinHeight);
         } while (stacks.size() > SLOT_MAXIMUM);
 
+        if(stacks.isEmpty()) return;
 
         // Optionally “thicken” full stacks (two coins per layer for full 10)
         if(coinHeight > 10)
@@ -85,7 +87,6 @@ public class CoinBlockEntityRenderer implements BlockEntityRenderer<CoinBlockEnt
         // Render
         final int seedBase = (int) be.getBlockPos().asLong();
         pose.pushPose();
-        //pose.mulPose(); // lay it flat
         pose.rotateAround(com.mojang.math.Axis.XP.rotationDegrees(90f), 0,0,0);
         pose.scale(COIN_SCALE_HORIZONTAL,
                 COIN_SCALE_HORIZONTAL,
@@ -135,10 +136,12 @@ public class CoinBlockEntityRenderer implements BlockEntityRenderer<CoinBlockEnt
     }
 
     // ---------- Build stacks from counts ----------
-    private static List<StackVis> getStacks(CurrencyInfo info, int stackSize) {
+    private static List<StackVis> getStacks(CurrencyData info, int stackSize) {
         List<StackVis> stacks = new ArrayList<>();
         addStacks(stacks, stackSize, TAOMItems.COIN_EMERALD.get(),  info.coinsEmerald());
+        addStacks(stacks, stackSize, TAOMItems.COIN_PLATINUM.get(),   info.coinsPlatinum());
         addStacks(stacks, stackSize, TAOMItems.COIN_ELECTRUM.get(), info.coinsElectrum());
+        addStacks(stacks, stackSize, TAOMItems.COIN_GOLD.get(),   info.coinsGold());
         addStacks(stacks, stackSize, TAOMItems.COIN_SILVER.get(),   info.coinsSilver());
         addStacks(stacks, stackSize, TAOMItems.COIN_BRONZE.get(),   info.coinsBronze());
         addStacks(stacks, stackSize, TAOMItems.COIN_COPPER.get(),   info.coinsCopper());
@@ -146,6 +149,10 @@ public class CoinBlockEntityRenderer implements BlockEntityRenderer<CoinBlockEnt
     }
 
     private static void addStacks(List<StackVis> out, int stackSize, Item coinItem, int count) {
+        if(count > 1000) {
+            out.add(new StackVis(coinItem, Math.max(stackSize, 50)));
+            return;
+        }
         while (count > 0) {
             int h = Math.min(stackSize, count);
             out.add(new StackVis(coinItem, h));

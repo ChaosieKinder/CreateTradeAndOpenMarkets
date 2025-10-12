@@ -2,6 +2,7 @@ package net.errantchaosie.tradeandopenmarkets.screen;
 
 import net.errantchaosie.tradeandopenmarkets.TradeAndOpenMarketsMod;
 import net.errantchaosie.tradeandopenmarkets.screen.safe.SafeMenu;
+import net.errantchaosie.tradeandopenmarkets.screen.wallet.WalletMenu;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
@@ -18,6 +19,9 @@ public class TAOMMenus {
 
     public static final DeferredHolder<MenuType<?>, MenuType<SafeMenu>> SAFE_MENU =
             registerMenuType("safe_menu", SafeMenu::new);
+
+    public static final DeferredHolder<MenuType<?>, MenuType<WalletMenu>> WALLET_MENU =
+            registerMenuType("wallet_menu", WalletMenu::new);
 
     private static <T extends AbstractContainerMenu>DeferredHolder<MenuType<?>, MenuType<T>> registerMenuType(String name,
                                                                                                               IContainerFactory<T> factory) {

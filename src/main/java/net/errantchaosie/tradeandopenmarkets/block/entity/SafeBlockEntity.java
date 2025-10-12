@@ -50,7 +50,6 @@ public class SafeBlockEntity extends BlockEntity implements MenuProvider {
         for(int i = 0; i < inventory.getSlots(); i++) {
             inv.setItem(i, inventory.getStackInSlot(i));
         }
-
         Containers.dropContents(this.level, this.worldPosition, inv);
     }
 

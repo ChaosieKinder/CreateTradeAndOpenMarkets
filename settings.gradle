@@ -1,9 +1,19 @@
 pluginManagement {
     repositories {
         gradlePluginPortal()
+        maven { url = 'https://maven.neoforged.net/releases' }  // <-- REQUIRED
+        mavenCentral()
+
     }
 }
 
 plugins {
     id 'org.gradle.toolchains.foojay-resolver-convention' version '0.9.0'
+}
+
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
+        maven { url = 'https://maven.neoforged.net/releases' }  // libs (NeoForge, etc.)
+    }
 }

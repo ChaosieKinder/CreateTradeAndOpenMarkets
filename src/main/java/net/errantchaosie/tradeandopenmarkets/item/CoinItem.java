@@ -1,10 +1,10 @@
-package net.errantchaosie.tradeandopenmarkets.item.coins;
+package net.errantchaosie.tradeandopenmarkets.item;
 
 import com.mojang.logging.LogUtils;
 import net.errantchaosie.tradeandopenmarkets.block.TAOMBlocks;
 import net.errantchaosie.tradeandopenmarkets.block.entity.CoinBlockEntity;
-import net.errantchaosie.tradeandopenmarkets.component.CurrencyInfo;
-import net.errantchaosie.tradeandopenmarkets.item.TAOMItems;
+import net.errantchaosie.tradeandopenmarkets.component.CurrencyData;
+import net.errantchaosie.tradeandopenmarkets.data.CoinDenomination;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionResult;
@@ -21,46 +21,18 @@ import net.minecraft.world.level.gameevent.GameEvent;
 import org.slf4j.Logger;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 
-
-public class CoinItemBase extends Item {
+public class CoinItem extends Item {
     public static final Logger LOG = LogUtils.getLogger();
-    public enum Denomination {
-        NONE(0, ""),
-        COPPER(1, "§6"),
-        BRONZE(8, "§4"),
-        SILVER(64, "§i"),
-        ELECTRUM(512, "§e"),
-        EMERALD(4096, "§a");
 
-        public final int value;       // coin worth per 1 item
-        public final String format;   // color code (or use TextColor)
 
-        Denomination(int value, String format) {
-            this.value = value;
-            this.format = format;
-        }
-    }
+    private final CoinDenomination denom;
 
-    private final Denomination denom;
+    public CoinDenomination denom() { return denom; }
 
-    public Denomination denom() { return denom; }
-
-    public CoinItemBase(Properties properties, Denomination denom) {
+    public CoinItem(Properties properties, CoinDenomination denom) {
         super(properties);
         this.denom = denom;
-    }
-
-
-    public static Denomination getDenomination(Item item) {
-        if (item == TAOMItems.COIN_COPPER.get())   return Denomination.COPPER;
-        if (item == TAOMItems.COIN_BRONZE.get())   return Denomination.BRONZE;
-        if (item == TAOMItems.COIN_SILVER.get())   return Denomination.SILVER;
-        if (item == TAOMItems.COIN_ELECTRUM.get()) return Denomination.ELECTRUM;
-        if (item == TAOMItems.COIN_EMERALD.get())  return Denomination.EMERALD;
-        return Denomination.NONE;
     }
 
     @Override
@@ -81,19 +53,13 @@ public class CoinItemBase extends Item {
 
     @Override
     public InteractionResult useOn(UseOnContext ctx) {
-        LOG.info("CoinItem - useOn()");
         Player player = ctx.getPlayer();
         Level level   = ctx.getLevel();
         BlockPos pos  = ctx.getClickedPos();
 
-        // must have a player, must be crouching (shift), must click the TOP face
-//        if (player == null || !player.isCrouching() || ctx.getClickedFace() != Direction.UP) {
-//            return InteractionResult.PASS;
-//        }
         // If clicking an existing CoinBlock, let the block handle (single or double tap)
         //  and don't allow placing coin blocks on top of coin blocks
         if (level.getBlockState(pos).is(TAOMBlocks.COIN_BLOCK.get())) {
-            LOG.info("CoinItem - useOn - is coin block, passing");
             return InteractionResult.PASS;
         }
 
@@ -102,17 +68,14 @@ public class CoinItemBase extends Item {
         BlockState toPlace = TAOMBlocks.COIN_BLOCK.get().getStateForPlacement(placeCtx);
 
         if (toPlace == null) {
-            LOG.info("CoinItem - useOn - toPlace == null");
             // Fallback if your block doesn’t use orientation
             toPlace = TAOMBlocks.COIN_BLOCK.get().defaultBlockState();
         }
 
         if (level.isClientSide) {
-            LOG.info("CoinItem - useOn - suppressed on clientSide");
             return InteractionResult.sidedSuccess(level.isClientSide);
         }
 
-        LOG.info("CoinItem - useOn - continuing on serverSide");
         BlockPos placePos = pos.above();
         // Place the block (flag 11: neighbors + client update)
         boolean placed = level.setBlock(placePos, toPlace, 11);
@@ -122,7 +85,9 @@ public class CoinItemBase extends Item {
 
         // Initialize the just-created BlockEntity with 1 coin of this denomination
         if (level.getBlockEntity(placePos) instanceof CoinBlockEntity be) {
-            be.setCurrency(newCurrencyFromDenom(getDenomination(ctx.getItemInHand().getItem()), 1, Optional.of(player.getUUID())));
+            be.setCurrency(
+                    CurrencyData.newCurrencyFromDenom(
+                            getDenomination(ctx.getItemInHand().getItem()), 1));
             be.setChanged();
             level.sendBlockUpdated(placePos, toPlace, toPlace, 3);
         }
@@ -136,16 +101,35 @@ public class CoinItemBase extends Item {
         return InteractionResult.sidedSuccess(level.isClientSide());
     }
 
-    /** Build a CurrencyInfo with exactly `amount` in the given denomination. */
-    private static CurrencyInfo newCurrencyFromDenom(Denomination d, int amount, Optional<UUID> owner) {
-        int c = 0, b = 0, s = 0, e = 0, em = 0;
-        switch (d) {
-            case COPPER   -> c  = amount;
-            case BRONZE   -> b  = amount;
-            case SILVER   -> s  = amount;
-            case ELECTRUM -> e  = amount;
-            case EMERALD  -> em = amount;
-        }
-        return new CurrencyInfo(c, b, s, e, em, owner);
+    public static CoinDenomination getDenomination(Item item) {
+        if (item == TAOMItems.COIN_COPPER.get())   return CoinDenomination.COPPER;
+        if (item == TAOMItems.COIN_BRONZE.get())   return CoinDenomination.BRONZE;
+        if (item == TAOMItems.COIN_SILVER.get())   return CoinDenomination.SILVER;
+        if (item == TAOMItems.COIN_GOLD.get()) return CoinDenomination.GOLD;
+        if (item == TAOMItems.COIN_ELECTRUM.get()) return CoinDenomination.ELECTRUM;
+        if (item == TAOMItems.COIN_PLATINUM.get()) return CoinDenomination.PLATINUM;
+        if (item == TAOMItems.COIN_EMERALD.get())  return CoinDenomination.EMERALD;
+        return CoinDenomination.NONE;
+    }
+
+    public static ItemStack createCurrencyItem(CoinDenomination denomination, int value ) {
+        if (denomination == CoinDenomination.COPPER) return new ItemStack(TAOMItems.COIN_COPPER.get(), value);
+        if (denomination == CoinDenomination.BRONZE) return new ItemStack(TAOMItems.COIN_BRONZE.get(), value);
+        if (denomination == CoinDenomination.SILVER) return new ItemStack(TAOMItems.COIN_SILVER.get(), value);
+        if (denomination == CoinDenomination.GOLD) return new ItemStack(TAOMItems.COIN_GOLD.get(), value);
+        if (denomination == CoinDenomination.ELECTRUM) return new ItemStack(TAOMItems.COIN_ELECTRUM.get(), value);
+        if (denomination == CoinDenomination.PLATINUM) return new ItemStack(TAOMItems.COIN_PLATINUM.get(), value);
+        if (denomination == CoinDenomination.EMERALD) return new ItemStack(TAOMItems.COIN_EMERALD.get(), value);
+        return ItemStack.EMPTY;
+    }
+
+    public static boolean isCoinItem(Item item) {
+        return item == TAOMItems.COIN_COPPER.get()
+                || item == TAOMItems.COIN_BRONZE.get()
+                || item == TAOMItems.COIN_SILVER.get()
+                || item == TAOMItems.COIN_GOLD.get()
+                || item == TAOMItems.COIN_ELECTRUM.get()
+                || item == TAOMItems.COIN_PLATINUM.get()
+                || item == TAOMItems.COIN_EMERALD.get();
     }
 }

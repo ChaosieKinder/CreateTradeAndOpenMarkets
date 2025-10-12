@@ -3,7 +3,10 @@ package net.errantchaosie.tradeandopenmarkets;
 import com.tterrag.registrate.Registrate;
 import net.errantchaosie.tradeandopenmarkets.block.TAOMBlocks;
 import net.errantchaosie.tradeandopenmarkets.block.entity.TAOMBlockEntities;
+import net.errantchaosie.tradeandopenmarkets.block.entity.eventhandlers.CoinBlockLeftClickHandler;
+import net.errantchaosie.tradeandopenmarkets.component.TAOMComponents;
 import net.errantchaosie.tradeandopenmarkets.item.TAOMItems;
+import net.errantchaosie.tradeandopenmarkets.item.wallet.WalletAutoDeposit;
 import net.errantchaosie.tradeandopenmarkets.registry.*;
 import net.errantchaosie.tradeandopenmarkets.screen.TAOMMenus;
 import net.errantchaosie.tradeandopenmarkets.villager.TAOMVillagers;
@@ -44,6 +47,7 @@ public class TradeAndOpenMarketsMod {
 
         REGISTRATE.registerEventListeners(modEventBus);
 
+        TAOMComponents.register(modEventBus);
         TAOMCreativeModeTabs.register(modEventBus);
         TAOMItems.register(modEventBus);
         TAOMBlocks.register(modEventBus);
@@ -54,7 +58,9 @@ public class TradeAndOpenMarketsMod {
         // Register the item to a creative tab
         //modEventBus.addListener(this::addCreative);
         //modEventBus.addListener(this::clientSetup);
-
+        // Gameplay / world events go on the global NeoForge bus:
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(CoinBlockLeftClickHandler::onLeftClickBlock);
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(WalletAutoDeposit::onPlayerTick);
         // Register our mod's ModConfigSpec so that FML can create and load the config file for us
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
     }

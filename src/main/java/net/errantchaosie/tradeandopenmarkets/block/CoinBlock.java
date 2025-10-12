@@ -3,8 +3,9 @@ package net.errantchaosie.tradeandopenmarkets.block;
 import com.mojang.logging.LogUtils;
 import com.mojang.serialization.MapCodec;
 import net.errantchaosie.tradeandopenmarkets.block.entity.CoinBlockEntity;
-import net.errantchaosie.tradeandopenmarkets.component.CurrencyInfo;
+import net.errantchaosie.tradeandopenmarkets.component.CurrencyData;
 import net.errantchaosie.tradeandopenmarkets.item.TAOMItems;
+import net.errantchaosie.tradeandopenmarkets.item.CoinItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
@@ -84,16 +85,18 @@ public class CoinBlock extends BaseEntityBlock {
             if (!level.isClientSide) {
                 BlockEntity be = level.getBlockEntity(pos);
                 if (be instanceof CoinBlockEntity coinBE) {
-                    CurrencyInfo c = coinBE.getCurrency();
+                    CurrencyData c = coinBE.getCurrency();
                     // Drop each denomination
                     dropStacks(level, pos, TAOMItems.COIN_COPPER.get(),   c.coinsCopper());
                     dropStacks(level, pos, TAOMItems.COIN_BRONZE.get(),   c.coinsBronze());
                     dropStacks(level, pos, TAOMItems.COIN_SILVER.get(),   c.coinsSilver());
+                    dropStacks(level, pos, TAOMItems.COIN_GOLD.get(),     c.coinsGold());
                     dropStacks(level, pos, TAOMItems.COIN_ELECTRUM.get(), c.coinsElectrum());
+                    dropStacks(level, pos, TAOMItems.COIN_PLATINUM.get(), c.coinsPlatinum());
                     dropStacks(level, pos, TAOMItems.COIN_EMERALD.get(),  c.coinsEmerald());
 
                     // Optional: clear to avoid dupes if something else reads it later
-                    coinBE.setCurrency(CurrencyInfo.EMPTY);
+                    coinBE.setCurrency(CurrencyData.EMPTY);
                 }
             }
             // IMPORTANT: call super AFTER your logic (BE might be removed by super)
@@ -125,7 +128,7 @@ public class CoinBlock extends BaseEntityBlock {
         if (!level.isClientSide && player.getAbilities().instabuild) {
             BlockEntity be = level.getBlockEntity(pos);
             if (be instanceof CoinBlockEntity coinBE) {
-                coinBE.setCurrency(CurrencyInfo.EMPTY);
+                coinBE.setCurrency(CurrencyData.EMPTY);
             }
         }
         return super.playerWillDestroy(level, pos, state, player);
@@ -185,8 +188,8 @@ public class CoinBlock extends BaseEntityBlock {
         // So, peek both hands and pass a coin stack if present.
         ItemStack main = player.getMainHandItem();
         ItemStack off  = player.getOffhandItem();
-        ItemStack held = isCoinItem(main.getItem()) ? main
-                : isCoinItem(off.getItem())  ? off
+        ItemStack held = CoinItem.isCoinItem(main.getItem()) ? main
+                : CoinItem.isCoinItem(off.getItem())  ? off
                 : ItemStack.EMPTY;
 
         boolean did = handleInteraction(state, level, pos, player, held, InteractionHand.OFF_HAND);
@@ -202,37 +205,26 @@ public class CoinBlock extends BaseEntityBlock {
                                               Player player,
                                               ItemStack held,
                                               InteractionHand hand) {
-        LOG.info("CoinBlock - handleInteraction()");
-        LOG.info("CoinBlock - handleInteraction.pos = {}", pos );
-        LOG.info("CoinBlock - handleInteraction.held = {}", held );
-        LOG.info("CoinBlock - handleInteraction.hand = {}", hand );
         boolean sneaking = player.isCrouching() || player.isFallFlying();
-        boolean isCoin   = !held.isEmpty() && isCoinItem(held.getItem());
+        boolean isCoin   = !held.isEmpty() && CoinItem.isCoinItem(held.getItem());
 
-        LOG.info("CoinBlock - handleInteraction.sneaking = {}", sneaking);
-        LOG.info("CoinBlock - handleInteraction.isCoin = {}", isCoin);
         // Not sneaking and not a coin-in-hand → let other handlers run
         if (!sneaking && (!isCoin && !held.isEmpty())) {
-            LOG.info("CoinBlock - handleInteraction - failed first sanity check");
             return false;
         }
 
         if (!(level.getBlockEntity(pos) instanceof CoinBlockEntity be)){
-            LOG.info("CoinBlock - handleInteraction - failed second sanity check");
             return false;
         }
 
         // CLIENT: claim the interaction so the animation/GUI suppression happens.
         if (level.isClientSide) {
-            LOG.info("CoinBlock - handleInteraction - suppressed on clientSide");
             return true;
         }
 
-        LOG.info("CoinBlock - handleInteraction - continuing on serverSide");
         // SERVER: double-tap detection
         if(sneaking)
         {
-            LOG.info("CoinBlock - handleInteraction - is sneaking");
             long now = level.getGameTime();
             var id   = player.getUUID();
             var prev = LAST_SNEAK_USE.get(id);
@@ -240,7 +232,6 @@ public class CoinBlock extends BaseEntityBlock {
             LAST_SNEAK_USE.put(id, new DoubleTap(now, pos.immutable()));
 
             if (doubleTap) {
-                LOG.info("CoinBlock - handleInteraction - is sneaking - is doubleTap");
                 int moved = dumpAllCoinsFromInventory(player, be);
                 if (moved > 0) {
                     sync(be, level, pos, state);
@@ -253,7 +244,6 @@ public class CoinBlock extends BaseEntityBlock {
         // - sneaking + holding coin → insert WHOLE hand stack
         // - sneaking + empty hand → arm for double tap (do nothing else)
         if (isCoin) {
-            LOG.info("CoinBlock - handleInteraction - inserting coin");
             int moved = insertFromHeldStack(held, player, be);
             if (moved > 0) {
                 sync(be, level, pos, state);
@@ -271,97 +261,52 @@ public class CoinBlock extends BaseEntityBlock {
         level.sendBlockUpdated(pos, state, state, 3);
     }
 
-    private static boolean isCoinItem(Item item) {
-        return item == TAOMItems.COIN_COPPER.get()
-                || item == TAOMItems.COIN_BRONZE.get()
-                || item == TAOMItems.COIN_SILVER.get()
-                || item == TAOMItems.COIN_ELECTRUM.get()
-                || item == TAOMItems.COIN_EMERALD.get();
-    }
 
+    /**
+     * Attempts to insert an item stack, removing the in-hand item stack if the player is not in creative
+     * @param held
+     * @param player
+     * @param be
+     * @return the number of items added from the in-hand stack. (might be less then requested if pile is full)
+     */
     private static int insertFromHeldStack(ItemStack held, Player player, CoinBlockEntity be) {
-        LOG.info("CoinBlock - insertFromHeldStack()");
-        if (held.isEmpty() || !isCoinItem(held.getItem())) return 0;
-        CurrencyInfo c = be.getCurrency();
-        int denom   = denomIndex(held.getItem());
-        int current = getByDenom(c, denom);
-        int space   = Math.max(0, Integer.MAX_VALUE - current);
-        int move    = Math.min(space, player.isCrouching() ? held.getCount() : 1);
-        LOG.info("CoinBlock - insertFromHeldStack() denom = {}", denom);
-        LOG.info("CoinBlock - insertFromHeldStack() current = {}", current);
-        LOG.info("CoinBlock - insertFromHeldStack() space = {}", space);
-        LOG.info("CoinBlock - insertFromHeldStack() move = {}", move);
-        if (move <= 0) return 0;
-
-        c = setByDenom(c, denom, current + move);
-        be.setCurrency(c);
-        if (!player.getAbilities().instabuild) held.shrink(move);
-        return move;
+        int res = 0;
+        if (!held.isEmpty() && CoinItem.isCoinItem(held.getItem())) {
+            var result = be.getCurrency().add(held);
+            be.setCurrency(result.updated());
+            if (!player.getAbilities().instabuild) held.shrink(result.delta());
+            res = result.delta();
+        }
+        return res;
     }
 
     private static int dumpAllCoinsFromInventory(Player player, CoinBlockEntity be) {
-        CurrencyInfo c = be.getCurrency();
+        CurrencyData c = be.getCurrency();
         int movedTotal = 0;
         var inv = player.getInventory();
         for (int i = 0; i < inv.getContainerSize(); i++) {
             ItemStack s = inv.getItem(i);
-            if (s.isEmpty() || !isCoinItem(s.getItem())) continue;
-            int denom = denomIndex(s.getItem());
-            int current = getByDenom(c, denom);
-            int space = Math.max(0, Integer.MAX_VALUE - current);
-            int move = Math.min(space, s.getCount());
-            if (move <= 0) continue;
-            c = setByDenom(c, denom, current + move);
+            if (s.isEmpty() || !CoinItem.isCoinItem(s.getItem())) continue;
+            var addResult = c.add(s);
+            be.setCurrency(addResult.updated());
             if (!player.getAbilities().instabuild) {
-                s.shrink(move);
+                s.shrink(addResult.delta());
                 if (s.isEmpty()) inv.setItem(i, ItemStack.EMPTY);
             }
-            movedTotal += move;
+            movedTotal += addResult.delta();
         }
         // offhand, too
         ItemStack off = player.getOffhandItem();
-        if (!off.isEmpty() && isCoinItem(off.getItem())) {
-            int denom = denomIndex(off.getItem());
-            int current = getByDenom(c, denom);
-            int space = Math.max(0, Integer.MAX_VALUE - current);
-            int move = Math.min(space, off.getCount());
-            if (move > 0) {
-                c = setByDenom(c, denom, current + move);
-                if (!player.getAbilities().instabuild) off.shrink(move);
-                movedTotal += move;
+        if (!off.isEmpty() && CoinItem.isCoinItem(off.getItem())) {
+            var addResult = c.add(off);
+            be.setCurrency(addResult.updated());
+            if (!player.getAbilities().instabuild) {
+                off.shrink(addResult.delta());
             }
+            movedTotal += addResult.delta();
         }
         if (movedTotal > 0) be.setCurrency(c);
         return movedTotal;
-    }
-
-    private static int denomIndex(Item item) {
-        if (item == TAOMItems.COIN_COPPER.get()) return 0;
-        if (item == TAOMItems.COIN_BRONZE.get()) return 1;
-        if (item == TAOMItems.COIN_SILVER.get()) return 2;
-        if (item == TAOMItems.COIN_ELECTRUM.get()) return 3;
-        if (item == TAOMItems.COIN_EMERALD.get()) return 4;
-        return -1;
-    }
-    private static int getByDenom(CurrencyInfo c, int idx) {
-        return switch (idx) {
-            case 0 -> c.coinsCopper();
-            case 1 -> c.coinsBronze();
-            case 2 -> c.coinsSilver();
-            case 3 -> c.coinsElectrum();
-            case 4 -> c.coinsEmerald();
-            default -> 0;
-        };
-    }
-    private static CurrencyInfo setByDenom(CurrencyInfo c, int idx, int v) {
-        return switch (idx) {
-            case 0 -> new CurrencyInfo(v, c.coinsBronze(), c.coinsSilver(), c.coinsElectrum(), c.coinsEmerald(), c.owner());
-            case 1 -> new CurrencyInfo(c.coinsCopper(), v, c.coinsSilver(), c.coinsElectrum(), c.coinsEmerald(), c.owner());
-            case 2 -> new CurrencyInfo(c.coinsCopper(), c.coinsBronze(), v, c.coinsElectrum(), c.coinsEmerald(), c.owner());
-            case 3 -> new CurrencyInfo(c.coinsCopper(), c.coinsBronze(), c.coinsSilver(), v, c.coinsEmerald(), c.owner());
-            case 4 -> new CurrencyInfo(c.coinsCopper(), c.coinsBronze(), c.coinsSilver(), c.coinsElectrum(), v, c.owner());
-            default -> c;
-        };
     }
 
 }

@@ -1,16 +1,6 @@
 package net.errantchaosie.tradeandopenmarkets.block.entity;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.math.Axis;
-import net.errantchaosie.tradeandopenmarkets.component.CurrencyInfo;
-import net.errantchaosie.tradeandopenmarkets.item.TAOMItems;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.LightTexture;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
-import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.client.renderer.entity.ItemRenderer;
-import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.errantchaosie.tradeandopenmarkets.component.CurrencyData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -19,19 +9,13 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
-import net.minecraft.util.RandomSource;
-import net.minecraft.world.item.ItemDisplayContext;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.ItemLike;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 
 public class CoinBlockEntity extends BlockEntity {
 
-    private CurrencyInfo currency = CurrencyInfo.EMPTY;
+    private CurrencyData currency = CurrencyData.EMPTY;
 
     public CoinBlockEntity(BlockPos pos, BlockState state) {
         super(TAOMBlockEntities.COIN_BLOCKENTITY.get(), pos, state);
@@ -60,26 +44,13 @@ public class CoinBlockEntity extends BlockEntity {
 
 
     // ---------- Mutators / helpers ----------
-    public CurrencyInfo getCurrency() {
+    public CurrencyData getCurrency() {
         return currency;
     }
 
-    public void setCurrency(CurrencyInfo info) {
-        if (info == null) info = CurrencyInfo.EMPTY;
+    public void setCurrency(CurrencyData info) {
+        if (info == null) info = CurrencyData.EMPTY;
         this.currency = info;
-        markDirtyAndSync();
-    }
-
-    public void addCoins(int copper, int bronze, int silver, int electrum, int emerald) {
-        CurrencyInfo c = this.currency;
-        this.currency = new CurrencyInfo(
-                (c.coinsCopper() + copper),
-                (c.coinsBronze() + bronze),
-                (c.coinsSilver() + silver),
-                (c.coinsElectrum() + electrum),
-                (c.coinsEmerald() + emerald),
-                c.owner()
-        );
         markDirtyAndSync();
     }
 
@@ -95,7 +66,7 @@ public class CoinBlockEntity extends BlockEntity {
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider provider) {
         super.saveAdditional(tag, provider);
         // Encode CurrencyInfo → Tag via NbtOps
-        CurrencyInfo.CODEC.encodeStart(NbtOps.INSTANCE, currency)
+        CurrencyData.CODEC.encodeStart(NbtOps.INSTANCE, currency)
                 .resultOrPartial(err -> /* your logger here */ System.err.println("Currency save failed: " + err))
                 .ifPresent(encoded -> tag.put(KEY_CURRENCY, encoded));
     }
@@ -105,14 +76,14 @@ public class CoinBlockEntity extends BlockEntity {
         super.loadAdditional(tag, provider);
         if (tag.contains(KEY_CURRENCY, Tag.TAG_COMPOUND)) {
             Tag data = tag.get(KEY_CURRENCY);
-            CurrencyInfo.CODEC.parse(NbtOps.INSTANCE, data)
+            CurrencyData.CODEC.parse(NbtOps.INSTANCE, data)
                     .resultOrPartial(err -> /* your logger here */ System.err.println("Currency load failed: " + err))
                     .ifPresentOrElse(
                             v -> this.currency = v,
-                            () -> this.currency = CurrencyInfo.EMPTY
+                            () -> this.currency = CurrencyData.EMPTY
                     );
         } else {
-            this.currency = CurrencyInfo.EMPTY;
+            this.currency = CurrencyData.EMPTY;
         }
     }
 
