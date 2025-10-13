@@ -138,12 +138,17 @@ public class WalletScreen extends AbstractContainerScreen<WalletMenu> {
         return mc.player.getItemInHand(this.menu.getHand());
     }
 
+    private static final float buttonIconScale = 0.5f;
     private void drawLine(GuiGraphics guiGraphics, int xIcon, int y, ItemStack iconStack, int count) {
         // icon
+        var pose = guiGraphics.pose();
+        pose.pushPose();
+        pose.scale(0.5f, 0.5f, 0.5f);
         guiGraphics.renderFakeItem(iconStack, xIcon, y);
+        pose.popPose();
         // count text
         String text = String.valueOf(count);
-        drawScaled(guiGraphics, text, xIcon+  18, y + 4,0.7f ,0xFFFFFF);
+        drawScaled(guiGraphics, text, xIcon+  18, y + 4,0.4f ,0xFFFFFF);
     }
 
 

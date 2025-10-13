@@ -2,7 +2,6 @@ package net.errantchaosie.tradeandopenmarkets.item.wallet;
 
 import net.errantchaosie.tradeandopenmarkets.component.CurrencyData;
 import net.errantchaosie.tradeandopenmarkets.component.WalletBalance;
-import net.errantchaosie.tradeandopenmarkets.data.CoinDenomination;
 import net.errantchaosie.tradeandopenmarkets.screen.wallet.WalletMenu;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -10,12 +9,14 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.tooltip.TooltipComponent;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 
 import java.util.List;
+import java.util.Optional;
 
 public class WalletItem extends Item {
 
@@ -48,5 +49,15 @@ public class WalletItem extends Item {
         tooltip.add(Component.translatable("item.tradeandopenmarkets.wallet.tooltip_prefix")
                 .append(denomonation.format + value));
         super.appendHoverText(stack, ctx, tooltip, flag);
+    }
+
+    @Override
+    public Optional<TooltipComponent> getTooltipImage(ItemStack stack) {
+        List<ItemStack> contents = WalletInventory.read(stack);
+        boolean hasItems = contents.stream().anyMatch(item -> !item.isEmpty());
+        if (!hasItems) {
+            return Optional.empty();
+        }
+        return Optional.of(new WalletTooltip(contents));
     }
 }

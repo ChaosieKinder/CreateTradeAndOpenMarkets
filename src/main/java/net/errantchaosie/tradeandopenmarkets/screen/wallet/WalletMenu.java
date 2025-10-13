@@ -152,35 +152,15 @@ public class WalletMenu extends AbstractContainerMenu {
     @Override
     public boolean clickMenuButton(Player player, int id) {
         if (!(player instanceof ServerPlayer sp)) return false;
-        Boolean transferStack = player.isShiftKeyDown();
-        // We will give withdrawn coins directly to player inventory
-        java.util.function.Function<CoinDenomination, Boolean> withdraw1 = (d) -> {
-            CurrencyData c = WalletBalance.get(walletStack);
-            var res = c.remove(d, 1);
-            if (res.delta() == 0) return false;
-            WalletBalance.set(walletStack, res.updated());
-            sp.setItemInHand(hand, walletStack);   // re-set same ref to mark the slot dirty
-            playerInv.setChanged();                // mark inventory dirty
-            // give the coin item
-            var result = WalletBalance.remove(walletStack, d, transferStack ? 64 : 1);
-            var coin = CoinItem.createCurrencyItem(result.denomination(), result.delta());
-            if (result.delta() != 0) {
-                if (!sp.getInventory().add(coin)) {
-                    sp.drop(coin, false);
-                }
-            }
-            broadcastChanges();
-            return true;
-        };
 
         return switch (id) {
-            case BTN_WITHDRAW_COPPER -> withdraw1.apply(CoinDenomination.COPPER);
-            case BTN_WITHDRAW_BRONZE -> withdraw1.apply(CoinDenomination.BRONZE);
-            case BTN_WITHDRAW_SILVER -> withdraw1.apply(CoinDenomination.SILVER);
-            case BTN_WITHDRAW_GOLD -> withdraw1.apply(CoinDenomination.GOLD);
-            case BTN_WITHDRAW_ELECTRUM -> withdraw1.apply(CoinDenomination.ELECTRUM);
-            case BTN_WITHDRAW_PLATINUM -> withdraw1.apply(CoinDenomination.PLATINUM);
-            case BTN_WITHDRAW_EMERALD -> withdraw1.apply(CoinDenomination.EMERALD);
+            case BTN_WITHDRAW_COPPER -> withdrawCoinsFromWallet(sp, CoinDenomination.COPPER);
+            case BTN_WITHDRAW_BRONZE -> withdrawCoinsFromWallet(sp, CoinDenomination.BRONZE);
+            case BTN_WITHDRAW_SILVER -> withdrawCoinsFromWallet(sp, CoinDenomination.SILVER);
+            case BTN_WITHDRAW_GOLD -> withdrawCoinsFromWallet(sp, CoinDenomination.GOLD);
+            case BTN_WITHDRAW_ELECTRUM -> withdrawCoinsFromWallet(sp, CoinDenomination.ELECTRUM);
+            case BTN_WITHDRAW_PLATINUM -> withdrawCoinsFromWallet(sp, CoinDenomination.PLATINUM);
+            case BTN_WITHDRAW_EMERALD -> withdrawCoinsFromWallet(sp, CoinDenomination.EMERALD);
             case BTN_DEPOSIT_ALL -> {
                 depositAllCoinsFromPlayer(sp);
                 yield true;
@@ -188,6 +168,23 @@ public class WalletMenu extends AbstractContainerMenu {
             default -> false;
         };
     }
+    private boolean withdrawCoinsFromWallet(ServerPlayer sp, CoinDenomination denomonation) {
+        var result = WalletBalance.remove(walletStack, denomonation, sp.isShiftKeyDown() ? 64 : 1);
+        if (result.delta() == 0) return false; // sanity check
+        WalletBalance.set(walletStack, result.updated());
+        sp.setItemInHand(hand, walletStack);   // re-set same ref to mark the slot dirty
+        playerInv.setChanged();                // mark inventory dirty
+        // give the coin item
+        var coin = CoinItem.createCurrencyItem(result.denomination(), result.delta());
+        if (result.delta() != 0) {
+            if (!sp.getInventory().add(coin)) {
+                sp.drop(coin, false);
+            }
+        }
+        broadcastChanges();
+        return true;
+    }
+
     // WalletMenu: expose which hand was used
     public InteractionHand getHand() { return hand; }
 
