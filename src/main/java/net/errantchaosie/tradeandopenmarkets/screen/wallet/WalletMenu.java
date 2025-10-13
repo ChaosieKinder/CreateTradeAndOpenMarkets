@@ -1,8 +1,14 @@
 package net.errantchaosie.tradeandopenmarkets.screen.wallet;
 
+import net.errantchaosie.tradeandopenmarkets.component.CurrencyData;
+import net.errantchaosie.tradeandopenmarkets.component.WalletBalance;
+import net.errantchaosie.tradeandopenmarkets.data.CoinDenomination;
+import net.errantchaosie.tradeandopenmarkets.item.CoinItem;
+import net.errantchaosie.tradeandopenmarkets.item.TAOMItems;
 import net.errantchaosie.tradeandopenmarkets.item.wallet.WalletInventory;
 import net.errantchaosie.tradeandopenmarkets.screen.TAOMMenus;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.*;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -18,6 +24,17 @@ public class WalletMenu extends AbstractContainerMenu {
     private final InteractionHand hand;
     private final ItemStack walletStack;
     private final SimpleContainer walletInv; // working inventory
+
+    // Button IDs (unique and stable)
+    public static final int BTN_WITHDRAW_COPPER    = 10;
+    public static final int BTN_WITHDRAW_BRONZE    = 11;
+    public static final int BTN_WITHDRAW_SILVER    = 12;
+    public static final int BTN_WITHDRAW_GOLD      = 13;
+    public static final int BTN_WITHDRAW_ELECTRUM  = 14;
+    public static final int BTN_WITHDRAW_PLATINUM  = 15;
+    public static final int BTN_WITHDRAW_EMERALD   = 16;
+    public static final int BTN_DEPOSIT_ALL = 50; // <— new button id
+    private final Inventory playerInv;
 
     public static WalletMenu fromNetwork(int id, Inventory inv, FriendlyByteBuf buf) {
         InteractionHand hand = buf.readEnum(InteractionHand.class);
@@ -38,6 +55,7 @@ public class WalletMenu extends AbstractContainerMenu {
     public WalletMenu(int id, Inventory playerInv, InteractionHand hand) {
         super(TAOMMenus.WALLET_MENU.get(), id);
         this.hand = hand;
+        this.playerInv = playerInv;
         this.walletStack = playerInv.player.getItemInHand(hand);
 
         WalletInventory.ensure(walletStack);
@@ -87,6 +105,7 @@ public class WalletMenu extends AbstractContainerMenu {
             addSlot(new Slot(playerInv, c, 47 + c * 18, invY + 58));
     }
 
+
     @Override
     public boolean stillValid(Player player) {
         // Keep open only while holding the same stack in that hand
@@ -129,4 +148,131 @@ public class WalletMenu extends AbstractContainerMenu {
         else slot.setChanged();
         return copy;
     }
+
+    @Override
+    public boolean clickMenuButton(Player player, int id) {
+        if (!(player instanceof ServerPlayer sp)) return false;
+        Boolean transferStack = player.isShiftKeyDown();
+        // We will give withdrawn coins directly to player inventory
+        java.util.function.Function<CoinDenomination, Boolean> withdraw1 = (d) -> {
+            CurrencyData c = WalletBalance.get(walletStack);
+            var res = c.remove(d, 1);
+            if (res.delta() == 0) return false;
+            WalletBalance.set(walletStack, res.updated());
+            sp.setItemInHand(hand, walletStack);   // re-set same ref to mark the slot dirty
+            playerInv.setChanged();                // mark inventory dirty
+            // give the coin item
+            var result = WalletBalance.remove(walletStack, d, transferStack ? 64 : 1);
+            var coin = CoinItem.createCurrencyItem(result.denomination(), result.delta());
+            if (result.delta() != 0) {
+                if (!sp.getInventory().add(coin)) {
+                    sp.drop(coin, false);
+                }
+            }
+            broadcastChanges();
+            return true;
+        };
+
+        return switch (id) {
+            case BTN_WITHDRAW_COPPER -> withdraw1.apply(CoinDenomination.COPPER);
+            case BTN_WITHDRAW_BRONZE -> withdraw1.apply(CoinDenomination.BRONZE);
+            case BTN_WITHDRAW_SILVER -> withdraw1.apply(CoinDenomination.SILVER);
+            case BTN_WITHDRAW_GOLD -> withdraw1.apply(CoinDenomination.GOLD);
+            case BTN_WITHDRAW_ELECTRUM -> withdraw1.apply(CoinDenomination.ELECTRUM);
+            case BTN_WITHDRAW_PLATINUM -> withdraw1.apply(CoinDenomination.PLATINUM);
+            case BTN_WITHDRAW_EMERALD -> withdraw1.apply(CoinDenomination.EMERALD);
+            case BTN_DEPOSIT_ALL -> {
+                depositAllCoinsFromPlayer(sp);
+                yield true;
+            }
+            default -> false;
+        };
+    }
+    // WalletMenu: expose which hand was used
+    public InteractionHand getHand() { return hand; }
+
+    private void depositAllCoinsFromPlayer(ServerPlayer sp) {
+        CurrencyData cur = WalletBalance.get(walletStack);
+        boolean changed = false;
+
+        // 1) sweep carried (cursor) stack
+        ItemStack carried = getCarried();
+        if (!carried.isEmpty() && carried.getItem() instanceof CoinItem coin) {
+            cur = cur.add(coin.denom(), carried.getCount()).updated();
+            setCarried(ItemStack.EMPTY);
+            changed = true;
+        }
+
+        // 2) sweep main inventory (includes hotbar)
+        for (int i = 0; i < playerInv.items.size(); i++) {
+            ItemStack s = playerInv.items.get(i);
+            if (s.isEmpty()) continue;
+            if (s.getItem() instanceof CoinItem coin) {
+                cur = cur.add(coin.denom(), s.getCount()).updated();
+                playerInv.items.set(i, ItemStack.EMPTY);
+                changed = true;
+            }
+        }
+
+        // 3) sweep offhand
+        for (int i = 0; i < playerInv.offhand.size(); i++) {
+            ItemStack s = playerInv.offhand.get(i);
+            if (s.isEmpty()) continue;
+            if (s.getItem() instanceof CoinItem coin) {
+                cur = cur.add(coin.denom(), s.getCount()).updated();
+                playerInv.offhand.set(i, ItemStack.EMPTY);
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            WalletBalance.set(walletStack, cur);
+            sp.setItemInHand(hand, walletStack);   // re-set same ref to mark the slot dirty
+            playerInv.setChanged();
+            broadcastChanges();
+        }
+    }
+    /** Sweep the 3×3 wallet grid; convert any coin stacks into CurrencyData, consuming the items. */
+    private void autoDepositFromSlots() {
+        // Server-side only
+        if (!(this.getCarried() != null && this.slots != null)) { /* nothing */ }
+        CurrencyData cur = WalletBalance.get(walletStack);
+        boolean changed = false;
+
+        for (int i = 0; i < WalletInventory.SIZE; i++) {
+            ItemStack s = walletInv.getItem(i);
+            if (s.isEmpty()) continue;
+            if (!(s.getItem() instanceof CoinItem coin)) continue;
+
+            int count = s.getCount();
+            if (count <= 0) continue;
+
+            // add to totals and clear the slot
+            cur = cur.add(coin.denom(), count).updated();
+            walletInv.setItem(i, ItemStack.EMPTY);
+            changed = true;
+        }
+
+        if (changed) {
+            WalletBalance.set(walletStack, cur);
+            if (!( playerInv.player instanceof ServerPlayer sp))
+            {
+                playerInv.player.setItemInHand(hand, walletStack);   // re-set same ref to mark the slot dirty
+            }
+            playerInv.setChanged();
+            broadcastChanges();
+        }
+    }
+
+    @Override
+    public void broadcastChanges() {
+        super.broadcastChanges();
+
+        // Only run server-side
+        if (this.getSlot(0) == null || (this.playerInv.player == null) || this.playerInv.player.level().isClientSide) return;
+        autoDepositFromSlots();
+    }
+
+    // expose wallet stack to the screen for drawing:
+    public ItemStack getWalletStack() { return walletStack; }
 }

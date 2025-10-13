@@ -60,7 +60,7 @@ public class TradeAndOpenMarketsMod {
         //modEventBus.addListener(this::clientSetup);
         // Gameplay / world events go on the global NeoForge bus:
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(CoinBlockLeftClickHandler::onLeftClickBlock);
-        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(WalletAutoDeposit::onPlayerTick);
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.register(new WalletAutoDeposit());
         // Register our mod's ModConfigSpec so that FML can create and load the config file for us
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
     }

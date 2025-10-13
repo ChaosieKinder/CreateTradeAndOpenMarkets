@@ -11,6 +11,7 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import org.jline.utils.Log;
@@ -23,11 +24,9 @@ import java.util.List;
 
 public final class WalletAutoDeposit {
     public static final Logger LOG = LogUtils.getLogger();
-    private WalletAutoDeposit(){
-    }
 
-    public static void onPlayerTick(PlayerTickEvent.Post e) {
-
+    @SubscribeEvent
+    public void onPlayerTick(PlayerTickEvent.Post e) {
         Player player = e.getEntity();
         Level level = player.level();
         if (level.isClientSide) return;
@@ -36,13 +35,15 @@ public final class WalletAutoDeposit {
         ItemStack wallet = findWallet(player);
         if (wallet == null) return;
 
+        LOG.info("Wallet PlayerTick - Found Wallet");
         // Find coin items overlapping the player's pickup box (same as vanilla does)
         // A small inflate helps catch near-misses; tweak if needed.
-        var box = player.getBoundingBox().inflate(0.2);
+        var box = player.getBoundingBox().inflate(1.1,0.6,1.1);
         List<ItemEntity> items = level.getEntitiesOfClass(ItemEntity.class, box, ie ->
-                ie.isAlive() && !ie.hasPickUpDelay() && ie.getItem().getItem() instanceof CoinItem
+                ie.isAlive() && ie.getItem().getItem() instanceof CoinItem
         );
         if (items.isEmpty()) return;
+        LOG.info("Wallet PlayerTick - Found Items");
 
         boolean any = false;
         for (ItemEntity ie : items) {

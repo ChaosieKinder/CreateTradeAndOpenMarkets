@@ -44,8 +44,10 @@ public final class WalletBalance {
         set(wallet, get(wallet).add(d, count).updated());
     }
 
-    public static void remove(ItemStack wallet, CoinDenomination d, int count) {
+    public static CurrencyData.CoinsChangeResult remove(ItemStack wallet, CoinDenomination d, int count) {
         ensure(wallet);
-        set(wallet, get(wallet).remove(d, count).updated());
+        var result = get(wallet).remove(d, count);
+        set(wallet, result.updated());
+        return result;
     }
 }

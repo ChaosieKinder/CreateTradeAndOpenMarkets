@@ -1,25 +1,70 @@
+# Trade and Open Markets (TAOM)
 
-Installation information
-=======
+**Trade and Open Markets** is a NeoForge mod that overhauls the entire Minecraft economy.  
+The vanilla emerald economy is removed and replaced with a **multi-denomination coin system**, a wallet for storing currency, coin blocks for stacking and trading, and future systems for banking, trading, and server integrations.
 
-This template repository can be directly cloned to get you started with a new
-mod. Simply create a new repository cloned from this one, by following the
-instructions provided by [GitHub](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template).
+---
 
-Once you have your clone, simply open the repository in the IDE of your choice. The usual recommendation for an IDE is either IntelliJ IDEA or Eclipse.
+## ✨ Current Features
 
-If at any point you are missing libraries in your IDE, or you've run into problems you can
-run `gradlew --refresh-dependencies` to refresh the local cache. `gradlew clean` to reset everything 
-{this does not affect your code} and then start the process again.
+- **Coins**: Multiple denominations (Copper, Bronze, Silver, Gold, Electrum, Platinum, Emerald).
+- **Coin Blocks**: Place coins into the world as dynamic blocks that visually render coin piles.
+    - Right-click to deposit coins.
+    - Left-click to withdraw coins (highest denomination first).
+    - Coins spill out when the block is broken.
+- **Wallet**:
+    - Stores coins in an internal balance (`CurrencyData`).
+    - Auto-deposits coins as they are picked up.
+    - Works in inventory or Curios slots.
+    - Shift-right-click to open its menu.
+- **Safes**: Secure block entity with planned advanced features for shared storage and trading.
 
-Mapping Names:
-============
-By default, the MDK is configured to use the official mapping names from Mojang for methods and fields 
-in the Minecraft codebase. These names are covered by a specific license. All modders should be aware of this
-license. For the latest license text, refer to the mapping file itself, or the reference copy here:
-https://github.com/NeoForged/NeoForm/blob/main/Mojang.md
+---
 
-Additional Resources: 
-==========
-Community Documentation: https://docs.neoforged.net/  
-NeoForged Discord: https://discord.neoforged.net/
+## 🛠 Upcoming Work
+
+- **Cashiers Checks**  
+  Create tradeable paper notes backed by coin balances.
+
+- **Coin Block Performance**  
+  Fix large coin block drops to prevent lag or crashes when huge stacks break.
+
+- **Trader Overhaul**  
+  Replace vanilla villager trading with a new coin-based UI.
+
+- **Safe Enhancements**  
+  Expand safe block functionality with new permissions and features.
+
+- **Bank Accounts**  
+  Support persistent, player-linked balances beyond the wallet.
+
+---
+
+## 📦 Planned Long-Term Features
+
+- **Villager Economy**: All villager trades will use coins instead of emeralds.
+- **Server Integration**: Hooks to allow server owners to sell ranks, perks, or benefits for coins.
+- **Custom Currency Items**: Add checks, bank notes, and other financial instruments.
+
+---
+
+## 🔧 Technical Notes
+
+- Built on **NeoForge 1.21.1+**.
+- Uses the new **Data Components** API to store wallet and coin data.
+- Block entity rendering is custom (coin piles scale and thicken dynamically).
+- Modular design allows additional denominations or new coin types to be added.
+
+---
+
+## 🚀 Contributing
+
+This project is still in **early alpha**.  
+Contributions, ideas, and testing feedback are welcome!
+
+---
+
+## 📋 License
+
+All Rights Reserved
+Future License option TBD
