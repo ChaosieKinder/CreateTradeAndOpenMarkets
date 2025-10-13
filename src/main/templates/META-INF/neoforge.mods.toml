@@ -97,23 +97,15 @@ description='''${mod_description}'''
 # Dependency on Create
 [[dependencies.${mod_id}]]
     modId="create"
-    type="required"
+    type="optional"
     versionRange="[6.0.6,6.1.0)"
-    ordering="AFTER"
-    side="BOTH"
-
-# Dependency on Create Numismatics
-[[dependencies.${mod_id}]]
-    modId="numismatics"
-    type="required"
-    versionRange="[1.0.18,)"
     ordering="AFTER"
     side="BOTH"
 
 # Dependency on Create Mobile Packages
 [[dependencies.${mod_id}]]
     modId="create_mobile_packages"
-    type="required"
+    type="optional"
     versionRange="[0.5.5,)"
     ordering="AFTER"
     side="BOTH"

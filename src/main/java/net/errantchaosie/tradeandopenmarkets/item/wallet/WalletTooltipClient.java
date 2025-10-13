@@ -45,7 +45,7 @@ public class WalletTooltipClient implements ClientTooltipComponent {
         int contentWidth = columns * SLOT_SIZE;
         int contentHeight = rows * SLOT_SIZE;
 
-        TooltipRenderUtil.renderTooltipBackground(guiGraphics, mouseX, mouseY, contentWidth, contentHeight);
+        TooltipRenderUtil.renderTooltipBackground(guiGraphics, mouseX, mouseY, contentWidth, contentHeight, 1);
 
         for (int index = 0; index < items.size(); index++) {
             ItemStack stack = items.get(index);
