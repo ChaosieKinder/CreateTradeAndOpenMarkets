@@ -34,7 +34,7 @@ public class WalletItem extends Item {
             WalletBalance.ensure(stack);   // CurrencyInfo
             ((ServerPlayer) player).openMenu(
                     new SimpleMenuProvider((id, inv, p) -> new WalletMenu(id, inv, hand),
-                            Component.translatable("container.taom.wallet")),
+                            Component.translatable("item.tradeandopenmarkets.wallet_leather")),
                     buf -> buf.writeEnum(hand)
             );
         }
@@ -43,12 +43,12 @@ public class WalletItem extends Item {
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext ctx, List<Component> tooltip, TooltipFlag flag) {
+        super.appendHoverText(stack, ctx, tooltip, flag);
         CurrencyData c = WalletBalance.get(stack);
         var denomonation = c.getHighestDenomonation();
-        int value = c.totalValue();
+        float value = c.totalValue();
         tooltip.add(Component.translatable("item.tradeandopenmarkets.wallet.tooltip_prefix")
-                .append(denomonation.format + value));
-        super.appendHoverText(stack, ctx, tooltip, flag);
+                .append(denomonation.format + java.text.NumberFormat.getCurrencyInstance().format(value)));
     }
 
     @Override

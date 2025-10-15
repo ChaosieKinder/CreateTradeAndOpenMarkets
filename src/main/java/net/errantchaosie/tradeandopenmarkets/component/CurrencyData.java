@@ -11,17 +11,21 @@ import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
-public record CurrencyData(int coinsCopper, int coinsBronze, int coinsSilver, int coinsGold, int coinsElectrum, int coinsPlatinum, int coinsEmerald) {
+public record CurrencyData(int coinsCopperBit, int coinsCopperShard,
+                           int coinsSilverBit, int coinsSilverCrown,
+                           int coinsGoldMark, int coinsGoldRegal,
+                           int coinsEmeraldSun,int coinsEmeraldThrone) {
 
     public static final Logger LOG = LogUtils.getLogger();
     public static final Codec<CurrencyData> CODEC = RecordCodecBuilder.create(inst -> inst.group(
-            Codec.INT.fieldOf("coinsCopper").forGetter(CurrencyData::coinsCopper),
-            Codec.INT.fieldOf("coinsBronze").forGetter(CurrencyData::coinsBronze),
-            Codec.INT.fieldOf("coinsSilver").forGetter(CurrencyData::coinsSilver),
-            Codec.INT.fieldOf("coinsGold").forGetter(CurrencyData::coinsGold),
-            Codec.INT.fieldOf("coinsElectrum").forGetter(CurrencyData::coinsElectrum),
-            Codec.INT.fieldOf("coinsPlatinum").forGetter(CurrencyData::coinsElectrum),
-            Codec.INT.fieldOf("coinsEmerald").forGetter(CurrencyData::coinsEmerald)
+            Codec.INT.fieldOf("coinsCopperBit").forGetter(CurrencyData::coinsCopperBit),
+            Codec.INT.fieldOf("coinsCopperShard").forGetter(CurrencyData::coinsCopperShard),
+            Codec.INT.fieldOf("coinsSilverBit").forGetter(CurrencyData::coinsSilverBit),
+            Codec.INT.fieldOf("coinsSilverCrown").forGetter(CurrencyData::coinsSilverCrown),
+            Codec.INT.fieldOf("coinsGoldMark").forGetter(CurrencyData::coinsGoldMark),
+            Codec.INT.fieldOf("coinsGoldRegal").forGetter(CurrencyData::coinsGoldRegal),
+            Codec.INT.fieldOf("coinsEmeraldSun").forGetter(CurrencyData::coinsEmeraldSun),
+            Codec.INT.fieldOf("coinsEmeraldThrone").forGetter(CurrencyData::coinsEmeraldThrone)
     ).apply(inst, CurrencyData::new));
 
     // ---------- Network (packets) ----------
@@ -29,73 +33,87 @@ public record CurrencyData(int coinsCopper, int coinsBronze, int coinsSilver, in
             new StreamCodec<>() {
                 @Override
                 public CurrencyData decode(RegistryFriendlyByteBuf buf) {
-                    int copper    = buf.readVarInt();
-                    int bronze    = buf.readVarInt();
-                    int silver    = buf.readVarInt();
-                    int gold      = buf.readVarInt();
-                    int electrum  = buf.readVarInt();
-                    int platinum  = buf.readVarInt();
-                    int emerald   = buf.readVarInt();
-                    return new CurrencyData(copper, bronze, silver, gold, electrum, platinum, emerald);
+                    int c1 = buf.readVarInt();
+                    int c2 = buf.readVarInt();
+                    int s1 = buf.readVarInt();
+                    int s2 = buf.readVarInt();
+                    int g1 = buf.readVarInt();
+                    int g2 = buf.readVarInt();
+                    int e1 = buf.readVarInt();
+                    int e2 = buf.readVarInt();
+                    return new CurrencyData(c1, c2, s1, s2, g1, g2, e1, e2);
                 }
 
                 @Override
                 public void encode(RegistryFriendlyByteBuf buf, CurrencyData v) {
-                    buf.writeVarInt(v.coinsCopper());
-                    buf.writeVarInt(v.coinsBronze());
-                    buf.writeVarInt(v.coinsSilver());
-                    buf.writeVarInt(v.coinsGold());
-                    buf.writeVarInt(v.coinsElectrum());
-                    buf.writeVarInt(v.coinsPlatinum());
-                    buf.writeVarInt(v.coinsEmerald());
+                    buf.writeVarInt(v.coinsCopperBit());
+                    buf.writeVarInt(v.coinsCopperShard());
+                    buf.writeVarInt(v.coinsSilverBit());
+                    buf.writeVarInt(v.coinsSilverCrown());
+                    buf.writeVarInt(v.coinsGoldMark());
+                    buf.writeVarInt(v.coinsGoldRegal());
+                    buf.writeVarInt(v.coinsEmeraldSun());
+                    buf.writeVarInt(v.coinsEmeraldThrone());
                 }
             };
-    public static final CurrencyData EMPTY = new CurrencyData(0, 0,0,0,0, 0, 0);
+    public static final CurrencyData EMPTY = new CurrencyData(0, 0,0,0,0, 0, 0, 0);
 
     public boolean isEmpty() {
-        return coinsCopper == 0 && coinsBronze == 0 && coinsSilver == 0 && coinsGold == 0 && coinsElectrum == 0  && coinsPlatinum == 0  && coinsEmerald == 0;
+        return coinsCopperBit == 0 && coinsCopperShard == 0 &&
+                coinsSilverBit == 0 && coinsSilverCrown == 0 &&
+                coinsGoldMark == 0  && coinsGoldRegal == 0  &&
+                coinsEmeraldSun == 0  && coinsEmeraldThrone == 0;
     }
 
     // ----- Withers -----
-    public CurrencyData withCopper(int v)   { return new CurrencyData(v, coinsBronze, coinsSilver, coinsGold, coinsElectrum, coinsPlatinum, coinsEmerald); }
-    public CurrencyData withBronze(int v)   { return new CurrencyData(coinsCopper, v, coinsSilver, coinsGold, coinsElectrum, coinsPlatinum, coinsEmerald); }
-    public CurrencyData withSilver(int v)   { return new CurrencyData(coinsCopper, coinsBronze, v, coinsGold, coinsElectrum, coinsPlatinum, coinsEmerald); }
-    public CurrencyData withGold(int v)     { return new CurrencyData(coinsCopper, coinsBronze, coinsSilver, v, coinsElectrum, coinsPlatinum, coinsEmerald); } // NEW
-    public CurrencyData withElectrum(int v) { return new CurrencyData(coinsCopper, coinsBronze, coinsSilver, coinsGold, v, coinsPlatinum, coinsEmerald); }
-    public CurrencyData withPlatinum(int v) { return new CurrencyData(coinsCopper, coinsBronze, coinsSilver, coinsGold, coinsElectrum, v, coinsEmerald); }     // NEW
-    public CurrencyData withEmerald(int v)  { return new CurrencyData(coinsCopper, coinsBronze, coinsSilver, coinsGold, coinsElectrum, coinsPlatinum, v); }
+    public CurrencyData withCopperBit(int v)     { return new CurrencyData(v, coinsCopperShard, coinsSilverBit, coinsSilverCrown, coinsGoldMark, coinsGoldRegal, coinsEmeraldSun, coinsEmeraldThrone); }
+    public CurrencyData withCopperShard(int v)   { return new CurrencyData(coinsCopperBit, v, coinsSilverBit, coinsSilverCrown, coinsGoldMark, coinsGoldRegal, coinsEmeraldSun, coinsEmeraldThrone); }
+    public CurrencyData withSilverBit(int v)     { return new CurrencyData(coinsCopperBit, coinsCopperShard, v, coinsSilverCrown, coinsGoldMark, coinsGoldRegal, coinsEmeraldSun, coinsEmeraldThrone); }
+    public CurrencyData withSilverCrown(int v)   { return new CurrencyData(coinsCopperBit, coinsCopperShard, coinsSilverBit, v, coinsGoldMark, coinsGoldRegal, coinsEmeraldSun, coinsEmeraldThrone); }
+    public CurrencyData withGoldMark(int v)      { return new CurrencyData(coinsCopperBit, coinsCopperShard, coinsSilverBit, coinsSilverCrown, v, coinsGoldRegal, coinsEmeraldSun, coinsEmeraldThrone); }
+    public CurrencyData withGoldRegal(int v)     { return new CurrencyData(coinsCopperBit, coinsCopperShard, coinsSilverBit, coinsSilverCrown, coinsGoldMark, v, coinsEmeraldSun, coinsEmeraldThrone); }
+    public CurrencyData withEmeraldSun(int v)    { return new CurrencyData(coinsCopperBit, coinsCopperShard, coinsSilverBit, coinsSilverCrown, coinsGoldMark, coinsGoldRegal, v, coinsEmeraldThrone); }
+    public CurrencyData withEmeraldThrone(int v) { return new CurrencyData(coinsCopperBit, coinsCopperShard, coinsSilverBit, coinsSilverCrown, coinsGoldMark, coinsGoldRegal, coinsEmeraldSun, v); }
 
 
     // ----- Enum-based access / ops -----
     public int get(CoinDenomination d) {
         return switch (d) {
-            case COPPER   -> coinsCopper;
-            case BRONZE   -> coinsBronze;
-            case SILVER   -> coinsSilver;
-            case GOLD     -> coinsGold;
-            case ELECTRUM -> coinsElectrum;
-            case PLATINUM -> coinsPlatinum;
-            case EMERALD  -> coinsEmerald;
-            case NONE     -> 0;
+            case COPPER_BIT     -> coinsCopperBit;
+            case COPPER_SHARD   -> coinsCopperShard;
+            case SILVER_BIT     -> coinsSilverBit;
+            case SILVER_CROWN   -> coinsSilverCrown;
+            case GOLD_MARK      -> coinsGoldMark;
+            case GOLD_REGAL     -> coinsGoldRegal;
+            case EMERALD_SUN    -> coinsEmeraldSun;
+            case EMERALD_THRONE -> coinsEmeraldThrone;
+            case NONE           -> 0;
         };
     }
     public CurrencyData set(CoinDenomination d, int v) {
         return switch (d) {
-            case COPPER   -> withCopper(v);
-            case BRONZE   -> withBronze(v);
-            case SILVER   -> withSilver(v);
-            case GOLD     -> withGold(v);
-            case ELECTRUM -> withElectrum(v);
-            case PLATINUM -> withPlatinum(v);
-            case EMERALD  -> withEmerald(v);
-            case NONE     -> this;
+            case COPPER_BIT     -> withCopperBit(v);
+            case COPPER_SHARD   -> withCopperShard(v);
+            case SILVER_BIT     -> withSilverBit(v);
+            case SILVER_CROWN   -> withSilverCrown(v);
+            case GOLD_MARK      -> withGoldMark(v);
+            case GOLD_REGAL     -> withGoldRegal(v);
+            case EMERALD_SUN    -> withEmeraldSun(v);
+            case EMERALD_THRONE -> withEmeraldThrone(v);
+            case NONE           -> this;
         };
     }
-    public CurrencyData add(int dc, int db, int ds, int dg, int de, int dp, int dem) {
+    public CurrencyData add(int c1, int c2, int s1, int s2, int g1, int g2, int e1, int e2) {
         return new CurrencyData(
-                coinsCopper + dc, coinsBronze + db,
-                coinsSilver + ds, coinsGold + dg,
-                coinsElectrum + de, coinsPlatinum + dp, coinsEmerald + dem);
+            coinsCopperBit + c1,
+            coinsCopperShard + c2,
+            coinsSilverBit + s1,
+            coinsSilverCrown + s2,
+            coinsGoldMark + g1,
+                + coinsGoldRegal + g2,
+                coinsEmeraldSun + e1,
+                coinsEmeraldThrone + e2
+        );
     }
 
     /**
@@ -103,20 +121,22 @@ public record CurrencyData(int coinsCopper, int coinsBronze, int coinsSilver, in
      * @return returns the coin denomination in the stack with the highest value
      */
     public CoinDenomination getHighestDenomonation() {
-        if(coinsEmerald > 0)
-            return CoinDenomination.EMERALD;
-        if(coinsPlatinum > 0)
-            return CoinDenomination.PLATINUM;
-        if(coinsElectrum > 0)
-            return CoinDenomination.ELECTRUM;
-        if(coinsGold > 0)
-            return CoinDenomination.GOLD;
-        if(coinsSilver > 0)
-            return CoinDenomination.SILVER;
-        if(coinsBronze > 0)
-            return CoinDenomination.BRONZE;
-        if(coinsCopper > 0)
-            return CoinDenomination.COPPER;
+        if(coinsEmeraldThrone > 0)
+            return CoinDenomination.EMERALD_THRONE;
+        if(coinsEmeraldSun > 0)
+            return CoinDenomination.EMERALD_SUN;
+        if(coinsGoldRegal > 0)
+            return CoinDenomination.GOLD_REGAL;
+        if(coinsGoldMark > 0)
+            return CoinDenomination.GOLD_MARK;
+        if(coinsSilverCrown > 0)
+            return CoinDenomination.SILVER_CROWN;
+        if(coinsSilverBit > 0)
+            return CoinDenomination.SILVER_BIT;
+        if(coinsCopperShard > 0)
+            return CoinDenomination.COPPER_SHARD;
+        if(coinsCopperBit > 0)
+            return CoinDenomination.COPPER_BIT;
         return CoinDenomination.NONE;
     }
 
@@ -161,31 +181,35 @@ public record CurrencyData(int coinsCopper, int coinsBronze, int coinsSilver, in
         return CurrencyData.EMPTY.add(d, amount).updated();
     }
 
-    public int totalValue() {
-        return coinsCopper * CoinDenomination.COPPER.value +
-                coinsBronze * CoinDenomination.BRONZE.value +
-                coinsSilver * CoinDenomination.SILVER.value +
-                coinsGold * CoinDenomination.GOLD.value +
-                coinsElectrum * CoinDenomination.ELECTRUM.value +
-                coinsPlatinum * CoinDenomination.PLATINUM.value +
-                coinsEmerald * CoinDenomination.EMERALD.value;
+    public float totalValue() {
+        return (coinsCopperBit * CoinDenomination.COPPER_BIT.value +
+            coinsCopperShard * CoinDenomination.COPPER_SHARD.value +
+            coinsSilverBit * CoinDenomination.SILVER_BIT.value +
+            coinsSilverCrown * CoinDenomination.SILVER_CROWN.value +
+            coinsGoldMark * CoinDenomination.GOLD_MARK.value +
+            coinsGoldRegal * CoinDenomination.GOLD_REGAL.value +
+            coinsEmeraldSun * CoinDenomination.EMERALD_SUN.value+
+            coinsEmeraldThrone * CoinDenomination.EMERALD_THRONE.value)/100.0f;
     }
 
     public int totalCount() {
-        return coinsCopper + coinsBronze + coinsSilver + coinsGold + coinsElectrum + coinsPlatinum + coinsEmerald;
+        return coinsCopperBit + coinsCopperShard +
+                coinsSilverBit + coinsSilverCrown +
+                coinsGoldMark + coinsGoldRegal +
+                coinsEmeraldSun+ coinsEmeraldThrone;
     }
 
-    @NotNull
     @Override
-    public String toString() {
+    public @NotNull String toString() {
         return "CurrencyData{" +
-                "coinsCopper=" + coinsCopper +
-                ", coinsBronze=" + coinsBronze +
-                ", coinsSilver=" + coinsSilver +
-                ", coinsGold=" + coinsGold +
-                ", coinsElectrum=" + coinsElectrum +
-                ", coinsPlatinum=" + coinsPlatinum +
-                ", coinsEmerald=" + coinsEmerald +
+                "coinsCopperBit=" + coinsCopperBit +
+                ", coinsCopperShard=" + coinsCopperShard +
+                ", coinsSilverBit=" + coinsSilverBit +
+                ", coinsSilverCrown=" + coinsSilverCrown +
+                ", coinsGoldMark=" + coinsGoldMark +
+                ", coinsGoldRegal=" + coinsGoldRegal +
+                ", coinsEmeraldSun=" + coinsEmeraldSun +
+                ", coinsEmeraldThrone=" + coinsEmeraldThrone +
                 '}';
     }
 
@@ -198,5 +222,16 @@ public record CurrencyData(int coinsCopper, int coinsBronze, int coinsSilver, in
      * @param newValue The amount of that value after the change was applied
      * @param remaining The amount that was not able to be added/removed from what was requested
      */
-    public record CoinsChangeResult(CurrencyData updated, CoinDenomination denomination, int delta, int newValue, int remaining) {}
+    public record CoinsChangeResult(CurrencyData updated, CoinDenomination denomination, int delta, int newValue, int remaining) {
+        @Override
+        public String toString() {
+            return "CoinsChangeResult{" +
+                    "updated=" + updated +
+                    ", denomination=" + denomination +
+                    ", delta=" + delta +
+                    ", newValue=" + newValue +
+                    ", remaining=" + remaining +
+                    '}';
+        }
+    }
 }

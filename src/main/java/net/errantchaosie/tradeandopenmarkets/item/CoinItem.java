@@ -102,34 +102,37 @@ public class CoinItem extends Item {
     }
 
     public static CoinDenomination getDenomination(Item item) {
-        if (item == TAOMItems.COIN_COPPER.get())   return CoinDenomination.COPPER;
-        if (item == TAOMItems.COIN_BRONZE.get())   return CoinDenomination.BRONZE;
-        if (item == TAOMItems.COIN_SILVER.get())   return CoinDenomination.SILVER;
-        if (item == TAOMItems.COIN_GOLD.get()) return CoinDenomination.GOLD;
-        if (item == TAOMItems.COIN_ELECTRUM.get()) return CoinDenomination.ELECTRUM;
-        if (item == TAOMItems.COIN_PLATINUM.get()) return CoinDenomination.PLATINUM;
-        if (item == TAOMItems.COIN_EMERALD.get())  return CoinDenomination.EMERALD;
+        if (item == TAOMItems.COIN_COPPER_BIT.get())   return CoinDenomination.COPPER_BIT;
+        if (item == TAOMItems.COIN_COPPER_SHARD.get())   return CoinDenomination.COPPER_SHARD;
+        if (item == TAOMItems.COIN_SILVER_BIT.get())   return CoinDenomination.SILVER_BIT;
+        if (item == TAOMItems.COIN_SILVER_CROWN.get()) return CoinDenomination.SILVER_CROWN;
+        if (item == TAOMItems.COIN_GOLD_MARK.get()) return CoinDenomination.GOLD_MARK;
+        if (item == TAOMItems.COIN_GOLD_REGAL.get()) return CoinDenomination.GOLD_REGAL;
+        if (item == TAOMItems.COIN_EMERALD_SUN.get())  return CoinDenomination.EMERALD_SUN;
+        if (item == TAOMItems.COIN_EMERALD_THRONE.get())  return CoinDenomination.EMERALD_THRONE;
         return CoinDenomination.NONE;
     }
 
     public static ItemStack createCurrencyItem(CoinDenomination denomination, int value ) {
-        if (denomination == CoinDenomination.COPPER) return new ItemStack(TAOMItems.COIN_COPPER.get(), value);
-        if (denomination == CoinDenomination.BRONZE) return new ItemStack(TAOMItems.COIN_BRONZE.get(), value);
-        if (denomination == CoinDenomination.SILVER) return new ItemStack(TAOMItems.COIN_SILVER.get(), value);
-        if (denomination == CoinDenomination.GOLD) return new ItemStack(TAOMItems.COIN_GOLD.get(), value);
-        if (denomination == CoinDenomination.ELECTRUM) return new ItemStack(TAOMItems.COIN_ELECTRUM.get(), value);
-        if (denomination == CoinDenomination.PLATINUM) return new ItemStack(TAOMItems.COIN_PLATINUM.get(), value);
-        if (denomination == CoinDenomination.EMERALD) return new ItemStack(TAOMItems.COIN_EMERALD.get(), value);
+        if (denomination == CoinDenomination.COPPER_BIT) return new ItemStack(TAOMItems.COIN_COPPER_BIT.get(), value);
+        if (denomination == CoinDenomination.COPPER_SHARD) return new ItemStack(TAOMItems.COIN_COPPER_SHARD.get(), value);
+        if (denomination == CoinDenomination.SILVER_BIT) return new ItemStack(TAOMItems.COIN_SILVER_BIT.get(), value);
+        if (denomination == CoinDenomination.SILVER_CROWN) return new ItemStack(TAOMItems.COIN_SILVER_CROWN.get(), value);
+        if (denomination == CoinDenomination.GOLD_MARK) return new ItemStack(TAOMItems.COIN_GOLD_MARK.get(), value);
+        if (denomination == CoinDenomination.GOLD_REGAL) return new ItemStack(TAOMItems.COIN_GOLD_REGAL.get(), value);
+        if (denomination == CoinDenomination.EMERALD_SUN) return new ItemStack(TAOMItems.COIN_EMERALD_SUN.get(), value);
+        if (denomination == CoinDenomination.EMERALD_THRONE) return new ItemStack(TAOMItems.COIN_EMERALD_THRONE.get(), value);
         return ItemStack.EMPTY;
     }
 
     public static boolean isCoinItem(Item item) {
-        return item == TAOMItems.COIN_COPPER.get()
-                || item == TAOMItems.COIN_BRONZE.get()
-                || item == TAOMItems.COIN_SILVER.get()
-                || item == TAOMItems.COIN_GOLD.get()
-                || item == TAOMItems.COIN_ELECTRUM.get()
-                || item == TAOMItems.COIN_PLATINUM.get()
-                || item == TAOMItems.COIN_EMERALD.get();
+        return item == TAOMItems.COIN_COPPER_SHARD.get()
+                || item == TAOMItems.COIN_COPPER_BIT.get()
+                || item == TAOMItems.COIN_SILVER_BIT.get()
+                || item == TAOMItems.COIN_SILVER_CROWN.get()
+                || item == TAOMItems.COIN_GOLD_MARK.get()
+                || item == TAOMItems.COIN_GOLD_REGAL.get()
+                || item == TAOMItems.COIN_EMERALD_SUN.get()
+                || item == TAOMItems.COIN_EMERALD_THRONE.get();
     }
 }

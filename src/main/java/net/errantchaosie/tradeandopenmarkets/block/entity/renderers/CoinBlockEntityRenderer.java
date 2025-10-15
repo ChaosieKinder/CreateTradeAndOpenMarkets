@@ -1,7 +1,6 @@
 package net.errantchaosie.tradeandopenmarkets.block.entity.renderers;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.logging.LogUtils;
 import net.errantchaosie.tradeandopenmarkets.block.entity.CoinBlockEntity;
 import net.errantchaosie.tradeandopenmarkets.component.CurrencyData;
 import net.errantchaosie.tradeandopenmarkets.item.TAOMItems;
@@ -14,8 +13,6 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
-import org.jline.utils.Log;
-import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -138,13 +135,14 @@ public class CoinBlockEntityRenderer implements BlockEntityRenderer<CoinBlockEnt
     // ---------- Build stacks from counts ----------
     private static List<StackVis> getStacks(CurrencyData info, int stackSize) {
         List<StackVis> stacks = new ArrayList<>();
-        addStacks(stacks, stackSize, TAOMItems.COIN_EMERALD.get(),  info.coinsEmerald());
-        addStacks(stacks, stackSize, TAOMItems.COIN_PLATINUM.get(),   info.coinsPlatinum());
-        addStacks(stacks, stackSize, TAOMItems.COIN_ELECTRUM.get(), info.coinsElectrum());
-        addStacks(stacks, stackSize, TAOMItems.COIN_GOLD.get(),   info.coinsGold());
-        addStacks(stacks, stackSize, TAOMItems.COIN_SILVER.get(),   info.coinsSilver());
-        addStacks(stacks, stackSize, TAOMItems.COIN_BRONZE.get(),   info.coinsBronze());
-        addStacks(stacks, stackSize, TAOMItems.COIN_COPPER.get(),   info.coinsCopper());
+        addStacks(stacks, stackSize, TAOMItems.COIN_EMERALD_THRONE.get(),  info.coinsEmeraldThrone());
+        addStacks(stacks, stackSize, TAOMItems.COIN_EMERALD_SUN.get(),  info.coinsEmeraldSun());
+        addStacks(stacks, stackSize, TAOMItems.COIN_GOLD_REGAL.get(),   info.coinsGoldRegal());
+        addStacks(stacks, stackSize, TAOMItems.COIN_GOLD_MARK.get(), info.coinsGoldMark());
+        addStacks(stacks, stackSize, TAOMItems.COIN_SILVER_CROWN.get(),   info.coinsSilverCrown());
+        addStacks(stacks, stackSize, TAOMItems.COIN_SILVER_BIT.get(),   info.coinsSilverBit());
+        addStacks(stacks, stackSize, TAOMItems.COIN_COPPER_SHARD.get(),   info.coinsCopperShard());
+        addStacks(stacks, stackSize, TAOMItems.COIN_COPPER_BIT.get(),   info.coinsCopperBit());
         return stacks;
     }
 

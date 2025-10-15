@@ -2,16 +2,20 @@ package net.errantchaosie.tradeandopenmarkets;
 
 import net.errantchaosie.tradeandopenmarkets.block.entity.TAOMBlockEntities;
 import net.errantchaosie.tradeandopenmarkets.block.entity.renderers.CoinBlockEntityRenderer;
+import net.errantchaosie.tradeandopenmarkets.item.wallet.WalletTooltip;
+import net.errantchaosie.tradeandopenmarkets.item.wallet.WalletTooltipClient;
 import net.errantchaosie.tradeandopenmarkets.screen.TAOMMenus;
 import net.errantchaosie.tradeandopenmarkets.screen.safe.SafeScreen;
 import net.errantchaosie.tradeandopenmarkets.screen.wallet.WalletScreen;
 import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.event.RegisterClientTooltipComponentFactoriesEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
@@ -36,6 +40,11 @@ public class TradeAndOpenMarketsModClient {
                 TAOMBlockEntities.COIN_BLOCKENTITY.get(),
                 CoinBlockEntityRenderer::new
         );
+    }
+
+    @SubscribeEvent
+    public static void onRegisterTooltips(RegisterClientTooltipComponentFactoriesEvent event) {
+        event.register(WalletTooltip.class, WalletTooltipClient::new);
     }
 
     @SubscribeEvent

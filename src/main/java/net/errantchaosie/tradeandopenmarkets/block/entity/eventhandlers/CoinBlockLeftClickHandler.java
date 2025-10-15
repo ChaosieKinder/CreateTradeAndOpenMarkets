@@ -37,7 +37,7 @@ public final class CoinBlockLeftClickHandler {
         if (!(be instanceof CoinBlockEntity coinBE)) return;
 
         // If the block has no coins, let normal breaking proceed
-        if (isEmpty(coinBE.getCurrency())) return;
+        if (coinBE.getCurrency().isEmpty()) return;
 
         // Take ONE coin of the highest denomination and give to player
         Player player = e.getEntity();
@@ -57,11 +57,6 @@ public final class CoinBlockLeftClickHandler {
             // prevent breaking/progress
             e.setCanceled(true);
         }
-    }
-
-    private static boolean isEmpty(CurrencyData c) {
-        return c.coinsEmerald() == 0 && c.coinsElectrum() == 0 && c.coinsSilver() == 0
-                && c.coinsBronze() == 0 && c.coinsCopper() == 0;
     }
 
     /** Removes one coin from the highest non-empty stack and gives it to the player. */

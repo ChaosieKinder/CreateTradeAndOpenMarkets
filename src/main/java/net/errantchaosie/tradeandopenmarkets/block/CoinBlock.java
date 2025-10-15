@@ -87,13 +87,14 @@ public class CoinBlock extends BaseEntityBlock {
                 if (be instanceof CoinBlockEntity coinBE) {
                     CurrencyData c = coinBE.getCurrency();
                     // Drop each denomination
-                    dropStacks(level, pos, TAOMItems.COIN_COPPER.get(),   c.coinsCopper());
-                    dropStacks(level, pos, TAOMItems.COIN_BRONZE.get(),   c.coinsBronze());
-                    dropStacks(level, pos, TAOMItems.COIN_SILVER.get(),   c.coinsSilver());
-                    dropStacks(level, pos, TAOMItems.COIN_GOLD.get(),     c.coinsGold());
-                    dropStacks(level, pos, TAOMItems.COIN_ELECTRUM.get(), c.coinsElectrum());
-                    dropStacks(level, pos, TAOMItems.COIN_PLATINUM.get(), c.coinsPlatinum());
-                    dropStacks(level, pos, TAOMItems.COIN_EMERALD.get(),  c.coinsEmerald());
+                    dropStacks(level, pos, TAOMItems.COIN_COPPER_BIT.get(),   c.coinsCopperBit());
+                    dropStacks(level, pos, TAOMItems.COIN_COPPER_SHARD.get(),   c.coinsCopperShard());
+                    dropStacks(level, pos, TAOMItems.COIN_SILVER_BIT.get(),   c.coinsSilverBit());
+                    dropStacks(level, pos, TAOMItems.COIN_SILVER_CROWN.get(),     c.coinsSilverCrown());
+                    dropStacks(level, pos, TAOMItems.COIN_GOLD_MARK.get(), c.coinsGoldMark());
+                    dropStacks(level, pos, TAOMItems.COIN_GOLD_REGAL.get(), c.coinsGoldRegal());
+                    dropStacks(level, pos, TAOMItems.COIN_EMERALD_SUN.get(),  c.coinsEmeraldSun());
+                    dropStacks(level, pos, TAOMItems.COIN_EMERALD_THRONE.get(),  c.coinsEmeraldThrone());
 
                     // Optional: clear to avoid dupes if something else reads it later
                     coinBE.setCurrency(CurrencyData.EMPTY);

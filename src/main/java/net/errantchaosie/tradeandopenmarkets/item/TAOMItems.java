@@ -12,26 +12,29 @@ public class TAOMItems {
 
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(TradeAndOpenMarketsMod.MOD_ID);
 
-    public static final DeferredItem<Item> COIN_COPPER   = ITEMS.register("coin_copper",
-            () -> new CoinItem(new Item.Properties(), CoinDenomination.COPPER));
+    public static final DeferredItem<Item> COIN_COPPER_BIT   = ITEMS.register("coin_copper_bit",
+            () -> new CoinItem(new Item.Properties(), CoinDenomination.COPPER_BIT));
 
-    public static final DeferredItem<Item> COIN_BRONZE   = ITEMS.register("coin_bronze",
-            () -> new CoinItem(new Item.Properties(), CoinDenomination.BRONZE));
+    public static final DeferredItem<Item> COIN_COPPER_SHARD   = ITEMS.register("coin_copper_shard",
+            () -> new CoinItem(new Item.Properties(), CoinDenomination.COPPER_SHARD));
 
-    public static final DeferredItem<Item> COIN_SILVER   = ITEMS.register("coin_silver",
-            () -> new CoinItem(new Item.Properties(), CoinDenomination.SILVER));
+    public static final DeferredItem<Item> COIN_SILVER_BIT = ITEMS.register("coin_silver_bit",
+            () -> new CoinItem(new Item.Properties(), CoinDenomination.SILVER_BIT));
 
-    public static final DeferredItem<Item> COIN_GOLD = ITEMS.register("coin_gold",
-            () -> new CoinItem(new Item.Properties(), CoinDenomination.GOLD));
+    public static final DeferredItem<Item> COIN_SILVER_CROWN = ITEMS.register("coin_silver_crown",
+            () -> new CoinItem(new Item.Properties(), CoinDenomination.SILVER_CROWN));
 
-    public static final DeferredItem<Item> COIN_ELECTRUM = ITEMS.register("coin_electrum",
-            () -> new CoinItem(new Item.Properties(), CoinDenomination.ELECTRUM));
+    public static final DeferredItem<Item> COIN_GOLD_MARK = ITEMS.register("coin_gold_mark",
+            () -> new CoinItem(new Item.Properties(), CoinDenomination.GOLD_MARK));
 
-    public static final DeferredItem<Item> COIN_PLATINUM = ITEMS.register("coin_platinum",
-            () -> new CoinItem(new Item.Properties(), CoinDenomination.PLATINUM));
+    public static final DeferredItem<Item> COIN_GOLD_REGAL = ITEMS.register("coin_gold_regal",
+            () -> new CoinItem(new Item.Properties(), CoinDenomination.GOLD_REGAL));
 
-    public static final DeferredItem<Item> COIN_EMERALD  = ITEMS.register("coin_emerald",
-            () -> new CoinItem(new Item.Properties(), CoinDenomination.EMERALD));
+    public static final DeferredItem<Item> COIN_EMERALD_SUN  = ITEMS.register("coin_emerald_sun",
+            () -> new CoinItem(new Item.Properties(), CoinDenomination.EMERALD_SUN));
+
+    public static final DeferredItem<Item> COIN_EMERALD_THRONE  = ITEMS.register("coin_emerald_throne",
+            () -> new CoinItem(new Item.Properties(), CoinDenomination.EMERALD_THRONE));
 
     public static final DeferredItem<Item> WALLET_LEATHER_ITEM  = ITEMS.register("wallet_leather",
             () -> new WalletItem(new Item.Properties()));

@@ -1,5 +1,6 @@
 package net.errantchaosie.tradeandopenmarkets.screen.wallet;
 
+import com.mojang.logging.LogUtils;
 import net.errantchaosie.tradeandopenmarkets.component.CurrencyData;
 import net.errantchaosie.tradeandopenmarkets.component.WalletBalance;
 import net.errantchaosie.tradeandopenmarkets.data.CoinDenomination;
@@ -16,23 +17,27 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.*;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.InteractionHand;
+import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class WalletMenu extends AbstractContainerMenu {
+    public static final Logger LOG = LogUtils.getLogger();
     private final InteractionHand hand;
     private final ItemStack walletStack;
     private final SimpleContainer walletInv; // working inventory
 
     // Button IDs (unique and stable)
-    public static final int BTN_WITHDRAW_COPPER    = 10;
-    public static final int BTN_WITHDRAW_BRONZE    = 11;
-    public static final int BTN_WITHDRAW_SILVER    = 12;
-    public static final int BTN_WITHDRAW_GOLD      = 13;
-    public static final int BTN_WITHDRAW_ELECTRUM  = 14;
-    public static final int BTN_WITHDRAW_PLATINUM  = 15;
-    public static final int BTN_WITHDRAW_EMERALD   = 16;
+    // Note: BTN_WITHDRAW_* has an additional option at +1000 for detecting shift state
+    public static final int BTN_WITHDRAW_COPPER_BIT      = 10;
+    public static final int BTN_WITHDRAW_COPPER_SHARD    = 11;
+    public static final int BTN_WITHDRAW_SILVER_BIT      = 12;
+    public static final int BTN_WITHDRAW_SILVER_CROWN    = 13;
+    public static final int BTN_WITHDRAW_GOLD_MARK       = 14;
+    public static final int BTN_WITHDRAW_GOLD_REGAL      = 15;
+    public static final int BTN_WITHDRAW_EMERALD_SUN     = 16;
+    public static final int BTN_WITHDRAW_EMERALD_THRONE  = 17;
     public static final int BTN_DEPOSIT_ALL = 50; // <— new button id
     private final Inventory playerInv;
 
@@ -152,15 +157,21 @@ public class WalletMenu extends AbstractContainerMenu {
     @Override
     public boolean clickMenuButton(Player player, int id) {
         if (!(player instanceof ServerPlayer sp)) return false;
-
+        boolean isShift = false;
+        if(id > 1000) {
+            id -= 1000;
+            isShift = true;
+        }
+        LOG.info("Click Recieved: id={}, shift={}", id, isShift);
         return switch (id) {
-            case BTN_WITHDRAW_COPPER -> withdrawCoinsFromWallet(sp, CoinDenomination.COPPER);
-            case BTN_WITHDRAW_BRONZE -> withdrawCoinsFromWallet(sp, CoinDenomination.BRONZE);
-            case BTN_WITHDRAW_SILVER -> withdrawCoinsFromWallet(sp, CoinDenomination.SILVER);
-            case BTN_WITHDRAW_GOLD -> withdrawCoinsFromWallet(sp, CoinDenomination.GOLD);
-            case BTN_WITHDRAW_ELECTRUM -> withdrawCoinsFromWallet(sp, CoinDenomination.ELECTRUM);
-            case BTN_WITHDRAW_PLATINUM -> withdrawCoinsFromWallet(sp, CoinDenomination.PLATINUM);
-            case BTN_WITHDRAW_EMERALD -> withdrawCoinsFromWallet(sp, CoinDenomination.EMERALD);
+            case BTN_WITHDRAW_COPPER_BIT     -> withdrawCoinsFromWallet(sp, CoinDenomination.COPPER_BIT, isShift);
+            case BTN_WITHDRAW_COPPER_SHARD   -> withdrawCoinsFromWallet(sp, CoinDenomination.COPPER_SHARD, isShift);
+            case BTN_WITHDRAW_SILVER_BIT     -> withdrawCoinsFromWallet(sp, CoinDenomination.SILVER_BIT, isShift);
+            case BTN_WITHDRAW_SILVER_CROWN   -> withdrawCoinsFromWallet(sp, CoinDenomination.SILVER_CROWN, isShift);
+            case BTN_WITHDRAW_GOLD_MARK      -> withdrawCoinsFromWallet(sp, CoinDenomination.GOLD_MARK, isShift);
+            case BTN_WITHDRAW_GOLD_REGAL     -> withdrawCoinsFromWallet(sp, CoinDenomination.GOLD_REGAL, isShift);
+            case BTN_WITHDRAW_EMERALD_SUN    -> withdrawCoinsFromWallet(sp, CoinDenomination.EMERALD_SUN, isShift);
+            case BTN_WITHDRAW_EMERALD_THRONE -> withdrawCoinsFromWallet(sp, CoinDenomination.EMERALD_THRONE, isShift);
             case BTN_DEPOSIT_ALL -> {
                 depositAllCoinsFromPlayer(sp);
                 yield true;
@@ -168,8 +179,8 @@ public class WalletMenu extends AbstractContainerMenu {
             default -> false;
         };
     }
-    private boolean withdrawCoinsFromWallet(ServerPlayer sp, CoinDenomination denomonation) {
-        var result = WalletBalance.remove(walletStack, denomonation, sp.isShiftKeyDown() ? 64 : 1);
+    private boolean withdrawCoinsFromWallet(ServerPlayer sp, CoinDenomination denomonation, boolean isShift) {
+        var result = WalletBalance.remove(walletStack, denomonation, isShift ? 64 : 1);
         if (result.delta() == 0) return false; // sanity check
         WalletBalance.set(walletStack, result.updated());
         sp.setItemInHand(hand, walletStack);   // re-set same ref to mark the slot dirty
@@ -181,6 +192,8 @@ public class WalletMenu extends AbstractContainerMenu {
                 sp.drop(coin, false);
             }
         }
+        slotsChanged(this.walletInv);
+        sp.setItemInHand(hand, walletStack);
         broadcastChanges();
         return true;
     }

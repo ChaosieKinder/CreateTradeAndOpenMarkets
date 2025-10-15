@@ -35,7 +35,7 @@ public final class WalletAutoDeposit {
         ItemStack wallet = findWallet(player);
         if (wallet == null) return;
 
-        LOG.info("Wallet PlayerTick - Found Wallet");
+        //LOG.info("Wallet PlayerTick - Found Wallet");
         // Find coin items overlapping the player's pickup box (same as vanilla does)
         // A small inflate helps catch near-misses; tweak if needed.
         var box = player.getBoundingBox().inflate(1.1,0.6,1.1);
@@ -43,7 +43,7 @@ public final class WalletAutoDeposit {
                 ie.isAlive() && ie.getItem().getItem() instanceof CoinItem
         );
         if (items.isEmpty()) return;
-        LOG.info("Wallet PlayerTick - Found Items");
+        //LOG.info("Wallet PlayerTick - Found Items");
 
         boolean any = false;
         for (ItemEntity ie : items) {

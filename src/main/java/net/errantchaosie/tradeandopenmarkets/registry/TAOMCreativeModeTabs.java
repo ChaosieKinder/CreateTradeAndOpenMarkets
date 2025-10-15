@@ -20,13 +20,14 @@ public class TAOMCreativeModeTabs {
             () -> CreativeModeTab.builder().icon(() -> new ItemStack(TAOMBlocks.SAFE_BLOCK.get().asItem()))
                     .title(Component.translatable("creativetab.tradeandopenmarkets.items_tab"))
                     .displayItems((itemDisplayParameters, output) -> {
-                        output.accept(TAOMItems.COIN_COPPER.get());
-                        output.accept(TAOMItems.COIN_BRONZE.get());
-                        output.accept(TAOMItems.COIN_SILVER.get());
-                        output.accept(TAOMItems.COIN_GOLD.get());
-                        output.accept(TAOMItems.COIN_ELECTRUM.get());
-                        output.accept(TAOMItems.COIN_PLATINUM.get());
-                        output.accept(TAOMItems.COIN_EMERALD.get());
+                        output.accept(TAOMItems.COIN_COPPER_BIT.get());
+                        output.accept(TAOMItems.COIN_COPPER_SHARD.get());
+                        output.accept(TAOMItems.COIN_SILVER_BIT.get());
+                        output.accept(TAOMItems.COIN_SILVER_CROWN.get());
+                        output.accept(TAOMItems.COIN_GOLD_MARK.get());
+                        output.accept(TAOMItems.COIN_GOLD_REGAL.get());
+                        output.accept(TAOMItems.COIN_EMERALD_SUN.get());
+                        output.accept(TAOMItems.COIN_EMERALD_THRONE.get());
                         output.accept(TAOMItems.WALLET_LEATHER_ITEM.get());
                         output.accept(TAOMBlocks.SAFE_BLOCK.get());
                     }).build());

@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "tradeandopenmarkets:item/coin_silver"
+    "layer0": "tradeandopenmarkets:item/coin_gold_regal"
   }
 }

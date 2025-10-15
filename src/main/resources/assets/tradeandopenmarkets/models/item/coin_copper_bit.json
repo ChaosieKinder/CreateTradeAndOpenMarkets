@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "tradeandopenmarkets:item/coin_copper"
+    "layer0": "tradeandopenmarkets:item/coin_copper_bit"
   }
 }

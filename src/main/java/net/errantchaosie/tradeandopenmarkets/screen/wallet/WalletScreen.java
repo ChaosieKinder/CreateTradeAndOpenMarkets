@@ -2,28 +2,32 @@ package net.errantchaosie.tradeandopenmarkets.screen.wallet;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Axis;
+import net.errantchaosie.errantlib.ui.component.ItemButton;
 import net.errantchaosie.tradeandopenmarkets.TradeAndOpenMarketsMod;
 import net.errantchaosie.tradeandopenmarkets.component.CurrencyData;
 import net.errantchaosie.tradeandopenmarkets.component.WalletBalance;
 import net.errantchaosie.tradeandopenmarkets.data.CoinDenomination;
-import net.errantchaosie.tradeandopenmarkets.item.TAOMItems;
+import net.errantchaosie.tradeandopenmarkets.item.CoinItem;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
 import javax.tools.Tool;
+import java.util.ArrayList;
 
 public class WalletScreen extends AbstractContainerScreen<WalletMenu> {
 
     // keep button refs for live enable/disable
-    private Button btnEmerald, btnPlatinum, btnElectrum, btnGold, btnSilver, btnBronze, btnCopper, btnDepositAll;
+    ArrayList<ItemButton> buttons = new ArrayList<>();
+    private Button btnDepositAll;
 
     private static final ResourceLocation GUI_TEXTURE =
             ResourceLocation.fromNamespaceAndPath(TradeAndOpenMarketsMod.MOD_ID, "textures/gui/wallet/wallet_screen.png");
@@ -38,42 +42,77 @@ public class WalletScreen extends AbstractContainerScreen<WalletMenu> {
         this.inventoryLabelY = this.imageHeight - 104;
     }
 
+    protected int getButtonIdFromDenomination(CoinDenomination denomination) {
+        return switch (denomination) {
+            case CoinDenomination.COPPER_BIT     -> WalletMenu.BTN_WITHDRAW_COPPER_BIT;
+            case CoinDenomination.COPPER_SHARD   -> WalletMenu.BTN_WITHDRAW_COPPER_SHARD;
+            case CoinDenomination.SILVER_BIT     -> WalletMenu.BTN_WITHDRAW_SILVER_BIT;
+            case CoinDenomination.SILVER_CROWN   -> WalletMenu.BTN_WITHDRAW_SILVER_CROWN;
+            case CoinDenomination.GOLD_MARK      -> WalletMenu.BTN_WITHDRAW_GOLD_MARK;
+            case CoinDenomination.GOLD_REGAL     -> WalletMenu.BTN_WITHDRAW_GOLD_REGAL;
+            case CoinDenomination.EMERALD_SUN    -> WalletMenu.BTN_WITHDRAW_EMERALD_SUN;
+            case CoinDenomination.EMERALD_THRONE -> WalletMenu.BTN_WITHDRAW_EMERALD_THRONE;
+            default -> 0;
+        };
+    }
+
     @Override
     protected void init() {
         super.init();
-        int left = this.leftPos;
-        int top  = this.topPos;
-
+        buttons.clear();    // clear if we've called init already
         // Small icon buttons (you can use ImageButton with your own icons)
         // Here I'll use vanilla-looking text buttons for clarity; replace with ImageButton for icons.
         // Withdraw (-1) buttons; replace with ImageButton if you have icon textures
-        btnEmerald  = addRenderableWidget(button(left + 8,  top + 18, "-", WalletMenu.BTN_WITHDRAW_EMERALD));
-        btnPlatinum = addRenderableWidget(button(left + 8,  top + 36, "-", WalletMenu.BTN_WITHDRAW_PLATINUM));
-        btnElectrum = addRenderableWidget(button(left + 8,  top + 54, "-", WalletMenu.BTN_WITHDRAW_ELECTRUM));
-        btnGold     = addRenderableWidget(button(left + 8,  top + 72, "-", WalletMenu.BTN_WITHDRAW_GOLD));
-        btnSilver   = addRenderableWidget(button(left + 8,  top + 90, "-", WalletMenu.BTN_WITHDRAW_SILVER));
-        btnBronze   = addRenderableWidget(button(left + 8,  top +108, "-", WalletMenu.BTN_WITHDRAW_BRONZE));
-        btnCopper   = addRenderableWidget(button(left + 8,  top +126, "-", WalletMenu.BTN_WITHDRAW_COPPER));
 
+        int left = this.leftPos + 130;
+        int top  = this.topPos + 48;
+        int x = left + 8;
+        int y = top + 12;
+        int rowStartY = y;
+        int rowCount = 0;
+        for (CoinDenomination coinDenom : CoinDenomination.values()) {
+            if(coinDenom == CoinDenomination.NONE)
+                continue;
+            var item = CoinItem.createCurrencyItem(coinDenom, 1);
+            var menuId = getButtonIdFromDenomination(coinDenom);
+            var button = new ItemButton(x, y, 40, 16, () -> item, b -> sendMenuButton(menuId), item.getDisplayName());
+            button.setTooltip(Tooltip.create(
+                    Component.translatable("item.tradeandopenmarkets."+ coinDenom.languageKey)
+                            .append("\n")
+                            .append(Component.translatable("item.tradeandopenmarkets."+ coinDenom.languageKey + ".tooltip"))
+                            .append("\n")
+                            .append(Component.translatable("item.tradeandopenmarkets.wallet.withdraw.tooltip"))
+            ));
+            button.setScale(0.8f, 0.8f);
+            button.setImageOffset(ItemButton.ItemAnchor.LEFT, 0, 0);
+            button.setTextOffset(ItemButton.ItemAnchor.RIGHT, 0, 0);
+            button.setMessage(Component.literal("0"));
+            buttons.add(button);
+            addRenderableWidget(button);
+            x += 21 + 16 + 6;
+            y += 8;
+            rowCount++;
+            if(rowCount % 2 == 0) {
+                rowStartY += 18;
+                x = left + 8;
+                y = rowStartY;
+            }
+        }
+        y += 8;
         // Deposit All
         btnDepositAll = addRenderableWidget(
                 Button.builder(Component.translatable("item.tradeandopenmarkets.wallet.deposit_all"),
                                 b -> sendMenuButton(WalletMenu.BTN_DEPOSIT_ALL))
-                        .pos(left + 8, top + 144).size(80, 16)
+                        .pos(this.leftPos + 138, this.topPos + 150).size(70, 10)
                         .tooltip(Tooltip.create(Component.translatable("item.tradeandopenmarkets.wallet.deposit_all.tooltip"))).build()
         );
     }
 
-    private Button button(int x, int y, String label, int id) {
-        return Button.builder(Component.literal(label), b -> sendMenuButton(id))
-                .pos(x, y).size(12, 12)
-                .tooltip(Tooltip.create(Component.translatable("Click to add one to inventory. Shift+Click to add a stack."))).build();
-    }
-
     /** Send container button click to server. */
     private void sendMenuButton(int id) {
+        boolean shift = net.minecraft.client.gui.screens.Screen.hasShiftDown();
         if (this.minecraft != null && this.minecraft.gameMode != null) {
-            this.minecraft.gameMode.handleInventoryButtonClick(this.menu.containerId, id);
+            this.minecraft.gameMode.handleInventoryButtonClick(this.menu.containerId , id+ (shift ? 1000 : 0));
         }
     }
 
@@ -81,54 +120,49 @@ public class WalletScreen extends AbstractContainerScreen<WalletMenu> {
     @Override
     protected void containerTick() {
         super.containerTick();
-        CurrencyData c = WalletBalance.get(this.menu.getWalletStack()); // safe client read
 
-        btnEmerald.active  = c.coinsEmerald()  > 0;
-        btnPlatinum.active = c.coinsPlatinum() > 0;
-        btnElectrum.active = c.coinsElectrum() > 0;
-        btnGold.active     = c.coinsGold()     > 0;
-        btnSilver.active   = c.coinsSilver()   > 0;
-        btnBronze.active   = c.coinsBronze()   > 0;
-        btnCopper.active   = c.coinsCopper()   > 0;
+        var mc = this.minecraft;
+        var walletStack = (mc != null && mc.player != null)
+                ? mc.player.getItemInHand(this.menu.getHand())
+                : ItemStack.EMPTY;
+
+        CurrencyData c = WalletBalance.get(walletStack); // safe client read
+
+        for (ItemButton btn : buttons) {
+            if(btn.getIconItem().getItem() instanceof CoinItem coin) {
+                int value = c.get(coin.denom());
+                btn.active = value > 0;
+                btn.setMessage(Component.literal("" + value));
+
+            }
+        }
     }
 
     @Override
-    protected void renderBg(GuiGraphics guiGraphics, float v, int i, int i1) {
+    protected void renderBg(@NotNull GuiGraphics guiGraphics, float mouseX, int mouseY, int partialTick) {
+        // Draw Background
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
         RenderSystem.setShaderTexture(0, GUI_TEXTURE);
-        int x =  (this.width - this.imageWidth) / 2;
-        int y =  (this.height - this.imageHeight) / 2;
+        guiGraphics.blit(GUI_TEXTURE,
+                (this.width - this.imageWidth) / 2,
+                (this.height - this.imageHeight) / 2,
+                0, 0, this.imageWidth, this.imageHeight);
 
-        guiGraphics.blit(GUI_TEXTURE, x, y, 0, 0, this.imageWidth, this.imageHeight);
-
-        // Render coin icons + counts
-        int xIcon = leftPos + 24;
-        int xText = xIcon + 18;
-        y = topPos + 16;
+        // Draw Total Value at top right of wallet
+        String totalValueText = java.text.NumberFormat.getCurrencyInstance().format(
+                WalletBalance.get(currentWalletStack()).totalValue());
+        int walletTotalX = leftPos + imageWidth - 40 - this.font.width(totalValueText)/2;
+        int walletTotalY = topPos + 48 - this.font.lineHeight/2;
         PoseStack pose = guiGraphics.pose();
-        CurrencyData c = WalletBalance.get(currentWalletStack()); // expose a getter in menu for walletStack
-
-        // draw from highest to lowest
-        drawLine(guiGraphics, xIcon, y,      new ItemStack(TAOMItems.COIN_EMERALD.get()),  c.coinsEmerald());
-        y += 18;
-        drawLine(guiGraphics, xIcon, y,      new ItemStack(TAOMItems.COIN_PLATINUM.get()), c.coinsPlatinum());
-        y += 18;
-        drawLine(guiGraphics, xIcon, y,      new ItemStack(TAOMItems.COIN_ELECTRUM.get()), c.coinsElectrum());
-        y += 18;
-        drawLine(guiGraphics, xIcon, y,      new ItemStack(TAOMItems.COIN_GOLD.get()),     c.coinsGold());
-        y += 18;
-        drawLine(guiGraphics, xIcon, y,      new ItemStack(TAOMItems.COIN_SILVER.get()),   c.coinsSilver());
-        y += 18;
-        drawLine(guiGraphics, xIcon, y,      new ItemStack(TAOMItems.COIN_BRONZE.get()),   c.coinsBronze());
-        y += 18;
-        drawLine(guiGraphics, xIcon, y,      new ItemStack(TAOMItems.COIN_COPPER.get()),   c.coinsCopper());
-
-        // Grand total (top-right)
-        long total = c.totalValue(); // see helper below
-        String pretty = java.text.NumberFormat.getIntegerInstance().format(total);
-        guiGraphics.drawCenteredString(font, Component.translatable("item.tradeandopenmarkets.wallet.total_prefix", pretty),
-                leftPos + imageWidth - 8 - this.font.width(pretty) - 40, topPos + 6, 0xFFE0A0);
+        pose.pushPose();
+        pose.translate(walletTotalX, walletTotalY, 0);
+        pose.mulPose(Axis.ZP.rotationDegrees(10f));
+        guiGraphics.drawCenteredString(font, totalValueText,
+                0, 0,
+                0xFFE0A0);
+        pose.popPose();
+        // Buttons and itemstacks are registered in init and handled as sub-components
     }
 
     // WalletScreen: helper to read the current wallet stack from the hand
@@ -138,26 +172,4 @@ public class WalletScreen extends AbstractContainerScreen<WalletMenu> {
         return mc.player.getItemInHand(this.menu.getHand());
     }
 
-    private static final float buttonIconScale = 0.5f;
-    private void drawLine(GuiGraphics guiGraphics, int xIcon, int y, ItemStack iconStack, int count) {
-        // icon
-        var pose = guiGraphics.pose();
-        pose.pushPose();
-        pose.scale(0.5f, 0.5f, 0.5f);
-        guiGraphics.renderFakeItem(iconStack, xIcon, y);
-        pose.popPose();
-        // count text
-        String text = String.valueOf(count);
-        drawScaled(guiGraphics, text, xIcon+  18, y + 4,0.4f ,0xFFFFFF);
-    }
-
-
-    private void drawScaled(GuiGraphics gg, String text, float x, float y, float scale, int color) {
-        var pose = gg.pose();
-        pose.pushPose();
-        pose.translate(x, y, 0);
-        pose.scale(scale, scale, 1f);
-        gg.drawString(this.font, text, 0, 0, color, false);
-        pose.popPose();
-    }
 }
