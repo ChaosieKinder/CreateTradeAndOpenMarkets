@@ -268,7 +268,7 @@ public class CoinBlock extends BaseEntityBlock {
      * @param held
      * @param player
      * @param be
-     * @return the number of items added from the in-hand stack. (might be less then requested if pile is full)
+     * @return the number of item added from the in-hand stack. (might be less then requested if pile is full)
      */
     private static int insertFromHeldStack(ItemStack held, Player player, CoinBlockEntity be) {
         int res = 0;

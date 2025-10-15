@@ -141,7 +141,7 @@ public record CurrencyData(int coinsCopperBit, int coinsCopperShard,
     }
 
     /**
-     * Adds the items from the item stack to the currency data if possible
+     * Adds the item from the item stack to the currency data if possible
      * @implNote does not handle adjusting the item stack size
      * @param itemstack
      * @return Result object that describes the change

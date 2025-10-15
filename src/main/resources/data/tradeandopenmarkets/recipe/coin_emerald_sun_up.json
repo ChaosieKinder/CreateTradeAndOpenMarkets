@@ -1,0 +1,34 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "tradeandopenmarkets:coin_gold_regal"
+    },
+    {
+      "item": "tradeandopenmarkets:coin_gold_regal"
+    },
+    {
+      "item": "tradeandopenmarkets:coin_gold_regal"
+    },
+    {
+      "item": "tradeandopenmarkets:coin_gold_regal"
+    },
+    {
+      "item": "tradeandopenmarkets:coin_gold_regal"
+    },
+    {
+      "item": "tradeandopenmarkets:coin_gold_regal"
+    },
+    {
+      "item": "tradeandopenmarkets:coin_gold_regal"
+    },
+    {
+      "item": "tradeandopenmarkets:coin_gold_regal"
+    }
+  ],
+  "result": {
+    "count": 1,
+    "id": "tradeandopenmarkets:coin_emerald_sun"
+  }
+}

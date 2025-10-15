@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "tradeandopenmarkets:coin_gold_mark"
+    }
+  ],
+  "result": {
+    "count": 5,
+    "id": "tradeandopenmarkets:coin_silver_crown"
+  }
+}

@@ -1,6 +1,7 @@
 package net.errantchaosie.tradeandopenmarkets.screen.wallet;
 
 import com.mojang.logging.LogUtils;
+import net.errantchaosie.tradeandopenmarkets.TAOMTags;
 import net.errantchaosie.tradeandopenmarkets.component.CurrencyData;
 import net.errantchaosie.tradeandopenmarkets.component.WalletBalance;
 import net.errantchaosie.tradeandopenmarkets.data.CoinDenomination;
@@ -217,9 +218,13 @@ public class WalletMenu extends AbstractContainerMenu {
         for (int i = 0; i < playerInv.items.size(); i++) {
             ItemStack s = playerInv.items.get(i);
             if (s.isEmpty()) continue;
-            if (s.getItem() instanceof CoinItem coin) {
-                cur = cur.add(coin.denom(), s.getCount()).updated();
-                playerInv.items.set(i, ItemStack.EMPTY);
+            if (s.is(TAOMTags.Items.WALLET_ITEMS)) {
+                if(s.getItem() instanceof CoinItem coin) {
+                    cur = cur.add(coin.denom(), s.getCount()).updated();
+                    playerInv.items.set(i, ItemStack.EMPTY);
+                } else {
+                    quickMoveStack(playerInv.player, i);
+                }
                 changed = true;
             }
         }
@@ -228,9 +233,13 @@ public class WalletMenu extends AbstractContainerMenu {
         for (int i = 0; i < playerInv.offhand.size(); i++) {
             ItemStack s = playerInv.offhand.get(i);
             if (s.isEmpty()) continue;
-            if (s.getItem() instanceof CoinItem coin) {
-                cur = cur.add(coin.denom(), s.getCount()).updated();
-                playerInv.offhand.set(i, ItemStack.EMPTY);
+            if (s.is(TAOMTags.Items.WALLET_ITEMS)) {
+                if(s.getItem() instanceof CoinItem coin) {
+                    cur = cur.add(coin.denom(), s.getCount()).updated();
+                    playerInv.offhand.set(i, ItemStack.EMPTY);
+                } else {
+                    quickMoveStack(playerInv.player, i);
+                }
                 changed = true;
             }
         }
@@ -242,7 +251,7 @@ public class WalletMenu extends AbstractContainerMenu {
             broadcastChanges();
         }
     }
-    /** Sweep the 3×3 wallet grid; convert any coin stacks into CurrencyData, consuming the items. */
+    /** Sweep the 3×3 wallet grid; convert any coin stacks into CurrencyData, consuming the item. */
     private void autoDepositFromSlots() {
         // Server-side only
         if (!(this.getCarried() != null && this.slots != null)) { /* nothing */ }

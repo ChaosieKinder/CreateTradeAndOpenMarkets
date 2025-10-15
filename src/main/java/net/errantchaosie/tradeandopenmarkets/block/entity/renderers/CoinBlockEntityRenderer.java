@@ -21,7 +21,7 @@ public class CoinBlockEntityRenderer implements BlockEntityRenderer<CoinBlockEnt
     // ---------- Tuning knobs ----------
     // base vertical spacing per layer (one coin) before scaling = 0.0625
     private static final float Layer_Z = (1.0f/16f);
-    // size of coin items
+    // size of coin item
     private static final float COIN_SCALE_HORIZONTAL    = 0.15f;
     // vertical spacing per layer (one coin)
     private static final float COIN_SCALE_VERTICAL      = 0.20f;

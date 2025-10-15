@@ -39,9 +39,11 @@ public class CoinItem extends Item {
     public void appendHoverText(ItemStack stack, TooltipContext ctx,
                                 List<Component> tooltip, TooltipFlag flag) {
         int total = stack.getCount() * denom.value;
-        tooltip.add(Component.translatable("tooltip_info_item.coin")
-                .append(Component.literal(denom.format))
-                .append(Component.literal(String.valueOf(total))));
+        tooltip.add(Component.translatable("item.tradeandopenmarkets." + denom.languageKey + ".tooltip")
+                        .append("\n")
+                .append(Component.translatable("tooltip_info_item.coin"))
+                .append(denom.format)
+                .append(java.text.NumberFormat.getCurrencyInstance().format(total/100.0f)));
         super.appendHoverText(stack, ctx, tooltip, flag);
     }
 

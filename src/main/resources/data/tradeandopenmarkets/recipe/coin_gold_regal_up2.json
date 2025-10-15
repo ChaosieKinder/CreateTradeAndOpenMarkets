@@ -1,0 +1,37 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "tradeandopenmarkets:coin_gold_mark"
+    },
+    {
+      "item": "tradeandopenmarkets:coin_gold_mark"
+    },
+    {
+      "item": "tradeandopenmarkets:coin_gold_mark"
+    },
+    {
+      "item": "tradeandopenmarkets:coin_gold_mark"
+    },
+    {
+      "item": "tradeandopenmarkets:coin_silver_crown"
+    },
+    {
+      "item": "tradeandopenmarkets:coin_silver_crown"
+    },
+    {
+      "item": "tradeandopenmarkets:coin_silver_crown"
+    },
+    {
+      "item": "tradeandopenmarkets:coin_silver_crown"
+    },
+    {
+      "item": "tradeandopenmarkets:coin_silver_crown"
+    }
+  ],
+  "result": {
+    "count": 1,
+    "id": "tradeandopenmarkets:coin_gold_regal"
+  }
+}

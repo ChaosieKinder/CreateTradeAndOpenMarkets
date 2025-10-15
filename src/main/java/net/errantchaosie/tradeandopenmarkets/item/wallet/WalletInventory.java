@@ -21,7 +21,7 @@ public final class WalletInventory {
         }
     }
 
-    /** Read a **copy** of the items currently stored on the stack. Never null. */
+    /** Read a **copy** of the item currently stored on the stack. Never null. */
     public static List<ItemStack> read(ItemStack stack) {
         ItemContainerContents c = stack.get(DataComponents.CONTAINER);
         List<ItemStack> out = new ArrayList<>(SIZE);
@@ -38,9 +38,9 @@ public final class WalletInventory {
         return out;
     }
 
-    /** Write items back to the stack’s component (persists). */
+    /** Write item back to the stack’s component (persists). */
     public static void write(ItemStack stack, List<ItemStack> items) {
-        // items.size() should be SIZE
+        // item.size() should be SIZE
         stack.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(items));
     }
 

@@ -1,0 +1,34 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "tradeandopenmarkets:coin_silver_bit"
+    },
+    {
+      "item": "tradeandopenmarkets:coin_silver_bit"
+    },
+    {
+      "item": "tradeandopenmarkets:coin_silver_bit"
+    },
+    {
+      "item": "tradeandopenmarkets:coin_silver_bit"
+    },
+    {
+      "item": "tradeandopenmarkets:coin_copper_shard"
+    },
+    {
+      "item": "tradeandopenmarkets:coin_copper_shard"
+    },
+    {
+      "item": "tradeandopenmarkets:coin_copper_shard"
+    },
+    {
+      "item": "tradeandopenmarkets:coin_copper_shard"
+    }
+  ],
+  "result": {
+    "count": 1,
+    "id": "tradeandopenmarkets:coin_silver_crown"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "tradeandopenmarkets:coin_copper_bit"
+    },
+    {
+      "item": "tradeandopenmarkets:coin_copper_bit"
+    },
+    {
+      "item": "tradeandopenmarkets:coin_copper_bit"
+    },
+    {
+      "item": "tradeandopenmarkets:coin_copper_bit"
+    },
+    {
+      "item": "tradeandopenmarkets:coin_copper_bit"
+    }
+  ],
+  "result": {
+    "count": 1,
+    "id": "tradeandopenmarkets:coin_copper_shard"
+  }
+}
