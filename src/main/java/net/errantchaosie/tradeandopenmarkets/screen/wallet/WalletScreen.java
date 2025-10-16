@@ -20,7 +20,6 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
-import javax.tools.Tool;
 import java.util.ArrayList;
 
 public class WalletScreen extends AbstractContainerScreen<WalletMenu> {
@@ -130,12 +129,18 @@ public class WalletScreen extends AbstractContainerScreen<WalletMenu> {
 
         for (ItemButton btn : buttons) {
             if(btn.getIconItem().getItem() instanceof CoinItem coin) {
-                int value = c.get(coin.denom());
+                int value = c.getFrom(coin.denom());
                 btn.active = value > 0;
                 btn.setMessage(Component.literal("" + value));
 
             }
         }
+    }
+
+    @Override
+    public void render(GuiGraphics gg, int mouseX, int mouseY, float partialTicks) {
+        super.render(gg, mouseX, mouseY, partialTicks); // 2) draws slots & items
+        this.renderTooltip(gg, mouseX, mouseY);  // 3) draws slot tooltips on top
     }
 
     @Override

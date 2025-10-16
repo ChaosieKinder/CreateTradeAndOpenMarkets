@@ -1,0 +1,11 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "tradeandopenmarkets:item/coin_stack1"
+  },
+  "overrides": [
+    { "predicate": { "tradeandopenmarkets:stack_tier": 2 }, "model": "tradeandopenmarkets:item/coin_stack2" },
+    { "predicate": { "tradeandopenmarkets:stack_tier": 3 }, "model": "tradeandopenmarkets:item/coin_stack3" },
+    { "predicate": { "tradeandopenmarkets:stack_tier": 4 }, "model": "tradeandopenmarkets:item/coin_stack4" }
+  ]
+}

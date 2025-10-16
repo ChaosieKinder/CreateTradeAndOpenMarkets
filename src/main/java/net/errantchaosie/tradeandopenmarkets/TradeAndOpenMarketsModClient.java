@@ -2,11 +2,15 @@ package net.errantchaosie.tradeandopenmarkets;
 
 import net.errantchaosie.tradeandopenmarkets.block.entity.TAOMBlockEntities;
 import net.errantchaosie.tradeandopenmarkets.block.entity.renderers.CoinBlockEntityRenderer;
+import net.errantchaosie.tradeandopenmarkets.item.CoinStackItem;
+import net.errantchaosie.tradeandopenmarkets.item.TAOMItems;
 import net.errantchaosie.tradeandopenmarkets.item.wallet.WalletTooltip;
 import net.errantchaosie.tradeandopenmarkets.item.wallet.WalletTooltipClient;
 import net.errantchaosie.tradeandopenmarkets.screen.TAOMMenus;
 import net.errantchaosie.tradeandopenmarkets.screen.safe.SafeScreen;
 import net.errantchaosie.tradeandopenmarkets.screen.wallet.WalletScreen;
+import net.minecraft.client.renderer.item.ItemProperties;
+import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.IEventBus;
@@ -14,6 +18,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterClientTooltipComponentFactoriesEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
@@ -40,6 +45,7 @@ public class TradeAndOpenMarketsModClient {
                 TAOMBlockEntities.COIN_BLOCKENTITY.get(),
                 CoinBlockEntityRenderer::new
         );
+
     }
 
     @SubscribeEvent
@@ -51,6 +57,15 @@ public class TradeAndOpenMarketsModClient {
     public static void registerScreens(RegisterMenuScreensEvent event) {
         event.register(TAOMMenus.SAFE_MENU.get(), SafeScreen::new);
         event.register(TAOMMenus.WALLET_MENU.get(), WalletScreen::new);
+    }
+
+    @SubscribeEvent
+    public static void onClientSetup(FMLClientSetupEvent event) {
+        event.enqueueWork(() -> {
+            ItemProperties.register(TAOMItems.COIN_STACK_ITEM.get(),
+                    ResourceLocation.fromNamespaceAndPath(TradeAndOpenMarketsMod.MOD_ID, "stack_tier"),
+                    (stack, level, entity, seed) -> CoinStackItem.tier(stack));
+        });
     }
 
 }

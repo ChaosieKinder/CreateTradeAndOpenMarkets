@@ -6,7 +6,7 @@ import net.errantchaosie.tradeandopenmarkets.component.CurrencyData;
 import net.errantchaosie.tradeandopenmarkets.component.WalletBalance;
 import net.errantchaosie.tradeandopenmarkets.data.CoinDenomination;
 import net.errantchaosie.tradeandopenmarkets.item.CoinItem;
-import net.errantchaosie.tradeandopenmarkets.item.TAOMItems;
+import net.errantchaosie.tradeandopenmarkets.item.CoinStackItem;
 import net.errantchaosie.tradeandopenmarkets.item.wallet.WalletInventory;
 import net.errantchaosie.tradeandopenmarkets.screen.TAOMMenus;
 import net.minecraft.network.chat.Component;
@@ -261,15 +261,21 @@ public class WalletMenu extends AbstractContainerMenu {
         for (int i = 0; i < WalletInventory.SIZE; i++) {
             ItemStack s = walletInv.getItem(i);
             if (s.isEmpty()) continue;
-            if (!(s.getItem() instanceof CoinItem coin)) continue;
+            if (s.getItem() instanceof CoinItem coin) {
+                int count = s.getCount();
+                if (count <= 0) continue;
 
-            int count = s.getCount();
-            if (count <= 0) continue;
-
-            // add to totals and clear the slot
-            cur = cur.add(coin.denom(), count).updated();
-            walletInv.setItem(i, ItemStack.EMPTY);
-            changed = true;
+                // add to totals and clear the slot
+                cur = cur.add(coin.denom(), count).updated();
+                walletInv.setItem(i, ItemStack.EMPTY);
+                changed = true;
+            }
+            if (s.getItem() instanceof CoinStackItem coinStack) {
+                var data = CurrencyData.getFrom(s);
+                cur = cur.add(data);
+                walletInv.setItem(i, ItemStack.EMPTY);
+                changed = true;
+            }
         }
 
         if (changed) {

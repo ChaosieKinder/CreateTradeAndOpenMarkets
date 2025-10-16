@@ -4,6 +4,8 @@ import com.mojang.logging.LogUtils;
 import com.mojang.serialization.MapCodec;
 import net.errantchaosie.tradeandopenmarkets.block.entity.CoinBlockEntity;
 import net.errantchaosie.tradeandopenmarkets.component.CurrencyData;
+import net.errantchaosie.tradeandopenmarkets.component.TAOMComponents;
+import net.errantchaosie.tradeandopenmarkets.item.CoinStackItem;
 import net.errantchaosie.tradeandopenmarkets.item.TAOMItems;
 import net.errantchaosie.tradeandopenmarkets.item.CoinItem;
 import net.minecraft.core.BlockPos;
@@ -86,18 +88,41 @@ public class CoinBlock extends BaseEntityBlock {
                 BlockEntity be = level.getBlockEntity(pos);
                 if (be instanceof CoinBlockEntity coinBE) {
                     CurrencyData c = coinBE.getCurrency();
-                    // Drop each denomination
-                    dropStacks(level, pos, TAOMItems.COIN_COPPER_BIT.get(),   c.coinsCopperBit());
-                    dropStacks(level, pos, TAOMItems.COIN_COPPER_SHARD.get(),   c.coinsCopperShard());
-                    dropStacks(level, pos, TAOMItems.COIN_SILVER_BIT.get(),   c.coinsSilverBit());
-                    dropStacks(level, pos, TAOMItems.COIN_SILVER_CROWN.get(),     c.coinsSilverCrown());
-                    dropStacks(level, pos, TAOMItems.COIN_GOLD_MARK.get(), c.coinsGoldMark());
-                    dropStacks(level, pos, TAOMItems.COIN_GOLD_REGAL.get(), c.coinsGoldRegal());
-                    dropStacks(level, pos, TAOMItems.COIN_EMERALD_SUN.get(),  c.coinsEmeraldSun());
-                    dropStacks(level, pos, TAOMItems.COIN_EMERALD_THRONE.get(),  c.coinsEmeraldThrone());
 
-                    // Optional: clear to avoid dupes if something else reads it later
-                    coinBE.setCurrency(CurrencyData.EMPTY);
+                    // --- decide whether to compress into a single CoinStackItem ---
+                    int stacksNeeded =
+                            stacksFor(c.coinsCopperBit(), TAOMItems.COIN_COPPER_BIT.get().getDefaultMaxStackSize())
+                                    + stacksFor(c.coinsCopperShard(), TAOMItems.COIN_COPPER_SHARD.get().getDefaultMaxStackSize())
+                                    + stacksFor(c.coinsSilverBit(), TAOMItems.COIN_SILVER_BIT.get().getDefaultMaxStackSize())
+                                    + stacksFor(c.coinsSilverCrown(), TAOMItems.COIN_SILVER_CROWN.get().getDefaultMaxStackSize())
+                                    + stacksFor(c.coinsGoldMark(), TAOMItems.COIN_GOLD_MARK.get().getDefaultMaxStackSize())
+                                    + stacksFor(c.coinsGoldRegal(), TAOMItems.COIN_GOLD_REGAL.get().getDefaultMaxStackSize())
+                                    + stacksFor(c.coinsEmeraldSun(), TAOMItems.COIN_EMERALD_SUN.get().getDefaultMaxStackSize())
+                                    + stacksFor(c.coinsEmeraldThrone(), TAOMItems.COIN_EMERALD_THRONE.get().getDefaultMaxStackSize());
+
+
+                    if (stacksNeeded > 20) {
+                        // Drop a SINGLE CoinStackItem that contains all coins
+                        ItemStack compressed = new ItemStack(TAOMItems.COIN_STACK_ITEM.get());
+                        // write CurrencyData component directly onto the item
+                        compressed.set(TAOMComponents.CURRENCY_DATA.get(), c);
+                        Block.popResource(level, pos, compressed);
+
+                        // clear BE to avoid dupes
+                        coinBE.setCurrency(CurrencyData.EMPTY);
+                    } else {
+                        // Original per-denomination fan-out drops
+                        dropStacks(level, pos, TAOMItems.COIN_COPPER_BIT.get(), c.coinsCopperBit());
+                        dropStacks(level, pos, TAOMItems.COIN_COPPER_SHARD.get(), c.coinsCopperShard());
+                        dropStacks(level, pos, TAOMItems.COIN_SILVER_BIT.get(), c.coinsSilverBit());
+                        dropStacks(level, pos, TAOMItems.COIN_SILVER_CROWN.get(), c.coinsSilverCrown());
+                        dropStacks(level, pos, TAOMItems.COIN_GOLD_MARK.get(), c.coinsGoldMark());
+                        dropStacks(level, pos, TAOMItems.COIN_GOLD_REGAL.get(), c.coinsGoldRegal());
+                        dropStacks(level, pos, TAOMItems.COIN_EMERALD_SUN.get(), c.coinsEmeraldSun());
+                        dropStacks(level, pos, TAOMItems.COIN_EMERALD_THRONE.get(), c.coinsEmeraldThrone());
+
+                        coinBE.setCurrency(CurrencyData.EMPTY);
+                    }
                 }
             }
             // IMPORTANT: call super AFTER your logic (BE might be removed by super)
@@ -105,6 +130,11 @@ public class CoinBlock extends BaseEntityBlock {
         } else {
             super.onRemove(oldState, level, pos, newState, isMoving);
         }
+    }
+
+    private static int stacksFor(int count, int maxStack) {
+        if (count <= 0) return 0;
+        return (count + maxStack - 1) / maxStack; // ceil(count / maxStack)
     }
 
     private static void dropStacks(Level level, BlockPos pos, Item item, int total) {
@@ -206,11 +236,14 @@ public class CoinBlock extends BaseEntityBlock {
                                               Player player,
                                               ItemStack held,
                                               InteractionHand hand) {
-        boolean sneaking = player.isCrouching() || player.isFallFlying();
-        boolean isCoin   = !held.isEmpty() && CoinItem.isCoinItem(held.getItem());
+        boolean sneaking = player.isCrouching();
+        boolean isCoin   = !held.isEmpty()
+                && CoinItem.isCoinItem(held.getItem());
+        boolean isCoinStack = !held.isEmpty()
+                && held.getItem() instanceof CoinStackItem;
 
         // Not sneaking and not a coin-in-hand → let other handlers run
-        if (!sneaking && (!isCoin && !held.isEmpty())) {
+        if (!sneaking && (!isCoin && !isCoinStack && !held.isEmpty())) {
             return false;
         }
 
@@ -224,7 +257,7 @@ public class CoinBlock extends BaseEntityBlock {
         }
 
         // SERVER: double-tap detection
-        if(sneaking)
+        if(sneaking && !isCoinStack)
         {
             long now = level.getGameTime();
             var id   = player.getUUID();
@@ -245,7 +278,14 @@ public class CoinBlock extends BaseEntityBlock {
         // - sneaking + holding coin → insert WHOLE hand stack
         // - sneaking + empty hand → arm for double tap (do nothing else)
         if (isCoin) {
-            int moved = insertFromHeldStack(held, player, be);
+            long moved = insertFromHeldCoins(held, player, be);
+            if (moved > 0) {
+                sync(be, level, pos, state);
+            }
+            return true;
+        }
+        if (isCoinStack) {
+            long moved = insertFromHeldCoinStack(held, player, be);
             if (moved > 0) {
                 sync(be, level, pos, state);
             }
@@ -270,13 +310,31 @@ public class CoinBlock extends BaseEntityBlock {
      * @param be
      * @return the number of item added from the in-hand stack. (might be less then requested if pile is full)
      */
-    private static int insertFromHeldStack(ItemStack held, Player player, CoinBlockEntity be) {
+    private static int insertFromHeldCoins(ItemStack held, Player player, CoinBlockEntity be) {
         int res = 0;
         if (!held.isEmpty() && CoinItem.isCoinItem(held.getItem())) {
             var result = be.getCurrency().add(held);
             be.setCurrency(result.updated());
             if (!player.getAbilities().instabuild) held.shrink(result.delta());
             res = result.delta();
+        }
+        return res;
+    }
+
+    /**
+     * Attempts to insert an CoinStack, removing the in-hand stack if the player is not in creative
+     * @param held
+     * @param player
+     * @param be
+     * @return the number of item added from the in-hand stack. (might be less then requested if pile is full)
+     */
+    private static long insertFromHeldCoinStack(ItemStack held, Player player, CoinBlockEntity be) {
+        long res = 0;
+        if (held.getItem() instanceof CoinStackItem coinStackItem) {
+            var stackData = CurrencyData.getFrom(held);
+            be.setCurrency(be.getCurrency().add(stackData));
+            if (!player.getAbilities().instabuild) held.shrink(1);
+            res = stackData.totalCount();
         }
         return res;
     }

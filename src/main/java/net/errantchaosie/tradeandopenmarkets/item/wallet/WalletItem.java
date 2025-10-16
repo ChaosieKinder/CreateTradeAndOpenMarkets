@@ -46,7 +46,7 @@ public class WalletItem extends Item {
         super.appendHoverText(stack, ctx, tooltip, flag);
         CurrencyData c = WalletBalance.get(stack);
         var denomonation = c.getHighestDenomonation();
-        float value = c.totalValue();
+        double value = c.totalValue();
         tooltip.add(Component.translatable("item.tradeandopenmarkets.wallet.tooltip_prefix")
                 .append(denomonation.format + java.text.NumberFormat.getCurrencyInstance().format(value)));
     }

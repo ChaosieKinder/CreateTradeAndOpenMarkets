@@ -58,6 +58,17 @@ public record CurrencyData(int coinsCopperBit, int coinsCopperShard,
             };
     public static final CurrencyData EMPTY = new CurrencyData(0, 0,0,0,0, 0, 0, 0);
 
+    public static CurrencyData getFrom(ItemStack stack) {
+        CurrencyData d = stack.get(TAOMComponents.CURRENCY_DATA.get());
+        return d != null ? d : CurrencyData.EMPTY;
+    }
+    public static void set(ItemStack stack, CurrencyData data) {
+        stack.set(TAOMComponents.CURRENCY_DATA.get(), data);
+    }
+    public static void update(ItemStack stack, java.util.function.UnaryOperator<CurrencyData> op) {
+        stack.update(TAOMComponents.CURRENCY_DATA.get(), CurrencyData.EMPTY, op);
+    }
+
     public boolean isEmpty() {
         return coinsCopperBit == 0 && coinsCopperShard == 0 &&
                 coinsSilverBit == 0 && coinsSilverCrown == 0 &&
@@ -77,7 +88,7 @@ public record CurrencyData(int coinsCopperBit, int coinsCopperShard,
 
 
     // ----- Enum-based access / ops -----
-    public int get(CoinDenomination d) {
+    public int getFrom(CoinDenomination d) {
         return switch (d) {
             case COPPER_BIT     -> coinsCopperBit;
             case COPPER_SHARD   -> coinsCopperShard;
@@ -103,16 +114,30 @@ public record CurrencyData(int coinsCopperBit, int coinsCopperShard,
             case NONE           -> this;
         };
     }
+
+    public CurrencyData add(CurrencyData d) {
+        return new CurrencyData(
+        coinsCopperBit + d.coinsCopperBit,
+        coinsCopperShard + d.coinsCopperShard,
+        coinsSilverBit + d.coinsSilverBit,
+        coinsSilverCrown + d.coinsSilverCrown,
+        coinsGoldMark + d.coinsGoldMark,
+        + coinsGoldRegal + d.coinsGoldRegal,
+        coinsEmeraldSun + d.coinsEmeraldSun,
+        coinsEmeraldThrone + d.coinsEmeraldThrone
+        );
+    }
+
     public CurrencyData add(int c1, int c2, int s1, int s2, int g1, int g2, int e1, int e2) {
         return new CurrencyData(
-            coinsCopperBit + c1,
-            coinsCopperShard + c2,
-            coinsSilverBit + s1,
-            coinsSilverCrown + s2,
-            coinsGoldMark + g1,
-                + coinsGoldRegal + g2,
-                coinsEmeraldSun + e1,
-                coinsEmeraldThrone + e2
+        coinsCopperBit + c1,
+        coinsCopperShard + c2,
+        coinsSilverBit + s1,
+        coinsSilverCrown + s2,
+        coinsGoldMark + g1,
+        coinsGoldRegal + g2,
+        coinsEmeraldSun + e1,
+        coinsEmeraldThrone + e2
         );
     }
 
@@ -158,7 +183,7 @@ public record CurrencyData(int coinsCopperBit, int coinsCopperShard,
     public CoinsChangeResult add(CoinDenomination denomination, int addCount) {
         if (denomination == CoinDenomination.NONE || addCount == 0)
             return new CoinsChangeResult(this, CoinDenomination.NONE,0 ,0, addCount);
-        int currentCoinCount = get(denomination);
+        int currentCoinCount = getFrom(denomination);
         int space   = Integer.MAX_VALUE - currentCoinCount;
         int toAdd = Math.min(addCount, space);
         int newValue = currentCoinCount + toAdd;
@@ -169,7 +194,7 @@ public record CurrencyData(int coinsCopperBit, int coinsCopperShard,
     public CoinsChangeResult remove(CoinDenomination denomination, int removeCount) {
         if (denomination == CoinDenomination.NONE || removeCount <= 0)
             return new CoinsChangeResult(this, denomination,0 ,0, removeCount);
-        int currentCoinCount = get(denomination);
+        int currentCoinCount = getFrom(denomination);
         int removed = Math.min(removeCount, currentCoinCount);
         int newValue = currentCoinCount - removed;
         return new CoinsChangeResult(set(denomination, newValue),denomination, removed, newValue,
@@ -181,18 +206,18 @@ public record CurrencyData(int coinsCopperBit, int coinsCopperShard,
         return CurrencyData.EMPTY.add(d, amount).updated();
     }
 
-    public float totalValue() {
-        return (coinsCopperBit * CoinDenomination.COPPER_BIT.value +
-            coinsCopperShard * CoinDenomination.COPPER_SHARD.value +
-            coinsSilverBit * CoinDenomination.SILVER_BIT.value +
-            coinsSilverCrown * CoinDenomination.SILVER_CROWN.value +
-            coinsGoldMark * CoinDenomination.GOLD_MARK.value +
-            coinsGoldRegal * CoinDenomination.GOLD_REGAL.value +
-            coinsEmeraldSun * CoinDenomination.EMERALD_SUN.value+
-            coinsEmeraldThrone * CoinDenomination.EMERALD_THRONE.value)/100.0f;
+    public double totalValue() {
+        return ((long)coinsCopperBit * CoinDenomination.COPPER_BIT.value +
+                (long)coinsCopperShard * CoinDenomination.COPPER_SHARD.value +
+                (long)coinsSilverBit * CoinDenomination.SILVER_BIT.value +
+                (long)coinsSilverCrown * CoinDenomination.SILVER_CROWN.value +
+                (long)coinsGoldMark * CoinDenomination.GOLD_MARK.value +
+                (long)coinsGoldRegal * CoinDenomination.GOLD_REGAL.value +
+                (long)coinsEmeraldSun * CoinDenomination.EMERALD_SUN.value+
+                (long)coinsEmeraldThrone * CoinDenomination.EMERALD_THRONE.value)/100.0;
     }
 
-    public int totalCount() {
+    public long totalCount() {
         return coinsCopperBit + coinsCopperShard +
                 coinsSilverBit + coinsSilverCrown +
                 coinsGoldMark + coinsGoldRegal +

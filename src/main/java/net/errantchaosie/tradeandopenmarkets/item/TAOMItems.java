@@ -39,6 +39,9 @@ public class TAOMItems {
     public static final DeferredItem<Item> WALLET_LEATHER_ITEM  = ITEMS.register("wallet_leather",
             () -> new WalletItem(new Item.Properties()));
 
+    public static final DeferredItem<Item> COIN_STACK_ITEM  = ITEMS.register("coin_stack",
+            () -> new CoinStackItem(new Item.Properties().stacksTo(1)));
+
     public static void register(IEventBus modEventBus) {
         ITEMS.register(modEventBus);
     }

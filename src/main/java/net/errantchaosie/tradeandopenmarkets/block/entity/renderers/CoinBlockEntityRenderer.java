@@ -61,7 +61,7 @@ public class CoinBlockEntityRenderer implements BlockEntityRenderer<CoinBlockEnt
         var level = be.getLevel();
         var info  = be.getCurrency();
         if (level == null || info == null) return;
-        int total = info.totalCount();
+        long total = info.totalCount();
         if (total <= 0) return;
         var coinHeight = 0;
 

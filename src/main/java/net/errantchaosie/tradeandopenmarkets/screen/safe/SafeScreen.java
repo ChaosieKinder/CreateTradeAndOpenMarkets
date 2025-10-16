@@ -36,4 +36,10 @@ public class SafeScreen extends AbstractContainerScreen<SafeMenu> {
 
         guiGraphics.blit(GUI_TEXTURE, x, y, 0, 0, this.imageWidth, this.imageHeight);
     }
+
+    @Override
+    public void render(GuiGraphics gg, int mouseX, int mouseY, float partialTicks) {
+        super.render(gg, mouseX, mouseY, partialTicks); // 2) draws slots & items
+        this.renderTooltip(gg, mouseX, mouseY);  // 3) draws slot tooltips on top
+    }
 }
