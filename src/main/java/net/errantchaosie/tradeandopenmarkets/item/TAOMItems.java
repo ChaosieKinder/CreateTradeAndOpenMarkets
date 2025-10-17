@@ -6,6 +6,7 @@ import net.errantchaosie.tradeandopenmarkets.item.wallet.WalletItem;
 import net.minecraft.world.item.Item;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredItem;
+import net.errantchaosie.tradeandopenmarkets.item.idcard.IdentityCardItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 public class TAOMItems {
@@ -38,6 +39,9 @@ public class TAOMItems {
 
     public static final DeferredItem<Item> WALLET_LEATHER_ITEM  = ITEMS.register("wallet_leather",
             () -> new WalletItem(new Item.Properties()));
+
+    public static final DeferredItem<Item> ID_CARD = ITEMS.register("id_card",
+            () -> new IdentityCardItem(new Item.Properties()));
 
     public static final DeferredItem<Item> COIN_STACK_ITEM  = ITEMS.register("coin_stack",
             () -> new CoinStackItem(new Item.Properties().stacksTo(1)));

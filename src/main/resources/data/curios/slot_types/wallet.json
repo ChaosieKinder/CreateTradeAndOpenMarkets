@@ -1,7 +1,0 @@
-{
-  "identifier": "wallet",
-  "size": 1,
-  "cosmetic": false,
-  "order": 50,
-  "icon": "tradeandopenmarkets:item/wallet_leather"   // optional; points at your item texture
-}

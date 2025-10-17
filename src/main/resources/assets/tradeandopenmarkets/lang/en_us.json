@@ -20,10 +20,17 @@
   "item.tradeandopenmarkets.wallet.deposit_all.tooltip": "Deposit All Items",
   "item.tradeandopenmarkets.wallet.deposit_all": "Deposit All",
   "item.tradeandopenmarkets.wallet.withdraw.tooltip": "Click to add one to inventory. Shift+Click to add a stack.",
+  "item.tradeandopenmarkets.id_card": "Identification Card",
+  "item.tradeandopenmarkets.id_card.unassigned": "Blank card awaiting assignment.",
+  "item.tradeandopenmarkets.id_card.instructions": "Sneak and use while holding to store your identity.",
+  "item.tradeandopenmarkets.id_card.bound": "Stored identity for %s.",
+  "item.tradeandopenmarkets.id_card.already_bound": "This card is already assigned.",
   "block.tradeandopenmarkets.safe_block": "Safe",
   "screen.tradeandopenmarkets.wallet_name": "",
   "creativetab.tradeandopenmarkets.items_tab": "Trade And Open Markets",
   "sounds.tradeandopenmarkets.coin_drop": "Coins drop and spin",
   "entity.minecraft.villager.tradeandopenmarkets.banker": "Banker",
-  "tooltip_info_item.coin":  "Stack Value: "
+  "tooltip_info_item.coin":  "Stack Value: ",
+  "tooltip.tradeandopenmarkets.id_card.owner": "Holder: %s",
+  "tooltip.tradeandopenmarkets.id_card.created": "Issued: %s"
 }

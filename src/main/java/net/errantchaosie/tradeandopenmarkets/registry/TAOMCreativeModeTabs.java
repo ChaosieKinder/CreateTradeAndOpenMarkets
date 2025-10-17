@@ -29,6 +29,7 @@ public class TAOMCreativeModeTabs {
                         output.accept(TAOMItems.COIN_EMERALD_SUN.get());
                         output.accept(TAOMItems.COIN_EMERALD_THRONE.get());
                         output.accept(TAOMItems.WALLET_LEATHER_ITEM.get());
+                        output.accept(TAOMItems.ID_CARD.get());
                         output.accept(TAOMBlocks.SAFE_BLOCK.get());
                     }).build());
 

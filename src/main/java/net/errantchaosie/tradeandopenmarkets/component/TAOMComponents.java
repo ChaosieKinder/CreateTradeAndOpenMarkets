@@ -23,6 +23,14 @@ public class TAOMComponents
                             .build()
             );
 
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<IdentityCardData>> IDENTITY_CARD_DATA =
+            DATA_COMPONENT_TYPES.register("identity_card_data", () ->
+                    DataComponentType.<IdentityCardData>builder()
+                            .persistent(IdentityCardData.CODEC)
+                            .networkSynchronized(IdentityCardData.STREAM_CODEC)
+                            .build()
+            );
+    
     // NEW: return Supplier<DataComponentType<T>> and use registerComponentType(...)
     public static <T> Supplier<DataComponentType<T>> register(
             String name,
