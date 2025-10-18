@@ -1,15 +1,25 @@
 package net.errantchaosie.tradeandopenmarkets.component;
 
 import com.mojang.authlib.GameProfile;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.ResolvableProfile;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import org.joml.Matrix4f;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -58,9 +68,11 @@ public record IdentityCardData(UUID playerId, String playerName, long createdAtM
         return new GameProfile(playerId, playerName);
     }
 
+
     public ItemStack createHeadStack() {
         ItemStack stack = new ItemStack(Items.PLAYER_HEAD);
         stack.set(DataComponents.PROFILE, new ResolvableProfile(toProfile()));
         return stack;
     }
+
 }

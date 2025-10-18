@@ -25,6 +25,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.event.ModelEvent;
 import net.neoforged.neoforge.client.event.RegisterClientTooltipComponentFactoriesEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
@@ -81,6 +82,11 @@ public class TradeAndOpenMarketsModClient {
     public static void registerScreens(RegisterMenuScreensEvent event) {
         event.register(TAOMMenus.SAFE_MENU.get(), SafeScreen::new);
         event.register(TAOMMenus.WALLET_MENU.get(), WalletScreen::new);
+    }
+
+    @SubscribeEvent
+    private static void onRegisterAdditionalModels(ModelEvent.RegisterAdditional event) {
+        event.register(IdentityCardItemRenderer.CARD_MODEL_LOCATION);
     }
 
     @SubscribeEvent

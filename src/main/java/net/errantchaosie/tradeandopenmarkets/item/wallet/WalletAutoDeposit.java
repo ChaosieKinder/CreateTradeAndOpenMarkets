@@ -40,7 +40,7 @@ public final class WalletAutoDeposit {
         // A small inflate helps catch near-misses; tweak if needed.
         var box = player.getBoundingBox().inflate(1.1,0.6,1.1);
         List<ItemEntity> items = level.getEntitiesOfClass(ItemEntity.class, box, ie ->
-                ie.isAlive() && ie.getItem().getItem() instanceof CoinItem
+                ie.isAlive() && !ie.hasPickUpDelay() && ie.getItem().getItem() instanceof CoinItem
         );
         if (items.isEmpty()) return;
         //LOG.info("Wallet PlayerTick - Found Items");
