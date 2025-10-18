@@ -100,12 +100,12 @@ public class IdentityCardItemRenderer extends BlockEntityWithoutLevelRenderer {
             // Initial alignment
             switch (displayContext) {
                 case GUI -> {
-                    poseStack.translate(0.20f, 0.25f, 0.45f);
+                    poseStack.translate(0.25f, 0.25f, 0.45f);
                     // Draw player picture
                     renderFlatFaceQuad(poseStack, displayContext, buffer, data.toProfile(), 0.5f, 0.5f, packedLight, packedOverlay);
                 }
                 default -> { // Anything in-world
-                    poseStack.translate(0.05f, 0.30f, 0.45f); //y=0.3 is too low
+                    poseStack.translate(0.05f, 0.25f, 0.45f); //y=0.3 is too low
                     // Draw player picture
                     renderFlatFaceQuad(poseStack, displayContext, buffer, data.toProfile(), 0.3f, 0.3f, packedLight, packedOverlay);
                 }
@@ -126,7 +126,7 @@ public class IdentityCardItemRenderer extends BlockEntityWithoutLevelRenderer {
 
         int fontColor = 0x000000;
 
-        if (snapshot != null) {
+        if(snapshot != null) {
             // Player Xp Bar
             poseStack.pushPose();
             poseStack.translate(0.150f, 0.31f, 0); // was 0.150f, 0.3f, 0, which put us directly under the head
@@ -136,24 +136,24 @@ public class IdentityCardItemRenderer extends BlockEntityWithoutLevelRenderer {
             // Player Level
             poseStack.pushPose();
             poseStack.scale(0.005f, 0.005f, 1f);
-            poseStack.translate(0.150f, 0.34f, -0.004);
+            poseStack.translate(0.150f, 0.58f, -0.004);
             String levelText = String.valueOf(snapshot.level());
             int levelTextWidth = textRenderer.width(levelText);
-
             textRenderer.drawInBatch(levelText,
-                30f - levelTextWidth/2.0f,
-                60f,
-                0xFF22CC22, // xp green = 0xFF55FF55
-                false, poseStack.last().pose(), buffer,
-                Font.DisplayMode.NORMAL, 0, LightTexture.FULL_BRIGHT);
+                    30f - levelTextWidth/2.0f,
+                    66f, // 65 is barely too high 70 is too low
+                    0xFF22CC22, // xp green = 0xFF55FF55
+                    false, poseStack.last().pose(), buffer,
+                    Font.DisplayMode.NORMAL, 0, LightTexture.FULL_BRIGHT);
             poseStack.popPose();
         }
+
         // Player Name
         poseStack.pushPose();
         poseStack.scale(0.01f, 0.01f, 1f);
         textRenderer.drawInBatch(data.playerName(),
                 0f,
-                34f, // 38 is too low, 32 is too high
+                38f,
                 fontColor, false, poseStack.last().pose(), buffer,
                 Font.DisplayMode.NORMAL, 0, /*light*/ 0xF000F0);
         poseStack.popPose();
@@ -166,7 +166,7 @@ public class IdentityCardItemRenderer extends BlockEntityWithoutLevelRenderer {
         formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
         String dateFormatted = formatter.format(date);
         textRenderer.drawInBatch("Issued: " + dateFormatted,
-                80, // 72 is too far right
+                80,
                 0,
                 fontColor, false, poseStack.last().pose(), buffer,
                 Font.DisplayMode.NORMAL, 0, /*light*/ 0xF000F0);
@@ -174,11 +174,20 @@ public class IdentityCardItemRenderer extends BlockEntityWithoutLevelRenderer {
         // Dynamic player information is available here for rendering when needed.
         // It may not be available and should be skipped if it is not.
         if (snapshot != null) {
-            textRenderer.drawInBatch("Age: " + snapshot.timePlayedDays() + "d " + (Math.round(snapshot.timePlayedHours() * 2400) / 100) + "h",
-                    80,
-                    10,
-                    fontColor, false, poseStack.last().pose(), buffer,
-                    Font.DisplayMode.NORMAL, 0, /*light*/ 0xF000F0);
+            // Players Age (time on server)
+            if(snapshot.timePlayedDays() > 0) {
+                textRenderer.drawInBatch("Age: " + snapshot.timePlayedDays() + "d " + (Math.floor(snapshot.timePlayedHours() * 100f/24f) / 100f) + "h",
+                        80,
+                        10,
+                        fontColor, false, poseStack.last().pose(), buffer,
+                        Font.DisplayMode.NORMAL, 0, /*light*/ 0xF000F0);
+            } else {
+                textRenderer.drawInBatch("Age: " + (Math.floor(snapshot.timePlayedHours() * 100f/24f) / 100f) + "h",
+                        80,
+                        10,
+                        fontColor, false, poseStack.last().pose(), buffer,
+                        Font.DisplayMode.NORMAL, 0, /*light*/ 0xF000F0);
+            }
 
             //Heart and health
 //            drawHeart(poseStack, buffer, 0, 50, -1, 16, 16, packedLight);
@@ -215,7 +224,7 @@ public class IdentityCardItemRenderer extends BlockEntityWithoutLevelRenderer {
         // Player Id
         textRenderer.drawInBatch("ID: " + data.playerId().toString(),
                 -4,
-                120,
+                115,
                 fontColor, false, poseStack.last().pose(), buffer,
                 Font.DisplayMode.NORMAL, 0, /*light*/ 0xF000F0);
 

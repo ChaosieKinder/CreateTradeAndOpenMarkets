@@ -8,6 +8,7 @@ import net.errantchaosie.tradeandopenmarkets.item.TAOMItems;
 import net.errantchaosie.tradeandopenmarkets.item.idcard.IdentityCardItemRenderer;
 import net.errantchaosie.tradeandopenmarkets.item.idcard.IdentityCardTooltip;
 import net.errantchaosie.tradeandopenmarkets.item.idcard.IdentityCardTooltipClient;
+import net.errantchaosie.tradeandopenmarkets.item.idcard.client.IdentityCardClientExtensions;
 import net.errantchaosie.tradeandopenmarkets.item.wallet.WalletTooltip;
 import net.errantchaosie.tradeandopenmarkets.item.wallet.WalletTooltipClient;
 import net.errantchaosie.tradeandopenmarkets.screen.TAOMMenus;
@@ -61,15 +62,7 @@ public class TradeAndOpenMarketsModClient {
     @SubscribeEvent
     public static void onRegisterClientExtensions(RegisterClientExtensionsEvent event) {
         LOG.info(TradeAndOpenMarketsMod.MOD_ID + " Registering ClientExtensions");
-        event.registerItem(new IClientItemExtensions() {
-            private final BlockEntityWithoutLevelRenderer renderer = new IdentityCardItemRenderer();
-
-            @Override
-            @NotNull
-            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
-                return renderer;
-            }
-        }, TAOMItems.ID_CARD.get());
+        event.registerItem(new IdentityCardClientExtensions(), TAOMItems.ID_CARD.get());
     }
 
     @SubscribeEvent
@@ -83,6 +76,7 @@ public class TradeAndOpenMarketsModClient {
         event.register(TAOMMenus.SAFE_MENU.get(), SafeScreen::new);
         event.register(TAOMMenus.WALLET_MENU.get(), WalletScreen::new);
     }
+
 
     @SubscribeEvent
     private static void onRegisterAdditionalModels(ModelEvent.RegisterAdditional event) {
