@@ -39,6 +39,11 @@ public class IdentityCardItem extends Item {
     }
 
     @Override
+    public boolean isFoil(ItemStack stack) {
+        return IdentityCardComponent.hasIdentity(stack);
+    }
+
+    @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
         if (level.isClientSide) {

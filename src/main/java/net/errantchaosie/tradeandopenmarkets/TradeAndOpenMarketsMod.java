@@ -5,7 +5,9 @@ import net.errantchaosie.tradeandopenmarkets.block.entity.TAOMBlockEntities;
 import net.errantchaosie.tradeandopenmarkets.block.entity.eventhandlers.CoinBlockLeftClickHandler;
 import net.errantchaosie.tradeandopenmarkets.component.TAOMComponents;
 import net.errantchaosie.tradeandopenmarkets.item.TAOMItems;
+import net.errantchaosie.tradeandopenmarkets.item.idcard.IdentityCardDataSyncHandler;
 import net.errantchaosie.tradeandopenmarkets.item.wallet.WalletAutoDeposit;
+import net.errantchaosie.tradeandopenmarkets.network.TAOMNetwork;
 import net.errantchaosie.tradeandopenmarkets.registry.*;
 import net.errantchaosie.tradeandopenmarkets.screen.TAOMMenus;
 import net.errantchaosie.tradeandopenmarkets.villager.TAOMVillagers;
@@ -33,6 +35,7 @@ public class TradeAndOpenMarketsMod {
     public TradeAndOpenMarketsMod(IEventBus modEventBus, ModContainer modContainer) {
         // Register the commonSetup method for modloading
         modEventBus.addListener(this::commonSetup);
+        modEventBus.addListener(TAOMNetwork::register);
 
         // Register ourselves for server and other game events we are interested in.
         // Note that this is necessary if and only if we want *this* class (ExampleMod) to respond directly to events.
@@ -53,6 +56,7 @@ public class TradeAndOpenMarketsMod {
         // Gameplay / world events go on the global NeoForge bus:
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(CoinBlockLeftClickHandler::onLeftClickBlock);
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.register(new WalletAutoDeposit());
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.register(new IdentityCardDataSyncHandler());
         // Register our mod's ModConfigSpec so that FML can create and load the config file for us
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
     }

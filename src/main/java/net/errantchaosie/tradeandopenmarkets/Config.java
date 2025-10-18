@@ -23,6 +23,20 @@ public class Config {
             .comment("What you want the introduction message to be for the magic number")
             .define("magicNumberIntroduction", "The magic number is... ");
 
+    static {
+        BUILDER.push("identityCard");
+    }
+
+    public static final ModConfigSpec.IntValue IDENTITY_CARD_SYNC_INTERVAL_TICKS = BUILDER
+            .comment(
+                    "Number of ticks between updates of identity card player information to clients.",
+                    "Default is 1200 ticks (approximately 60 seconds)."
+            )
+            .defineInRange("syncIntervalTicks", 1200, 20, Integer.MAX_VALUE);
+
+    static {
+        BUILDER.pop();
+    }
 
     static final ModConfigSpec SPEC = BUILDER.build();
 
