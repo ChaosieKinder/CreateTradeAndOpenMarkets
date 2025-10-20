@@ -1,4 +1,4 @@
-package net.errantchaosie.tradeandopenmarkets.data;
+package net.errantchaosie.errantlib.net;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -12,7 +12,7 @@ public class Codecs {
                 StreamCodec.of(
                         (FriendlyByteBuf buf, UUID id) -> buf.writeUUID(id),
                         (FriendlyByteBuf buf) -> buf.readUUID()
-        );
+                );
 
 
     }

@@ -26,12 +26,10 @@ The vanilla emerald economy is removed and replaced with a **multi-denomination 
     - Shift-right-click to open its menu.
     - Also acts as a 9-slot storage for security cards, cashiers checks, etc.
 - **Safe**: Secure block entity with planned advanced features for shared storage and trading.
+- **ID Card**: Stores a players identity for use with various parts of the mod. 
 
 ---
-
 ## 🛠 Upcoming Work
-- **ID Card**
-    - Id card
 
 - **Trader Overhaul**
     - Replace vanilla villager trading with a new coin-based UI.
@@ -40,6 +38,9 @@ The vanilla emerald economy is removed and replaced with a **multi-denomination 
     - New villager, uses the safe as a job block.
     - Sells a few things, access's bank accounts, and changes money
 
+- **Bank Accounts**
+    - Support persistent, player-linked balances beyond the wallet.
+
 - **Paper Notes**
   - Paper notes can be deposited to banks and wallets directly
   - Create tradeable paper notes backed by coin balances.
@@ -47,9 +48,6 @@ The vanilla emerald economy is removed and replaced with a **multi-denomination 
   
 - **Coin Stack Item**  
   - Can be used in crafting to withdraw stacks at a time until empty
-
-- **Bank Accounts**
-    - Support persistent, player-linked balances beyond the wallet.
 
 - **Safe Enhancements**  
   - Expand safe block functionality with new permissions and features.

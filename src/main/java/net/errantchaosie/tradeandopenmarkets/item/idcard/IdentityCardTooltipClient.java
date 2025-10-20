@@ -38,22 +38,10 @@ public class IdentityCardTooltipClient implements ClientTooltipComponent {
 
     @Override
     public void renderImage(Font font, int mouseX, int mouseY, GuiGraphics guiGraphics) {
-        int width = getWidth(font);
-        int height = getHeight();
-        int contentWidth = width - BORDER * 2;
-        int contentHeight = height - BORDER * 2;
-
-        TooltipRenderUtil.renderTooltipBackground(guiGraphics, mouseX, mouseY, contentWidth, contentHeight, 1);
-
         int faceX = mouseX + BORDER;
         int faceY = mouseY + BORDER;
         guiGraphics.renderItem(headStack, faceX, faceY);
         guiGraphics.renderItemDecorations(font, headStack, faceX, faceY);
-
-        int textX = faceX + FACE_SIZE + SPACING;
-        int textY = faceY + 2;
-        //guiGraphics.drawString(font, ownerLine, textX, textY, 0xFFFFFFFF);
-        //guiGraphics.drawString(font, createdLine, textX, textY + font.lineHeight + 2, 0xFFB0B0B0);
     }
 
     private static ItemStack createHeadStack(IdentityCardData data) {
