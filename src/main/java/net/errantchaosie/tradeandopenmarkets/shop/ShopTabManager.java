@@ -9,6 +9,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.item.Items;
@@ -16,6 +17,7 @@ import net.minecraft.world.item.trading.Merchant;
 import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.item.trading.MerchantOffers;
 import net.minecraft.world.level.Level;
+import net.minecraft.server.level.ServerLevel;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -41,9 +43,16 @@ public final class ShopTabManager {
 
     public synchronized List<ShopTab> resolveTabs(@Nullable Merchant merchant, MerchantOffers offers, Level level) {
         long dayIndex = level.getDayTime() / 24000L;
-        long seed = level.getSeed() ^ dayIndex;
-        if (merchant != null) {
-            seed ^= merchant.getId();
+        long seed = dayIndex;
+        if (level instanceof ServerLevel serverLevel) {
+            seed ^= serverLevel.getSeed();
+        } else {
+            seed ^= level.dimension().location().hashCode();
+        }
+        if (merchant instanceof Entity entity) {
+            UUID uuid = entity.getUUID();
+            seed ^= uuid.getMostSignificantBits();
+            seed ^= uuid.getLeastSignificantBits();
         }
         RandomSource random = RandomSource.create(seed);
         ShopTabGenerationContext context = new ShopTabGenerationContext(merchant, offers, level, dayIndex, random);

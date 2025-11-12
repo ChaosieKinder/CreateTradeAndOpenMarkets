@@ -2,10 +2,10 @@ package net.errantchaosie.tradeandopenmarkets.shop;
 
 import net.errantchaosie.tradeandopenmarkets.TradeAndOpenMarketsMod;
 import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.AddReloadListenerEvent;
 
-@Mod.EventBusSubscriber(modid = TradeAndOpenMarketsMod.MOD_ID)
+@EventBusSubscriber(modid = TradeAndOpenMarketsMod.MOD_ID)
 public final class ShopDataEvents {
     private ShopDataEvents() {
     }
