@@ -51,6 +51,12 @@ public class ShopScreen extends AbstractContainerScreen<ShopMenu> {
     }
 
     @Override
+    protected void containerTick() {
+        super.containerTick();
+        this.menu.refresh();
+    }
+
+    @Override
     protected void init() {
         super.init();
         this.leftPos = (this.width - TEXTURE_WIDTH) / 2;
