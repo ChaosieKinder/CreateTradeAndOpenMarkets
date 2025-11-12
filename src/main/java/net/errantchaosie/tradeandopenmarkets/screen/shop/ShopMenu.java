@@ -45,6 +45,7 @@ public class ShopMenu extends AbstractContainerMenu {
         this.playerInventory = inventory;
         this.level = playerInventory.player.level();
         this.title = Component.literal("ERROR OPENING SHOPMENU");
+        addPlayerSlots();
         refresh();
     }
 
@@ -54,7 +55,21 @@ public class ShopMenu extends AbstractContainerMenu {
         this.playerInventory = playerInventory;
         this.level = playerInventory.player.level();
         this.title = title;
+        addPlayerSlots();
         refresh();
+    }
+
+    public void addPlayerSlots() {
+        // Player inventory + hotbar
+        int invY = 93;
+        int invX = 11;
+        for (int r = 0; r < 3; ++r)
+            for (int c = 0; c < 9; ++c)
+                addSlot(new Slot(this.playerInventory, c + r * 9 + 9,
+                        invX + c * 18, invY + r * 18));
+        for (int c = 0; c < 9; ++c)
+            addSlot(new Slot(this.playerInventory, c, invX + c * 20 - 7,
+                    invY + 58));
     }
 
     public void refresh() {

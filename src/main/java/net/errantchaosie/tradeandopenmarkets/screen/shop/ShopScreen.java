@@ -3,6 +3,7 @@ package net.errantchaosie.tradeandopenmarkets.screen.shop;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.errantchaosie.tradeandopenmarkets.TradeAndOpenMarketsMod;
 import net.errantchaosie.tradeandopenmarkets.screen.safe.SafeMenu;
+import net.errantchaosie.tradeandopenmarkets.util.InventoryHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
@@ -24,11 +25,11 @@ import org.jetbrains.annotations.Nullable;
 public class ShopScreen extends AbstractContainerScreen<ShopMenu> {
     private static final ResourceLocation SHOP_TEXTURE = ResourceLocation.fromNamespaceAndPath(
             TradeAndOpenMarketsMod.MOD_ID,
-            "textures/gui/shop/shop_screen.png"
+            "textures/gui/shop/shop_base.png"
     );
 
-    private static final int TEXTURE_WIDTH = 256;
-    private static final int TEXTURE_HEIGHT = 256;
+    private static final int TEXTURE_WIDTH = 276;
+    private static final int TEXTURE_HEIGHT = 209;
 
     private int leftPos;
     private int topPos;
@@ -46,29 +47,41 @@ public class ShopScreen extends AbstractContainerScreen<ShopMenu> {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        // draw tabs
+        InventoryHelper.drawTab(guiGraphics, this.font, "Buy", this.leftPos + 12, this.topPos + 1, mouseX, mouseY, true);
+        InventoryHelper.drawTab(guiGraphics, this.font, "Sell", this.leftPos + 51, this.topPos + 1, mouseX, mouseY, false);
+
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         this.renderTooltip(guiGraphics, mouseX, mouseY);  // 3) draws slot tooltips on top
     }
 
     @Override
     protected void renderBg(GuiGraphics guiGraphics, float v, int i, int i1) {
-        // draw main background
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-        RenderSystem.setShaderTexture(0, SHOP_TEXTURE);
-        guiGraphics.blit(SHOP_TEXTURE, this.leftPos, this.topPos, 0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT);
 
-        //renderTitle(guiGraphics);
+
+        // draw main background
+        RenderSystem.setShaderTexture(0, SHOP_TEXTURE);
+        guiGraphics.blit(SHOP_TEXTURE, this.leftPos, this.topPos,
+                0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT, TEXTURE_WIDTH, TEXTURE_HEIGHT);
+
+        // draw shop title - this is the profession of the shop
+        guiGraphics.drawString(this.font, this.menu.getTitle(),
+                this.leftPos + 18, this.topPos + 19, 0x404040, false);
+
         //renderTraderDetails(guiGraphics);
         //renderOfferSummary(guiGraphics);
     }
 
-    private void renderTitle(GuiGraphics guiGraphics) {
-        Component title = this.menu.getTitle();
-        int x = this.leftPos + 12;
-        int y = this.topPos + 6;
-        guiGraphics.drawString(this.font, title, x, y, 0x404040, false);
+    @Override
+    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        //super.renderLabels(guiGraphics, mouseX, mouseY);
+        //renderTraderDetails(guiGraphics);
+        //renderOfferSummary(guiGraphics);
     }
+
+
 
     private void renderTraderDetails(GuiGraphics guiGraphics) {
         @Nullable Merchant trader = this.menu.getTrader();
