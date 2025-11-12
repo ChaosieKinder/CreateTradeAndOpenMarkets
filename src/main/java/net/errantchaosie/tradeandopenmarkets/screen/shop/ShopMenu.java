@@ -1,9 +1,11 @@
 package net.errantchaosie.tradeandopenmarkets.screen.shop;
 
 import com.mojang.logging.LogUtils;
-import net.errantchaosie.tradeandopenmarkets.block.TAOMBlocks;
+import net.errantchaosie.tradeandopenmarkets.shop.ShopTabManager;
+import net.errantchaosie.tradeandopenmarkets.shop.tab.ShopTab;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.*;
@@ -16,6 +18,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
 import java.lang.reflect.Field;
+import java.util.List;
 
 import static net.errantchaosie.tradeandopenmarkets.util.InventoryHelper.*;
 
@@ -35,9 +38,11 @@ public class ShopMenu extends AbstractContainerMenu {
     private final Level level;
     private final Component title;
 
-    private MerchantOffers offers;
+    private MerchantOffers offers = new MerchantOffers();
     @Nullable
     private Merchant trader;
+    private List<ShopTab> tabs = List.of();
+    private int selectedTabIndex;
 
     public ShopMenu(int containerId, Inventory inventory, FriendlyByteBuf buffer) {
         super(MenuType.MERCHANT, containerId);
@@ -73,8 +78,16 @@ public class ShopMenu extends AbstractContainerMenu {
     }
 
     public void refresh() {
-        this.offers = this.merchantMenu.getOffers();
+        if (this.merchantMenu != null) {
+            this.offers = this.merchantMenu.getOffers();
+        }
         this.trader = extractTrader();
+        if (this.level != null) {
+            this.tabs = ShopTabManager.INSTANCE.resolveTabs(this.trader, this.offers, this.level);
+        } else {
+            this.tabs = List.of();
+        }
+        setSelectedTabIndex(this.selectedTabIndex);
     }
 
     public MerchantMenu getMerchantMenu() {
@@ -91,6 +104,31 @@ public class ShopMenu extends AbstractContainerMenu {
 
     public MerchantOffers getOffers() {
         return this.offers;
+    }
+
+    public List<ShopTab> getTabs() {
+        return this.tabs;
+    }
+
+    public int getSelectedTabIndex() {
+        return this.selectedTabIndex;
+    }
+
+    public void setSelectedTabIndex(int selectedTabIndex) {
+        if (this.tabs.isEmpty()) {
+            this.selectedTabIndex = 0;
+            return;
+        }
+        this.selectedTabIndex = Mth.clamp(selectedTabIndex, 0, this.tabs.size() - 1);
+    }
+
+    @Nullable
+    public ShopTab getSelectedTab() {
+        if (this.tabs.isEmpty()) {
+            return null;
+        }
+        int index = Mth.clamp(this.selectedTabIndex, 0, this.tabs.size() - 1);
+        return this.tabs.get(index);
     }
 
     @Nullable
@@ -159,6 +197,6 @@ public class ShopMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return merchantMenu.stillValid(player);
+        return this.merchantMenu != null && this.merchantMenu.stillValid(player);
     }
 }
