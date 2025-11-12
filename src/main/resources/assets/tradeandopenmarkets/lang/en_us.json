@@ -32,5 +32,7 @@
   "entity.minecraft.villager.tradeandopenmarkets.banker": "Banker",
   "tooltip_info_item.coin":  "Stack Value: ",
   "tooltip.tradeandopenmarkets.id_card.owner": "Holder: %s",
-  "tooltip.tradeandopenmarkets.id_card.created": "Issued: %s"
+  "tooltip.tradeandopenmarkets.id_card.created": "Issued: %s",
+  "screen.tradeandopenmarkets.shop.wallet_balance": "Wallet Balance: %s",
+  "screen.tradeandopenmarkets.shop.wallet_missing": "Wallet not found"
 }

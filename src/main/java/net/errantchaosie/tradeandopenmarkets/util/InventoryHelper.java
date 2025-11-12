@@ -4,6 +4,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.errantchaosie.tradeandopenmarkets.TradeAndOpenMarketsMod;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
 public class InventoryHelper {
@@ -47,7 +48,7 @@ public class InventoryHelper {
             "textures/gui/components/tab_hover.png"
     );
 
-    public static void drawTab(GuiGraphics guiGraphics, Font font, String text,
+    public static void drawTab(GuiGraphics guiGraphics, Font font, Component text,
                                int x, int y, int mouseX, int mouseY, boolean selected) {
         ResourceLocation texture;
         if (mouseX >= x && mouseX <= x + TAB_WIDTH && mouseY >= y && mouseY <= y + TAB_HEIGHT) {
