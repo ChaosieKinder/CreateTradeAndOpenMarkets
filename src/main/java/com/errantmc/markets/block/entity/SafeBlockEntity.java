@@ -42,7 +42,7 @@ public class SafeBlockEntity extends BlockEntity implements MenuProvider {
 
     public void clearContents() {
         for(int slot = 0; slot < inventory.getSlots(); slot++)
-            inventory.setStackInSlot(0, ItemStack.EMPTY);
+            inventory.setStackInSlot(slot, ItemStack.EMPTY);
     }
 
     public void drops() {
