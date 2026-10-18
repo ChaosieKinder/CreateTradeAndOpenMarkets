@@ -3,8 +3,9 @@ package com.errantmc.markets.gametest;
 import com.errantmc.markets.ErrantTrade;
 import com.errantmc.markets.block.TradeBlocks;
 import com.errantmc.markets.block.entity.CoinBlockEntity;
-import com.errantmc.markets.component.CurrencyData;
-import com.errantmc.markets.data.CoinDenomination;
+import com.errantmc.markets.component.Purses;
+import com.errantmc.markets.domain.Purse;
+import com.errantmc.markets.domain.CoinDenomination;
 import com.errantmc.markets.item.TradeItems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -37,7 +38,7 @@ public final class CoinBlockGameTests {
     @GameTest(template = ARENA)
     public static void pileDropsItsCoinsWhenItsSupportBreaks(GameTestHelper helper) {
         helper.setBlock(PILE.below(2), Blocks.STONE); // catches the drops
-        CoinBlockEntity be = placePile(helper, CurrencyData.newCurrencyFromDenom(CoinDenomination.COPPER_BIT, 3));
+        CoinBlockEntity be = placePile(helper, Purse.of(CoinDenomination.COPPER_BIT, 3));
         if (be == null) return;
 
         helper.destroyBlock(PILE.below());
@@ -51,7 +52,7 @@ public final class CoinBlockGameTests {
     /** Every coin stack, main inventory and offhand, lands in the pile exactly once (BACKLOG #1). */
     @GameTest(template = ARENA)
     public static void sneakDoubleTapDepositsEveryCoinInTheInventory(GameTestHelper helper) {
-        CoinBlockEntity be = placePile(helper, CurrencyData.newCurrencyFromDenom(CoinDenomination.COPPER_BIT, 1));
+        CoinBlockEntity be = placePile(helper, Purse.of(CoinDenomination.COPPER_BIT, 1));
         if (be == null) return;
         ServerPlayer player = survivalPlayer(helper);
         player.getInventory().setItem(5, new ItemStack(TradeItems.COIN_COPPER_BIT.get(), 10));
@@ -62,10 +63,10 @@ public final class CoinBlockGameTests {
         helper.useBlock(PILE, player);
         helper.useBlock(PILE, player);
 
-        CurrencyData pile = be.getCurrency();
-        assertCount(helper, "copper bits in the pile", 11, pile.getFrom(CoinDenomination.COPPER_BIT));
-        assertCount(helper, "silver crowns in the pile", 2, pile.getFrom(CoinDenomination.SILVER_CROWN));
-        assertCount(helper, "copper shards in the pile", 3, pile.getFrom(CoinDenomination.COPPER_SHARD));
+        Purse pile = be.getCurrency();
+        assertCount(helper, "copper bits in the pile", 11, pile.count(CoinDenomination.COPPER_BIT));
+        assertCount(helper, "silver crowns in the pile", 2, pile.count(CoinDenomination.SILVER_CROWN));
+        assertCount(helper, "copper shards in the pile", 3, pile.count(CoinDenomination.COPPER_SHARD));
         assertCount(helper, "coins left in the inventory", 0, coinsIn(player));
         helper.succeed();
     }
@@ -77,16 +78,16 @@ public final class CoinBlockGameTests {
     @GameTest(template = ARENA)
     public static void coinStackIntoAFullPileIsRefused(GameTestHelper helper) {
         CoinBlockEntity be = placePile(helper,
-                CurrencyData.newCurrencyFromDenom(CoinDenomination.COPPER_BIT, Integer.MAX_VALUE - 1));
+                Purse.of(CoinDenomination.COPPER_BIT, Integer.MAX_VALUE - 1));
         if (be == null) return;
         ServerPlayer player = survivalPlayer(helper);
         player.setItemInHand(InteractionHand.MAIN_HAND,
-                coinStackOf(CurrencyData.newCurrencyFromDenom(CoinDenomination.COPPER_BIT, 5)));
+                coinStackOf(Purse.of(CoinDenomination.COPPER_BIT, 5)));
 
         helper.useBlock(PILE, player);
 
         assertCount(helper, "copper bits in the pile", Integer.MAX_VALUE - 1,
-                be.getCurrency().getFrom(CoinDenomination.COPPER_BIT));
+                be.getCurrency().count(CoinDenomination.COPPER_BIT));
         assertTrue(helper, "the coin stack to still be held",
                 player.getMainHandItem().is(TradeItems.COIN_STACK_ITEM.get()));
         helper.succeed();
@@ -126,7 +127,7 @@ public final class CoinBlockGameTests {
             helper.fail("no pile on top of the clicked block", clicked.above());
             return;
         }
-        assertCount(helper, "gold marks in the pile", 1, be.getCurrency().getFrom(CoinDenomination.GOLD_MARK));
+        assertCount(helper, "gold marks in the pile", 1, be.getCurrency().count(CoinDenomination.GOLD_MARK));
         assertCount(helper, "coins still held", 1, player.getMainHandItem().getCount());
         helper.succeed();
     }
@@ -141,7 +142,7 @@ public final class CoinBlockGameTests {
         helper.setBlock(clicked, Blocks.STONE);
         ServerPlayer player = survivalPlayer(helper);
         player.setItemInHand(InteractionHand.MAIN_HAND,
-                coinStackOf(CurrencyData.newCurrencyFromDenom(CoinDenomination.COPPER_BIT, 3)));
+                coinStackOf(Purse.of(CoinDenomination.COPPER_BIT, 3)));
 
         helper.useBlock(clicked, player, hitFace(helper, clicked, Direction.EAST));
 
@@ -158,7 +159,7 @@ public final class CoinBlockGameTests {
         helper.setBlock(clicked, Blocks.STONE);
         ServerPlayer player = survivalPlayer(helper);
         player.setItemInHand(InteractionHand.MAIN_HAND,
-                coinStackOf(CurrencyData.newCurrencyFromDenom(CoinDenomination.SILVER_BIT, 7)));
+                coinStackOf(Purse.of(CoinDenomination.SILVER_BIT, 7)));
 
         helper.useBlock(clicked, player, hitFace(helper, clicked, Direction.UP));
 
@@ -166,7 +167,7 @@ public final class CoinBlockGameTests {
             helper.fail("no pile on top of the clicked block", clicked.above());
             return;
         }
-        assertCount(helper, "silver bits in the pile", 7, be.getCurrency().getFrom(CoinDenomination.SILVER_BIT));
+        assertCount(helper, "silver bits in the pile", 7, be.getCurrency().count(CoinDenomination.SILVER_BIT));
         assertTrue(helper, "the coin stack to be used up", player.getMainHandItem().isEmpty());
         helper.succeed();
     }
@@ -179,31 +180,31 @@ public final class CoinBlockGameTests {
      */
     @GameTest(template = ARENA)
     public static void rightClickWithCoinsDepositsTheWholeHeldStack(GameTestHelper helper) {
-        CoinBlockEntity be = placePile(helper, CurrencyData.newCurrencyFromDenom(CoinDenomination.COPPER_BIT, 1));
+        CoinBlockEntity be = placePile(helper, Purse.of(CoinDenomination.COPPER_BIT, 1));
         if (be == null) return;
         ServerPlayer player = survivalPlayer(helper);
         player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(TradeItems.COIN_SILVER_BIT.get(), 12));
 
         helper.useBlock(PILE, player);
 
-        assertCount(helper, "silver bits in the pile", 12, be.getCurrency().getFrom(CoinDenomination.SILVER_BIT));
+        assertCount(helper, "silver bits in the pile", 12, be.getCurrency().count(CoinDenomination.SILVER_BIT));
         assertTrue(helper, "the held coins to be used up", player.getMainHandItem().isEmpty());
         helper.succeed();
     }
 
     @GameTest(template = ARENA)
     public static void aCoinStackMergesIntoAPile(GameTestHelper helper) {
-        CoinBlockEntity be = placePile(helper, CurrencyData.newCurrencyFromDenom(CoinDenomination.COPPER_BIT, 2));
+        CoinBlockEntity be = placePile(helper, Purse.of(CoinDenomination.COPPER_BIT, 2));
         if (be == null) return;
         ServerPlayer player = survivalPlayer(helper);
-        CurrencyData stack = CurrencyData.newCurrencyFromDenom(CoinDenomination.COPPER_BIT, 5)
+        Purse stack = Purse.of(CoinDenomination.COPPER_BIT, 5)
                 .add(CoinDenomination.GOLD_MARK, 1).updated();
         player.setItemInHand(InteractionHand.MAIN_HAND, coinStackOf(stack));
 
         helper.useBlock(PILE, player);
 
-        assertCount(helper, "copper bits in the pile", 7, be.getCurrency().getFrom(CoinDenomination.COPPER_BIT));
-        assertCount(helper, "gold marks in the pile", 1, be.getCurrency().getFrom(CoinDenomination.GOLD_MARK));
+        assertCount(helper, "copper bits in the pile", 7, be.getCurrency().count(CoinDenomination.COPPER_BIT));
+        assertCount(helper, "gold marks in the pile", 1, be.getCurrency().count(CoinDenomination.GOLD_MARK));
         assertTrue(helper, "the coin stack to be used up", player.getMainHandItem().isEmpty());
         helper.succeed();
     }
@@ -212,7 +213,7 @@ public final class CoinBlockGameTests {
 
     @GameTest(template = ARENA)
     public static void leftClickTakesOneCoinOfTheHighestDenomination(GameTestHelper helper) {
-        CurrencyData start = CurrencyData.newCurrencyFromDenom(CoinDenomination.COPPER_BIT, 3)
+        Purse start = Purse.of(CoinDenomination.COPPER_BIT, 3)
                 .add(CoinDenomination.GOLD_MARK, 2).updated();
         CoinBlockEntity be = placePile(helper, start);
         if (be == null) return;
@@ -221,22 +222,22 @@ public final class CoinBlockGameTests {
         boolean cancelled = leftClick(helper, player, PILE);
 
         assertTrue(helper, "the click to be cancelled so the pile is not mined", cancelled);
-        assertCount(helper, "gold marks in the pile", 1, be.getCurrency().getFrom(CoinDenomination.GOLD_MARK));
-        assertCount(helper, "copper bits in the pile", 3, be.getCurrency().getFrom(CoinDenomination.COPPER_BIT));
+        assertCount(helper, "gold marks in the pile", 1, be.getCurrency().count(CoinDenomination.GOLD_MARK));
+        assertCount(helper, "copper bits in the pile", 3, be.getCurrency().count(CoinDenomination.COPPER_BIT));
         helper.assertItemEntityCountIs(TradeItems.COIN_GOLD_MARK.get(), PILE, 2.0, 1);
         helper.succeed();
     }
 
     @GameTest(template = ARENA)
     public static void sneakLeftClickTakesUpToAStack(GameTestHelper helper) {
-        CoinBlockEntity be = placePile(helper, CurrencyData.newCurrencyFromDenom(CoinDenomination.COPPER_SHARD, 100));
+        CoinBlockEntity be = placePile(helper, Purse.of(CoinDenomination.COPPER_SHARD, 100));
         if (be == null) return;
         ServerPlayer player = survivalPlayer(helper);
         player.setPose(Pose.CROUCHING);
 
         leftClick(helper, player, PILE);
 
-        assertCount(helper, "copper shards left in the pile", 36, be.getCurrency().getFrom(CoinDenomination.COPPER_SHARD));
+        assertCount(helper, "copper shards left in the pile", 36, be.getCurrency().count(CoinDenomination.COPPER_SHARD));
         helper.assertItemEntityCountIs(TradeItems.COIN_COPPER_SHARD.get(), PILE, 2.0, 64);
         helper.succeed();
     }
@@ -244,7 +245,7 @@ public final class CoinBlockGameTests {
     @GameTest(template = ARENA)
     public static void takingTheLastCoinRemovesThePile(GameTestHelper helper) {
         helper.setBlock(PILE.below(2), Blocks.STONE);
-        CoinBlockEntity be = placePile(helper, CurrencyData.newCurrencyFromDenom(CoinDenomination.EMERALD_SUN, 1));
+        CoinBlockEntity be = placePile(helper, Purse.of(CoinDenomination.EMERALD_SUN, 1));
         if (be == null) return;
         ServerPlayer player = survivalPlayer(helper);
 
@@ -260,7 +261,7 @@ public final class CoinBlockGameTests {
     @GameTest(template = ARENA)
     public static void breakingASmallPileDropsTheCoinsThemselves(GameTestHelper helper) {
         helper.setBlock(PILE.below(2), Blocks.STONE);
-        CurrencyData start = CurrencyData.newCurrencyFromDenom(CoinDenomination.COPPER_BIT, 130)
+        Purse start = Purse.of(CoinDenomination.COPPER_BIT, 130)
                 .add(CoinDenomination.SILVER_CROWN, 3).updated();
         if (placePile(helper, start) == null) return;
 
@@ -277,7 +278,7 @@ public final class CoinBlockGameTests {
     @GameTest(template = ARENA)
     public static void breakingABigPileDropsOneCoinStack(GameTestHelper helper) {
         helper.setBlock(PILE.below(2), Blocks.STONE);
-        CurrencyData start = CurrencyData.newCurrencyFromDenom(CoinDenomination.COPPER_BIT, 21 * 64)
+        Purse start = Purse.of(CoinDenomination.COPPER_BIT, 21 * 64)
                 .add(CoinDenomination.EMERALD_THRONE, 2).updated();
         if (placePile(helper, start) == null) return;
 
@@ -289,7 +290,7 @@ public final class CoinBlockGameTests {
             var drops = helper.getLevel().getEntitiesOfClass(ItemEntity.class,
                     new AABB(helper.absolutePos(PILE)).inflate(2.0),
                     e -> e.getItem().is(TradeItems.COIN_STACK_ITEM.get()));
-            if (!CurrencyData.getFrom(drops.getFirst().getItem()).equals(start)) {
+            if (!Purses.get(drops.getFirst().getItem()).equals(start)) {
                 helper.fail("the coin stack should hold exactly what the pile held");
             }
         });
@@ -299,7 +300,7 @@ public final class CoinBlockGameTests {
     @GameTest(template = ARENA)
     public static void creativeBreakingDropsNothing(GameTestHelper helper) {
         helper.setBlock(PILE.below(2), Blocks.STONE);
-        if (placePile(helper, CurrencyData.newCurrencyFromDenom(CoinDenomination.GOLD_REGAL, 5)) == null) return;
+        if (placePile(helper, Purse.of(CoinDenomination.GOLD_REGAL, 5)) == null) return;
         ServerPlayer player = mockPlayer(helper, GameType.CREATIVE);
 
         player.gameMode.destroyBlock(helper.absolutePos(PILE));
@@ -316,7 +317,7 @@ public final class CoinBlockGameTests {
     /** The block entity's NBT is a save format: a pile must come back from disk unchanged. */
     @GameTest(template = ARENA)
     public static void aPileSurvivesSavingAndLoading(GameTestHelper helper) {
-        CurrencyData start = CurrencyData.newCurrencyFromDenom(CoinDenomination.SILVER_BIT, 17)
+        Purse start = Purse.of(CoinDenomination.SILVER_BIT, 17)
                 .add(CoinDenomination.EMERALD_THRONE, 3).updated();
         CoinBlockEntity be = placePile(helper, start);
         if (be == null) return;
@@ -343,7 +344,7 @@ public final class CoinBlockGameTests {
     }
 
     /** A pile at {@link #PILE} on a stone support, holding {@code currency}; null after failing the test. */
-    private static CoinBlockEntity placePile(GameTestHelper helper, CurrencyData currency) {
+    private static CoinBlockEntity placePile(GameTestHelper helper, Purse currency) {
         helper.setBlock(PILE.below(), Blocks.STONE);
         helper.setBlock(PILE, TradeBlocks.COIN_PILE.get());
         if (!(helper.getBlockEntity(PILE) instanceof CoinBlockEntity be)) {

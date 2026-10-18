@@ -1,7 +1,9 @@
 package com.errantmc.markets.item.wallet;
 
-import com.errantmc.markets.component.CurrencyData;
-import com.errantmc.markets.component.WalletBalance;
+import com.errantmc.markets.component.Purses;
+import com.errantmc.markets.domain.MoneyFormat;
+import com.errantmc.markets.domain.Purse;
+import com.errantmc.markets.item.CoinStyle;
 import com.errantmc.markets.screen.wallet.WalletMenu;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -31,7 +33,6 @@ public class WalletItem extends Item {
 
         if (!level.isClientSide) {
             WalletInventory.ensure(stack);      // 9 slots
-            WalletBalance.ensure(stack);   // CurrencyInfo
             ((ServerPlayer) player).openMenu(
                     new SimpleMenuProvider((id, inv, p) -> new WalletMenu(id, inv, hand),
                             Component.translatable("item.erranttrade.leather_wallet")),
@@ -44,11 +45,10 @@ public class WalletItem extends Item {
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext ctx, List<Component> tooltip, TooltipFlag flag) {
         super.appendHoverText(stack, ctx, tooltip, flag);
-        CurrencyData c = WalletBalance.get(stack);
-        var denomonation = c.getHighestDenomonation();
-        double value = c.totalValue();
+        Purse balance = Purses.get(stack);
         tooltip.add(Component.translatable("item.erranttrade.wallet.tooltip_prefix")
-                .append(denomonation.format + java.text.NumberFormat.getCurrencyInstance().format(value)));
+                .append(Component.literal(MoneyFormat.format(balance.totalValue()))
+                        .withStyle(CoinStyle.colour(balance.highest()))));
     }
 
     @Override

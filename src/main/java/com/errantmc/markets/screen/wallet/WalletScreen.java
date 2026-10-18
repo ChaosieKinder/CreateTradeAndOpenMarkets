@@ -5,9 +5,10 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import com.errantmc.markets.lib.ui.component.ItemButton;
 import com.errantmc.markets.ErrantTrade;
-import com.errantmc.markets.component.CurrencyData;
-import com.errantmc.markets.component.WalletBalance;
-import com.errantmc.markets.data.CoinDenomination;
+import com.errantmc.markets.domain.Purse;
+import com.errantmc.markets.component.Purses;
+import com.errantmc.markets.domain.CoinDenomination;
+import com.errantmc.markets.domain.MoneyFormat;
 import com.errantmc.markets.item.CoinItem;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -41,20 +42,6 @@ public class WalletScreen extends AbstractContainerScreen<WalletMenu> {
         this.inventoryLabelY = this.imageHeight - 104;
     }
 
-    protected int getButtonIdFromDenomination(CoinDenomination denomination) {
-        return switch (denomination) {
-            case CoinDenomination.COPPER_BIT     -> WalletMenu.BTN_WITHDRAW_COPPER_BIT;
-            case CoinDenomination.COPPER_SHARD   -> WalletMenu.BTN_WITHDRAW_COPPER_SHARD;
-            case CoinDenomination.SILVER_BIT     -> WalletMenu.BTN_WITHDRAW_SILVER_BIT;
-            case CoinDenomination.SILVER_CROWN   -> WalletMenu.BTN_WITHDRAW_SILVER_CROWN;
-            case CoinDenomination.GOLD_MARK      -> WalletMenu.BTN_WITHDRAW_GOLD_MARK;
-            case CoinDenomination.GOLD_REGAL     -> WalletMenu.BTN_WITHDRAW_GOLD_REGAL;
-            case CoinDenomination.EMERALD_SUN    -> WalletMenu.BTN_WITHDRAW_EMERALD_SUN;
-            case CoinDenomination.EMERALD_THRONE -> WalletMenu.BTN_WITHDRAW_EMERALD_THRONE;
-            default -> 0;
-        };
-    }
-
     @Override
     protected void init() {
         super.init();
@@ -69,16 +56,14 @@ public class WalletScreen extends AbstractContainerScreen<WalletMenu> {
         int y = top + 12;
         int rowStartY = y;
         int rowCount = 0;
-        for (CoinDenomination coinDenom : CoinDenomination.values()) {
-            if(coinDenom == CoinDenomination.NONE)
-                continue;
+        for (CoinDenomination coinDenom : CoinDenomination.coins()) {
             var item = CoinItem.createCurrencyItem(coinDenom, 1);
-            var menuId = getButtonIdFromDenomination(coinDenom);
+            var menuId = WalletMenu.withdrawButton(coinDenom);
             var button = new ItemButton(x, y, 40, 16, () -> item, b -> sendMenuButton(menuId), item.getDisplayName());
             button.setTooltip(Tooltip.create(
-                    Component.translatable("item.erranttrade."+ coinDenom.languageKey)
+                    Component.translatable("item.erranttrade."+ coinDenom.id)
                             .append("\n")
-                            .append(Component.translatable("item.erranttrade."+ coinDenom.languageKey + ".tooltip"))
+                            .append(Component.translatable("item.erranttrade."+ coinDenom.id + ".tooltip"))
                             .append("\n")
                             .append(Component.translatable("item.erranttrade.wallet.withdraw.tooltip"))
             ));
@@ -125,11 +110,11 @@ public class WalletScreen extends AbstractContainerScreen<WalletMenu> {
                 ? mc.player.getItemInHand(this.menu.getHand())
                 : ItemStack.EMPTY;
 
-        CurrencyData c = WalletBalance.get(walletStack); // safe client read
+        Purse c = Purses.get(walletStack); // safe client read
 
         for (ItemButton btn : buttons) {
             if(btn.getIconItem().getItem() instanceof CoinItem coin) {
-                int value = c.getFrom(coin.denom());
+                int value = c.count(coin.denom());
                 btn.active = value > 0;
                 btn.setMessage(Component.literal("" + value));
 
@@ -155,8 +140,7 @@ public class WalletScreen extends AbstractContainerScreen<WalletMenu> {
                 0, 0, this.imageWidth, this.imageHeight);
 
         // Draw Total Value at top right of wallet
-        String totalValueText = java.text.NumberFormat.getCurrencyInstance().format(
-                WalletBalance.get(currentWalletStack()).totalValue());
+        String totalValueText = MoneyFormat.format(Purses.get(currentWalletStack()).totalValue());
         int walletTotalX = leftPos + imageWidth - 40 - this.font.width(totalValueText)/2;
         int walletTotalY = topPos + 48 - this.font.lineHeight/2;
         PoseStack pose = guiGraphics.pose();

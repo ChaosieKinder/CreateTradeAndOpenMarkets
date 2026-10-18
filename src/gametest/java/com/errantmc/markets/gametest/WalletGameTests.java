@@ -1,9 +1,9 @@
 package com.errantmc.markets.gametest;
 
 import com.errantmc.markets.ErrantTrade;
-import com.errantmc.markets.component.CurrencyData;
-import com.errantmc.markets.component.WalletBalance;
-import com.errantmc.markets.data.CoinDenomination;
+import com.errantmc.markets.domain.Purse;
+import com.errantmc.markets.component.Purses;
+import com.errantmc.markets.domain.CoinDenomination;
 import com.errantmc.markets.item.TradeItems;
 import com.errantmc.markets.item.wallet.WalletInventory;
 import com.errantmc.markets.screen.wallet.WalletMenu;
@@ -38,9 +38,9 @@ public final class WalletGameTests {
     public static void depositAllTakesCoinStacksAndLeavesTheWalletsContents(GameTestHelper helper) {
         ServerPlayer player = survivalPlayer(helper);
         player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(TradeItems.LEATHER_WALLET.get()));
-        player.getInventory().setItem(2, coinStackOf(CurrencyData.newCurrencyFromDenom(CoinDenomination.COPPER_BIT, 5)));
+        player.getInventory().setItem(2, coinStackOf(Purse.of(CoinDenomination.COPPER_BIT, 5)));
         player.setItemInHand(InteractionHand.OFF_HAND,
-                coinStackOf(CurrencyData.newCurrencyFromDenom(CoinDenomination.GOLD_MARK, 2)));
+                coinStackOf(Purse.of(CoinDenomination.GOLD_MARK, 2)));
         player.getInventory().setItem(20, new ItemStack(TradeItems.COIN_SILVER_BIT.get(), 6));
         WalletMenu menu = new WalletMenu(0, player.getInventory(), InteractionHand.MAIN_HAND);
         menu.getSlot(0).set(new ItemStack(TradeItems.ID_CARD.get()));
@@ -52,10 +52,10 @@ public final class WalletGameTests {
         assertTrue(helper, "wallet slot 2 to keep its card", menu.getSlot(2).getItem().is(TradeItems.ID_CARD.get()));
         assertTrue(helper, "the hotbar coin stack to be taken", player.getInventory().getItem(2).isEmpty());
         assertTrue(helper, "the offhand coin stack to be taken", player.getOffhandItem().isEmpty());
-        CurrencyData balance = WalletBalance.get(menu.getWalletStack());
-        assertCount(helper, "copper bits in the wallet", 5, balance.getFrom(CoinDenomination.COPPER_BIT));
-        assertCount(helper, "gold marks in the wallet", 2, balance.getFrom(CoinDenomination.GOLD_MARK));
-        assertCount(helper, "silver bits in the wallet", 6, balance.getFrom(CoinDenomination.SILVER_BIT));
+        Purse balance = Purses.get(menu.getWalletStack());
+        assertCount(helper, "copper bits in the wallet", 5, balance.count(CoinDenomination.COPPER_BIT));
+        assertCount(helper, "gold marks in the wallet", 2, balance.count(CoinDenomination.GOLD_MARK));
+        assertCount(helper, "silver bits in the wallet", 6, balance.count(CoinDenomination.SILVER_BIT));
         assertCount(helper, "coins left in the inventory", 0, coinsIn(player));
         helper.succeed();
     }
@@ -71,7 +71,7 @@ public final class WalletGameTests {
         coins.playerTouch(player);
 
         assertCount(helper, "silver crowns in the wallet", 5,
-                WalletBalance.get(wallet).getFrom(CoinDenomination.SILVER_CROWN));
+                Purses.get(wallet).count(CoinDenomination.SILVER_CROWN));
         assertCount(helper, "coins in the inventory", 0, coinsIn(player));
         assertTrue(helper, "the coins on the ground to be gone", coins.isRemoved());
         helper.succeed();
@@ -88,7 +88,7 @@ public final class WalletGameTests {
         coins.playerTouch(player);
 
         assertCount(helper, "silver crowns in the wallet", 0,
-                WalletBalance.get(wallet).getFrom(CoinDenomination.SILVER_CROWN));
+                Purses.get(wallet).count(CoinDenomination.SILVER_CROWN));
         assertTrue(helper, "the coins to stay on the ground", !coins.isRemoved());
         helper.succeed();
     }
@@ -98,14 +98,14 @@ public final class WalletGameTests {
     public static void pickupIntoANearlyFullWalletPutsTheRestInTheInventory(GameTestHelper helper) {
         ServerPlayer player = survivalPlayer(helper);
         ItemStack wallet = new ItemStack(TradeItems.LEATHER_WALLET.get());
-        WalletBalance.set(wallet, CurrencyData.newCurrencyFromDenom(CoinDenomination.COPPER_BIT, Integer.MAX_VALUE - 1));
+        Purses.set(wallet, Purse.of(CoinDenomination.COPPER_BIT, Integer.MAX_VALUE - 1));
         player.getInventory().setItem(14, wallet);
         ItemEntity coins = dropAt(helper, new ItemStack(TradeItems.COIN_COPPER_BIT.get(), 5), true);
 
         coins.playerTouch(player);
 
         assertCount(helper, "copper bits in the wallet", Integer.MAX_VALUE,
-                WalletBalance.get(wallet).getFrom(CoinDenomination.COPPER_BIT));
+                Purses.get(wallet).count(CoinDenomination.COPPER_BIT));
         assertCount(helper, "coins in the inventory", 4, coinsIn(player));
         helper.succeed();
     }
@@ -115,13 +115,13 @@ public final class WalletGameTests {
     @GameTest(template = ARENA)
     public static void withdrawGivesOneCoin(GameTestHelper helper) {
         ServerPlayer player = survivalPlayer(helper);
-        ItemStack wallet = walletHolding(CurrencyData.newCurrencyFromDenom(CoinDenomination.GOLD_REGAL, 3));
+        ItemStack wallet = walletHolding(Purse.of(CoinDenomination.GOLD_REGAL, 3));
         player.setItemInHand(InteractionHand.MAIN_HAND, wallet);
         WalletMenu menu = new WalletMenu(0, player.getInventory(), InteractionHand.MAIN_HAND);
 
-        menu.clickMenuButton(player, WalletMenu.BTN_WITHDRAW_GOLD_REGAL);
+        menu.clickMenuButton(player, WalletMenu.withdrawButton(CoinDenomination.GOLD_REGAL));
 
-        assertCount(helper, "gold regals in the wallet", 2, WalletBalance.get(wallet).getFrom(CoinDenomination.GOLD_REGAL));
+        assertCount(helper, "gold regals in the wallet", 2, Purses.get(wallet).count(CoinDenomination.GOLD_REGAL));
         assertCount(helper, "coins in the inventory", 1, coinsIn(player));
         helper.succeed();
     }
@@ -130,13 +130,13 @@ public final class WalletGameTests {
     @GameTest(template = ARENA)
     public static void shiftWithdrawGivesAStack(GameTestHelper helper) {
         ServerPlayer player = survivalPlayer(helper);
-        ItemStack wallet = walletHolding(CurrencyData.newCurrencyFromDenom(CoinDenomination.COPPER_BIT, 100));
+        ItemStack wallet = walletHolding(Purse.of(CoinDenomination.COPPER_BIT, 100));
         player.setItemInHand(InteractionHand.MAIN_HAND, wallet);
         WalletMenu menu = new WalletMenu(0, player.getInventory(), InteractionHand.MAIN_HAND);
 
-        menu.clickMenuButton(player, 1000 + WalletMenu.BTN_WITHDRAW_COPPER_BIT);
+        menu.clickMenuButton(player, 1000 + WalletMenu.withdrawButton(CoinDenomination.COPPER_BIT));
 
-        assertCount(helper, "copper bits in the wallet", 36, WalletBalance.get(wallet).getFrom(CoinDenomination.COPPER_BIT));
+        assertCount(helper, "copper bits in the wallet", 36, Purses.get(wallet).count(CoinDenomination.COPPER_BIT));
         assertCount(helper, "coins in the inventory", 64, coinsIn(player));
         helper.succeed();
     }
@@ -144,11 +144,11 @@ public final class WalletGameTests {
     @GameTest(template = ARENA)
     public static void withdrawingFromAnEmptyDenominationDoesNothing(GameTestHelper helper) {
         ServerPlayer player = survivalPlayer(helper);
-        ItemStack wallet = walletHolding(CurrencyData.newCurrencyFromDenom(CoinDenomination.COPPER_BIT, 5));
+        ItemStack wallet = walletHolding(Purse.of(CoinDenomination.COPPER_BIT, 5));
         player.setItemInHand(InteractionHand.MAIN_HAND, wallet);
         WalletMenu menu = new WalletMenu(0, player.getInventory(), InteractionHand.MAIN_HAND);
 
-        boolean handled = menu.clickMenuButton(player, WalletMenu.BTN_WITHDRAW_EMERALD_THRONE);
+        boolean handled = menu.clickMenuButton(player, WalletMenu.withdrawButton(CoinDenomination.EMERALD_THRONE));
 
         assertTrue(helper, "the click to be refused", !handled);
         assertCount(helper, "coins in the inventory", 0, coinsIn(player));
@@ -159,16 +159,16 @@ public final class WalletGameTests {
     @GameTest(template = ARENA)
     public static void withdrawingWithAFullInventoryDropsTheCoins(GameTestHelper helper) {
         ServerPlayer player = survivalPlayer(helper);
-        ItemStack wallet = walletHolding(CurrencyData.newCurrencyFromDenom(CoinDenomination.SILVER_CROWN, 4));
+        ItemStack wallet = walletHolding(Purse.of(CoinDenomination.SILVER_CROWN, 4));
         player.setItemInHand(InteractionHand.MAIN_HAND, wallet);
         for (int i = 1; i < player.getInventory().items.size(); i++) {
             player.getInventory().setItem(i, new ItemStack(Items.DIRT, 64));
         }
         WalletMenu menu = new WalletMenu(0, player.getInventory(), InteractionHand.MAIN_HAND);
 
-        menu.clickMenuButton(player, WalletMenu.BTN_WITHDRAW_SILVER_CROWN);
+        menu.clickMenuButton(player, WalletMenu.withdrawButton(CoinDenomination.SILVER_CROWN));
 
-        assertCount(helper, "silver crowns in the wallet", 3, WalletBalance.get(wallet).getFrom(CoinDenomination.SILVER_CROWN));
+        assertCount(helper, "silver crowns in the wallet", 3, Purses.get(wallet).count(CoinDenomination.SILVER_CROWN));
         var dropped = player.level().getEntitiesOfClass(ItemEntity.class, player.getBoundingBox().inflate(3),
                 e -> e.getItem().is(TradeItems.COIN_SILVER_CROWN.get()));
         assertCount(helper, "silver crowns dropped", 1, dropped.stream().mapToInt(e -> e.getItem().getCount()).sum());
@@ -183,13 +183,13 @@ public final class WalletGameTests {
         player.setItemInHand(InteractionHand.MAIN_HAND, wallet);
         WalletMenu menu = new WalletMenu(0, player.getInventory(), InteractionHand.MAIN_HAND);
         menu.getSlot(4).set(new ItemStack(TradeItems.COIN_COPPER_SHARD.get(), 10));
-        menu.getSlot(7).set(coinStackOf(CurrencyData.newCurrencyFromDenom(CoinDenomination.GOLD_MARK, 3)));
+        menu.getSlot(7).set(coinStackOf(Purse.of(CoinDenomination.GOLD_MARK, 3)));
 
         menu.broadcastChanges();
 
-        CurrencyData balance = WalletBalance.get(wallet);
-        assertCount(helper, "copper shards in the wallet", 10, balance.getFrom(CoinDenomination.COPPER_SHARD));
-        assertCount(helper, "gold marks in the wallet", 3, balance.getFrom(CoinDenomination.GOLD_MARK));
+        Purse balance = Purses.get(wallet);
+        assertCount(helper, "copper shards in the wallet", 10, balance.count(CoinDenomination.COPPER_SHARD));
+        assertCount(helper, "gold marks in the wallet", 3, balance.count(CoinDenomination.GOLD_MARK));
         assertTrue(helper, "grid slot 4 to be empty", menu.getSlot(4).getItem().isEmpty());
         assertTrue(helper, "grid slot 7 to be empty", menu.getSlot(7).getItem().isEmpty());
         helper.succeed();
@@ -320,22 +320,22 @@ public final class WalletGameTests {
     /** The balance is a data component, so it is a save format: it must survive a round trip. */
     @GameTest(template = ARENA)
     public static void aWalletKeepsItsBalanceThroughSaving(GameTestHelper helper) {
-        CurrencyData balance = CurrencyData.newCurrencyFromDenom(CoinDenomination.EMERALD_SUN, 4)
+        Purse balance = Purse.of(CoinDenomination.EMERALD_SUN, 4)
                 .add(CoinDenomination.COPPER_BIT, 9).updated();
         ItemStack wallet = walletHolding(balance);
         var registries = helper.getLevel().registryAccess();
 
         ItemStack loaded = ItemStack.parseOptional(registries, (CompoundTag) wallet.save(registries));
 
-        if (!WalletBalance.get(loaded).equals(balance)) {
-            helper.fail("loaded " + WalletBalance.get(loaded) + ", saved " + balance);
+        if (!Purses.get(loaded).equals(balance)) {
+            helper.fail("loaded " + Purses.get(loaded) + ", saved " + balance);
         }
         helper.succeed();
     }
 
-    private static ItemStack walletHolding(CurrencyData balance) {
+    private static ItemStack walletHolding(Purse balance) {
         ItemStack wallet = new ItemStack(TradeItems.LEATHER_WALLET.get());
-        WalletBalance.set(wallet, balance);
+        Purses.set(wallet, balance);
         return wallet;
     }
 
@@ -353,7 +353,7 @@ public final class WalletGameTests {
     public static void depositAllIntoANearlyFullWalletLeavesTheRest(GameTestHelper helper) {
         ServerPlayer player = survivalPlayer(helper);
         ItemStack wallet = new ItemStack(TradeItems.LEATHER_WALLET.get());
-        WalletBalance.set(wallet, CurrencyData.newCurrencyFromDenom(CoinDenomination.COPPER_BIT, Integer.MAX_VALUE - 1));
+        Purses.set(wallet, Purse.of(CoinDenomination.COPPER_BIT, Integer.MAX_VALUE - 1));
         player.setItemInHand(InteractionHand.MAIN_HAND, wallet);
         player.getInventory().setItem(5, new ItemStack(TradeItems.COIN_COPPER_BIT.get(), 5));
         WalletMenu menu = new WalletMenu(0, player.getInventory(), InteractionHand.MAIN_HAND);
@@ -361,7 +361,7 @@ public final class WalletGameTests {
         menu.clickMenuButton(player, WalletMenu.BTN_DEPOSIT_ALL);
 
         assertCount(helper, "copper bits in the wallet", Integer.MAX_VALUE,
-                WalletBalance.get(menu.getWalletStack()).getFrom(CoinDenomination.COPPER_BIT));
+                Purses.get(menu.getWalletStack()).count(CoinDenomination.COPPER_BIT));
         assertCount(helper, "coins left in the inventory", 4, coinsIn(player));
         helper.succeed();
     }

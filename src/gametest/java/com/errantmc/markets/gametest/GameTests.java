@@ -1,7 +1,8 @@
 package com.errantmc.markets.gametest;
 
 import com.mojang.authlib.GameProfile;
-import com.errantmc.markets.component.CurrencyData;
+import com.errantmc.markets.component.Purses;
+import com.errantmc.markets.domain.Purse;
 import com.errantmc.markets.item.CoinItem;
 import com.errantmc.markets.item.TradeItems;
 import net.minecraft.core.BlockPos;
@@ -69,9 +70,9 @@ public final class GameTests {
         return new BlockHitResult(at, face, abs, false);
     }
 
-    public static ItemStack coinStackOf(CurrencyData currency) {
+    public static ItemStack coinStackOf(Purse currency) {
         ItemStack stack = new ItemStack(TradeItems.COIN_STACK_ITEM.get());
-        CurrencyData.set(stack, currency);
+        Purses.set(stack, currency);
         return stack;
     }
 

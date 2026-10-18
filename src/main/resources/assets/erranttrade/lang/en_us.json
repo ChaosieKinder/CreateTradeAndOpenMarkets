@@ -36,6 +36,8 @@
   "sounds.erranttrade.coin_drop": "Coins drop and spin",
   "entity.minecraft.villager.erranttrade.banker": "Banker",
   "tooltip_info_item.coin":  "Stack Value: ",
+  "tooltip.erranttrade.coin_stack.coins": "Coins: %s",
+  "tooltip.erranttrade.coin_stack.value": "Value: %s",
   "tooltip.erranttrade.id_card.owner": "Holder: %s",
   "tooltip.erranttrade.id_card.created": "Issued: %s"
 }

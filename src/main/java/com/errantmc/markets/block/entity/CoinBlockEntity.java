@@ -1,6 +1,9 @@
 package com.errantmc.markets.block.entity;
 
-import com.errantmc.markets.component.CurrencyData;
+import com.errantmc.markets.component.Purses;
+import com.errantmc.markets.domain.Purse;
+import com.mojang.logging.LogUtils;
+import org.slf4j.Logger;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -14,8 +17,9 @@ import net.minecraft.world.level.block.state.BlockState;
 
 
 public class CoinBlockEntity extends BlockEntity {
+    private static final Logger LOG = LogUtils.getLogger();
 
-    private CurrencyData currency = CurrencyData.EMPTY;
+    private Purse currency = Purse.EMPTY;
 
     public CoinBlockEntity(BlockPos pos, BlockState state) {
         super(TradeBlockEntities.COIN_PILE.get(), pos, state);
@@ -44,12 +48,12 @@ public class CoinBlockEntity extends BlockEntity {
 
 
     // ---------- Mutators / helpers ----------
-    public CurrencyData getCurrency() {
+    public Purse getCurrency() {
         return currency;
     }
 
-    public void setCurrency(CurrencyData info) {
-        if (info == null) info = CurrencyData.EMPTY;
+    public void setCurrency(Purse info) {
+        if (info == null) info = Purse.EMPTY;
         this.currency = info;
         markDirtyAndSync();
     }
@@ -65,9 +69,8 @@ public class CoinBlockEntity extends BlockEntity {
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider provider) {
         super.saveAdditional(tag, provider);
-        // Encode CurrencyInfo → Tag via NbtOps
-        CurrencyData.CODEC.encodeStart(NbtOps.INSTANCE, currency)
-                .resultOrPartial(err -> /* your logger here */ System.err.println("Currency save failed: " + err))
+        Purses.CODEC.encodeStart(NbtOps.INSTANCE, currency)
+                .resultOrPartial(err -> LOG.error("Coin pile at {} could not be saved: {}", worldPosition, err))
                 .ifPresent(encoded -> tag.put(KEY_CURRENCY, encoded));
     }
 
@@ -76,14 +79,14 @@ public class CoinBlockEntity extends BlockEntity {
         super.loadAdditional(tag, provider);
         if (tag.contains(KEY_CURRENCY, Tag.TAG_COMPOUND)) {
             Tag data = tag.get(KEY_CURRENCY);
-            CurrencyData.CODEC.parse(NbtOps.INSTANCE, data)
-                    .resultOrPartial(err -> /* your logger here */ System.err.println("Currency load failed: " + err))
+            Purses.CODEC.parse(NbtOps.INSTANCE, data)
+                    .resultOrPartial(err -> LOG.error("Coin pile at {} could not be loaded: {}", worldPosition, err))
                     .ifPresentOrElse(
                             v -> this.currency = v,
-                            () -> this.currency = CurrencyData.EMPTY
+                            () -> this.currency = Purse.EMPTY
                     );
         } else {
-            this.currency = CurrencyData.EMPTY;
+            this.currency = Purse.EMPTY;
         }
     }
 

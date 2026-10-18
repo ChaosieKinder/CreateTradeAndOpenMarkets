@@ -1,7 +1,7 @@
 package com.errantmc.markets.item.wallet;
 
 import com.errantmc.markets.compat.CuriosCompat;
-import com.errantmc.markets.component.WalletBalance;
+import com.errantmc.markets.component.Purses;
 import com.errantmc.markets.item.CoinItem;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
@@ -34,11 +34,11 @@ public final class WalletAutoDeposit {
         ItemStack wallet = findWallet(player);
         if (wallet == null) return;
 
-        var result = WalletBalance.add(wallet, coin.denom(), ground.getCount());
-        if (result.delta() == 0) return; // wallet full: vanilla picks the coins up as usual
+        var result = Purses.add(wallet, coin.denom(), ground.getCount());
+        if (result.moved() == 0) return; // wallet full: vanilla picks the coins up as usual
 
-        player.take(entity, result.delta()); // pickup animation and sound for everyone watching
-        ground.shrink(result.delta());
+        player.take(entity, result.moved()); // pickup animation and sound for everyone watching
+        ground.shrink(result.moved());
         if (ground.isEmpty()) {
             entity.discard();
             event.setCanPickup(TriState.FALSE);

@@ -17,3 +17,5 @@ dependencyResolutionManagement {
         maven { url = 'https://maven.neoforged.net/releases' }  // libs (NeoForge, etc.)
     }
 }
+// The economy without Minecraft (AGENTS §2). Its classes ship inside the mod jar.
+include 'errant-trade-domain'

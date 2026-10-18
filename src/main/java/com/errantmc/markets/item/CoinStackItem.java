@@ -2,7 +2,9 @@ package com.errantmc.markets.item;
 
 import com.errantmc.markets.block.TradeBlocks;
 import com.errantmc.markets.block.entity.CoinBlockEntity;
-import com.errantmc.markets.component.CurrencyData;
+import com.errantmc.markets.component.Purses;
+import com.errantmc.markets.domain.MoneyFormat;
+import com.errantmc.markets.domain.Purse;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -21,17 +23,12 @@ import java.util.List;
 
 public class CoinStackItem extends Item {
 
-    public static long totalCoins(ItemStack stack) { return CurrencyData.getFrom(stack).totalCount(); }
-    public static double totalValue(ItemStack stack) { return CurrencyData.getFrom(stack).totalValue(); }
-
-    /** Map to 1..4 for model predicate */
+    /** Which of the four models a coin stack shows, by worth: over $100,000, $10M and $100M. */
     public static int tier(ItemStack stack) {
-        long coins = totalCoins(stack);
-        double value = totalValue(stack);
-        // Choose whichever heuristic you prefer. Example mixes both:
-        if (value > 100000000) return 4;
-        if (value > 10000000) return 3;
-        if (value > 100000) return 2;
+        long copperBits = Purses.get(stack).totalValue();
+        if (copperBits > 10_000_000_000L) return 4;
+        if (copperBits > 1_000_000_000L) return 3;
+        if (copperBits > 10_000_000L) return 2;
         return 1;
     }
 
@@ -39,9 +36,10 @@ public class CoinStackItem extends Item {
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext ctx, List<Component> tip, TooltipFlag flag) {
-        var c = CurrencyData.getFrom(stack);
-        tip.add(Component.literal("Coins: " + c.totalCount()).withStyle(ChatFormatting.GRAY));
-        tip.add(Component.literal("Value: " + c.totalValue()).withStyle(ChatFormatting.GOLD));
+        Purse purse = Purses.get(stack);
+        tip.add(Component.translatable("tooltip.erranttrade.coin_stack.coins", purse.totalCount()).withStyle(ChatFormatting.GRAY));
+        tip.add(Component.translatable("tooltip.erranttrade.coin_stack.value", MoneyFormat.format(purse.totalValue()))
+                .withStyle(ChatFormatting.GOLD));
     }
 
     /** Place CoinBlock and move component data to the BE */
@@ -60,7 +58,7 @@ public class CoinStackItem extends Item {
 
         if (!level.setBlock(place, state, Block.UPDATE_ALL_IMMEDIATE)) return InteractionResult.FAIL;
         if (level.getBlockEntity(place) instanceof CoinBlockEntity be) {
-            be.setCurrency(CurrencyData.getFrom(ctx.getItemInHand()));
+            be.setCurrency(Purses.get(ctx.getItemInHand()));
         }
 
         Player player = ctx.getPlayer();

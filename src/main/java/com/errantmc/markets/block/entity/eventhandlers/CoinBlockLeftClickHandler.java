@@ -2,7 +2,7 @@ package com.errantmc.markets.block.entity.eventhandlers;
 
 import com.errantmc.markets.block.TradeBlocks;
 import com.errantmc.markets.block.entity.CoinBlockEntity;
-import com.errantmc.markets.component.CurrencyData;
+import com.errantmc.markets.domain.Purse;
 import com.errantmc.markets.item.CoinItem;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -61,12 +61,12 @@ public final class CoinBlockLeftClickHandler {
 
     /** Removes one coin from the highest non-empty stack and gives it to the player. */
     private static boolean dropFromHighestCoin(CoinBlockEntity be, Level level, BlockPos pos, int count) {
-        CurrencyData c = be.getCurrency();
-        var denom = c.getHighestDenomonation();
+        Purse c = be.getCurrency();
+        var denom = c.highest();
         var result = c.remove(denom, count);
-        if(result.delta() > 0) {
+        if(result.moved() > 0) {
             be.setCurrency(result.updated());
-            spawnDrop(level, pos, CoinItem.createCurrencyItem(denom, result.delta()));
+            spawnDrop(level, pos, CoinItem.createCurrencyItem(denom, result.moved()));
             return true;
         }
         return false;

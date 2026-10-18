@@ -1,6 +1,7 @@
 package com.errantmc.markets.component;
 
 import com.errantmc.markets.ErrantTrade;
+import com.errantmc.markets.domain.Purse;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.Registries;
 import net.neoforged.bus.api.IEventBus;
@@ -15,11 +16,12 @@ public class TradeComponents
     public static final DeferredRegister.DataComponents DATA_COMPONENT_TYPES =
             DeferredRegister.createDataComponents(Registries.DATA_COMPONENT_TYPE, ErrantTrade.MOD_ID);
 
-    public static final DeferredHolder<DataComponentType<?>, DataComponentType<CurrencyData>> CURRENCY_DATA =
+    /** The coins on a wallet or a coin stack. The id predates the Purse type and is a save format. */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Purse>> PURSE =
             DATA_COMPONENT_TYPES.register("currency_data", () ->
-                    DataComponentType.<CurrencyData>builder()
-                            .persistent(CurrencyData.CODEC)              // your existing Codec<CurrencyInfo>
-                            .networkSynchronized(CurrencyData.STREAM_CODEC)    // your existing StreamCodec<CurrencyInfo>
+                    DataComponentType.<Purse>builder()
+                            .persistent(Purses.CODEC)
+                            .networkSynchronized(Purses.STREAM_CODEC)
                             .build()
             );
 

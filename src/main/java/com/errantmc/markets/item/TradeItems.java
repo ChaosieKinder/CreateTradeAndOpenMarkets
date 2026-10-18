@@ -1,7 +1,7 @@
 package com.errantmc.markets.item;
 
 import com.errantmc.markets.ErrantTrade;
-import com.errantmc.markets.data.CoinDenomination;
+import com.errantmc.markets.domain.CoinDenomination;
 import com.errantmc.markets.item.wallet.WalletItem;
 import net.minecraft.world.item.Item;
 import net.neoforged.bus.api.IEventBus;

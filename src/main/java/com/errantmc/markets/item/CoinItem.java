@@ -3,8 +3,9 @@ package com.errantmc.markets.item;
 import com.mojang.logging.LogUtils;
 import com.errantmc.markets.block.TradeBlocks;
 import com.errantmc.markets.block.entity.CoinBlockEntity;
-import com.errantmc.markets.component.CurrencyData;
-import com.errantmc.markets.data.CoinDenomination;
+import com.errantmc.markets.domain.CoinDenomination;
+import com.errantmc.markets.domain.MoneyFormat;
+import com.errantmc.markets.domain.Purse;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionResult;
@@ -21,7 +22,9 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
 import org.slf4j.Logger;
 
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 
 public class CoinItem extends Item {
     public static final Logger LOG = LogUtils.getLogger();
@@ -39,12 +42,11 @@ public class CoinItem extends Item {
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext ctx,
                                 List<Component> tooltip, TooltipFlag flag) {
-        int total = stack.getCount() * denom.value;
-        tooltip.add(Component.translatable("item.erranttrade." + denom.languageKey + ".tooltip")
-                        .append("\n")
+        long total = (long) stack.getCount() * denom.value;
+        tooltip.add(Component.translatable("item.erranttrade." + denom.id + ".tooltip")
+                .append("\n")
                 .append(Component.translatable("tooltip_info_item.coin"))
-                .append(denom.format)
-                .append(java.text.NumberFormat.getCurrencyInstance().format(total/100.0f)));
+                .append(Component.literal(MoneyFormat.format(total)).withStyle(CoinStyle.colour(denom))));
         super.appendHoverText(stack, ctx, tooltip, flag);
     }
 
@@ -80,7 +82,7 @@ public class CoinItem extends Item {
         level.gameEvent(player, GameEvent.BLOCK_PLACE, placePos);
 
         if (level.getBlockEntity(placePos) instanceof CoinBlockEntity be) {
-            be.setCurrency(CurrencyData.newCurrencyFromDenom(denom, 1));
+            be.setCurrency(Purse.of(denom, 1));
         }
 
         if (player == null || !player.getAbilities().instabuild) {
@@ -89,38 +91,32 @@ public class CoinItem extends Item {
         return InteractionResult.CONSUME;
     }
 
-    public static CoinDenomination getDenomination(Item item) {
-        if (item == TradeItems.COIN_COPPER_BIT.get())   return CoinDenomination.COPPER_BIT;
-        if (item == TradeItems.COIN_COPPER_SHARD.get())   return CoinDenomination.COPPER_SHARD;
-        if (item == TradeItems.COIN_SILVER_BIT.get())   return CoinDenomination.SILVER_BIT;
-        if (item == TradeItems.COIN_SILVER_CROWN.get()) return CoinDenomination.SILVER_CROWN;
-        if (item == TradeItems.COIN_GOLD_MARK.get()) return CoinDenomination.GOLD_MARK;
-        if (item == TradeItems.COIN_GOLD_REGAL.get()) return CoinDenomination.GOLD_REGAL;
-        if (item == TradeItems.COIN_EMERALD_SUN.get())  return CoinDenomination.EMERALD_SUN;
-        if (item == TradeItems.COIN_EMERALD_THRONE.get())  return CoinDenomination.EMERALD_THRONE;
-        return CoinDenomination.NONE;
+    /** The registered coin item of each denomination, found by {@link #denom()}; built on first use. */
+    private static volatile Map<CoinDenomination, Item> byDenomination;
+
+    public static Item forDenomination(CoinDenomination denomination) {
+        Map<CoinDenomination, Item> map = byDenomination;
+        if (map == null) {
+            map = new EnumMap<>(CoinDenomination.class);
+            for (var entry : TradeItems.ITEMS.getEntries()) {
+                if (entry.get() instanceof CoinItem coin) map.put(coin.denom, coin);
+            }
+            byDenomination = map;
+        }
+        Item item = map.get(denomination);
+        if (item == null) throw new IllegalArgumentException("no coin item for " + denomination);
+        return item;
     }
 
-    public static ItemStack createCurrencyItem(CoinDenomination denomination, int value ) {
-        if (denomination == CoinDenomination.COPPER_BIT) return new ItemStack(TradeItems.COIN_COPPER_BIT.get(), value);
-        if (denomination == CoinDenomination.COPPER_SHARD) return new ItemStack(TradeItems.COIN_COPPER_SHARD.get(), value);
-        if (denomination == CoinDenomination.SILVER_BIT) return new ItemStack(TradeItems.COIN_SILVER_BIT.get(), value);
-        if (denomination == CoinDenomination.SILVER_CROWN) return new ItemStack(TradeItems.COIN_SILVER_CROWN.get(), value);
-        if (denomination == CoinDenomination.GOLD_MARK) return new ItemStack(TradeItems.COIN_GOLD_MARK.get(), value);
-        if (denomination == CoinDenomination.GOLD_REGAL) return new ItemStack(TradeItems.COIN_GOLD_REGAL.get(), value);
-        if (denomination == CoinDenomination.EMERALD_SUN) return new ItemStack(TradeItems.COIN_EMERALD_SUN.get(), value);
-        if (denomination == CoinDenomination.EMERALD_THRONE) return new ItemStack(TradeItems.COIN_EMERALD_THRONE.get(), value);
-        return ItemStack.EMPTY;
+    public static CoinDenomination getDenomination(Item item) {
+        return item instanceof CoinItem coin ? coin.denom : CoinDenomination.NONE;
+    }
+
+    public static ItemStack createCurrencyItem(CoinDenomination denomination, int count) {
+        return denomination == CoinDenomination.NONE ? ItemStack.EMPTY : new ItemStack(forDenomination(denomination), count);
     }
 
     public static boolean isCoinItem(Item item) {
-        return item == TradeItems.COIN_COPPER_SHARD.get()
-                || item == TradeItems.COIN_COPPER_BIT.get()
-                || item == TradeItems.COIN_SILVER_BIT.get()
-                || item == TradeItems.COIN_SILVER_CROWN.get()
-                || item == TradeItems.COIN_GOLD_MARK.get()
-                || item == TradeItems.COIN_GOLD_REGAL.get()
-                || item == TradeItems.COIN_EMERALD_SUN.get()
-                || item == TradeItems.COIN_EMERALD_THRONE.get();
+        return item instanceof CoinItem;
     }
 }

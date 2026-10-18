@@ -2,7 +2,7 @@ package com.errantmc.markets.gametest;
 
 import com.errantmc.markets.ErrantTrade;
 import com.errantmc.markets.block.TradeBlocks;
-import com.errantmc.markets.data.CoinDenomination;
+import com.errantmc.markets.domain.CoinDenomination;
 import com.errantmc.markets.item.CoinItem;
 import com.errantmc.markets.item.TradeItems;
 import com.errantmc.markets.registry.TradeCreativeModeTabs;
@@ -85,6 +85,21 @@ public final class ContentGameTests {
         }
         if (!wrong.isEmpty()) helper.fail("value not conserved by " + wrong);
         assertTrue(helper, "at least the 18 coin recipes to be checked, found " + checked, checked >= 18);
+        helper.succeed();
+    }
+
+    /** CoinItem.forDenomination finds coins by their denom(); two items on one denomination would make it ambiguous. */
+    @GameTest(template = ARENA)
+    public static void everyDenominationHasExactlyOneCoinItem(GameTestHelper helper) {
+        Map<CoinDenomination, Integer> items = new EnumMap<>(CoinDenomination.class);
+        for (Item item : ourItems()) {
+            if (item instanceof CoinItem coin) items.merge(coin.denom(), 1, Integer::sum);
+        }
+        for (CoinDenomination d : CoinDenomination.coins()) {
+            assertCount(helper, "coin items for " + d, 1, items.getOrDefault(d, 0));
+            assertTrue(helper, d + "'s item id to match its denomination",
+                    BuiltInRegistries.ITEM.getKey(CoinItem.forDenomination(d)).getPath().equals(d.id));
+        }
         helper.succeed();
     }
 

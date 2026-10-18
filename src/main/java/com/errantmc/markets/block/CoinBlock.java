@@ -3,8 +3,10 @@ package com.errantmc.markets.block;
 import com.mojang.logging.LogUtils;
 import com.mojang.serialization.MapCodec;
 import com.errantmc.markets.block.entity.CoinBlockEntity;
-import com.errantmc.markets.component.CurrencyData;
-import com.errantmc.markets.component.TradeComponents;
+import com.errantmc.markets.component.Purses;
+import com.errantmc.markets.domain.CoinDenomination;
+import com.errantmc.markets.domain.Purse;
+import com.errantmc.markets.item.CoinDeposits;
 import com.errantmc.markets.item.CoinStackItem;
 import com.errantmc.markets.item.TradeItems;
 import com.errantmc.markets.item.CoinItem;
@@ -82,84 +84,52 @@ public class CoinBlock extends BaseEntityBlock {
     @Override
     public void onRemove(BlockState oldState, Level level, BlockPos pos,
                          BlockState newState, boolean isMoving) {
-        // Only if we are really being replaced by a different block
-        if (!oldState.is(newState.getBlock())) {
-            if (!level.isClientSide) {
-                BlockEntity be = level.getBlockEntity(pos);
-                if (be instanceof CoinBlockEntity coinBE) {
-                    CurrencyData c = coinBE.getCurrency();
-
-                    // --- decide whether to compress into a single CoinStackItem ---
-                    int stacksNeeded =
-                            stacksFor(c.coinsCopperBit(), TradeItems.COIN_COPPER_BIT.get().getDefaultMaxStackSize())
-                                    + stacksFor(c.coinsCopperShard(), TradeItems.COIN_COPPER_SHARD.get().getDefaultMaxStackSize())
-                                    + stacksFor(c.coinsSilverBit(), TradeItems.COIN_SILVER_BIT.get().getDefaultMaxStackSize())
-                                    + stacksFor(c.coinsSilverCrown(), TradeItems.COIN_SILVER_CROWN.get().getDefaultMaxStackSize())
-                                    + stacksFor(c.coinsGoldMark(), TradeItems.COIN_GOLD_MARK.get().getDefaultMaxStackSize())
-                                    + stacksFor(c.coinsGoldRegal(), TradeItems.COIN_GOLD_REGAL.get().getDefaultMaxStackSize())
-                                    + stacksFor(c.coinsEmeraldSun(), TradeItems.COIN_EMERALD_SUN.get().getDefaultMaxStackSize())
-                                    + stacksFor(c.coinsEmeraldThrone(), TradeItems.COIN_EMERALD_THRONE.get().getDefaultMaxStackSize());
-
-
-                    if (stacksNeeded > 20) {
-                        // Drop a SINGLE CoinStackItem that contains all coins
-                        ItemStack compressed = new ItemStack(TradeItems.COIN_STACK_ITEM.get());
-                        // write CurrencyData component directly onto the item
-                        compressed.set(TradeComponents.CURRENCY_DATA.get(), c);
-                        Block.popResource(level, pos, compressed);
-
-                        // clear BE to avoid dupes
-                        coinBE.setCurrency(CurrencyData.EMPTY);
-                    } else {
-                        // Original per-denomination fan-out drops
-                        dropStacks(level, pos, TradeItems.COIN_COPPER_BIT.get(), c.coinsCopperBit());
-                        dropStacks(level, pos, TradeItems.COIN_COPPER_SHARD.get(), c.coinsCopperShard());
-                        dropStacks(level, pos, TradeItems.COIN_SILVER_BIT.get(), c.coinsSilverBit());
-                        dropStacks(level, pos, TradeItems.COIN_SILVER_CROWN.get(), c.coinsSilverCrown());
-                        dropStacks(level, pos, TradeItems.COIN_GOLD_MARK.get(), c.coinsGoldMark());
-                        dropStacks(level, pos, TradeItems.COIN_GOLD_REGAL.get(), c.coinsGoldRegal());
-                        dropStacks(level, pos, TradeItems.COIN_EMERALD_SUN.get(), c.coinsEmeraldSun());
-                        dropStacks(level, pos, TradeItems.COIN_EMERALD_THRONE.get(), c.coinsEmeraldThrone());
-
-                        coinBE.setCurrency(CurrencyData.EMPTY);
-                    }
-                }
+        // Only when really replaced by a different block; before super, which removes the block entity
+        if (!oldState.is(newState.getBlock()) && !level.isClientSide
+                && level.getBlockEntity(pos) instanceof CoinBlockEntity coinBE) {
+            Purse coins = coinBE.getCurrency();
+            if (stacksFor(coins) > MAX_DROPPED_STACKS) {
+                // One coin stack instead of hundreds of item entities (README)
+                ItemStack compressed = new ItemStack(TradeItems.COIN_STACK_ITEM.get());
+                Purses.set(compressed, coins);
+                Block.popResource(level, pos, compressed);
+            } else {
+                for (CoinDenomination d : CoinDenomination.coins()) dropStacks(level, pos, d, coins.count(d));
             }
-            // IMPORTANT: call super AFTER your logic (BE might be removed by super)
-            super.onRemove(oldState, level, pos, newState, isMoving);
-        } else {
-            super.onRemove(oldState, level, pos, newState, isMoving);
+            coinBE.setCurrency(Purse.EMPTY); // nothing left to drop twice
         }
+        super.onRemove(oldState, level, pos, newState, isMoving);
     }
 
-    private static int stacksFor(int count, int maxStack) {
-        if (count <= 0) return 0;
-        return (count + maxStack - 1) / maxStack; // ceil(count / maxStack)
+    /** Beyond this many item stacks a broken pile drops as one coin stack. */
+    private static final int MAX_DROPPED_STACKS = 20;
+
+    private static int stacksFor(Purse coins) {
+        int stacks = 0;
+        for (CoinDenomination d : CoinDenomination.coins()) {
+            int max = CoinItem.forDenomination(d).getDefaultMaxStackSize();
+            stacks += (coins.count(d) + max - 1) / max;
+        }
+        return stacks;
     }
 
-    private static void dropStacks(Level level, BlockPos pos, Item item, int total) {
-        if (total <= 0) return;
-        final int max = item.getDefaultMaxStackSize(); // usually 64
-        double x = pos.getX() + 0.5, y = pos.getY() + 0.5, z = pos.getZ() + 0.5;
-
+    private static void dropStacks(Level level, BlockPos pos, CoinDenomination denomination, int total) {
+        Item item = CoinItem.forDenomination(denomination);
+        int max = item.getDefaultMaxStackSize();
         while (total > 0) {
             int n = Math.min(total, max);
             total -= n;
-            ItemStack stack = new ItemStack(item, n);
-            // Either of these is fine; use one:
-            // net.minecraft.world.Containers.dropItemStack(level, x, y, z, stack);
-            Block.popResource(level, pos, stack); // simple helper to spawn the item entity
+            Block.popResource(level, pos, new ItemStack(item, n));
         }
     }
 
-    // (Optional) If you want to suppress drops in Creative (vanilla chests do this),
-    // handle it in playerWillDestroy and clear the BE instead of dropping:
+    /** As with chests, a creative player breaking a pile gets nothing. */
     @Override
     public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
         if (!level.isClientSide && player.getAbilities().instabuild) {
             BlockEntity be = level.getBlockEntity(pos);
             if (be instanceof CoinBlockEntity coinBE) {
-                coinBE.setCurrency(CurrencyData.EMPTY);
+                coinBE.setCurrency(Purse.EMPTY);
             }
         }
         return super.playerWillDestroy(level, pos, state, player);
@@ -266,29 +236,15 @@ public class CoinBlock extends BaseEntityBlock {
             LAST_SNEAK_USE.put(id, new DoubleTap(now, pos.immutable()));
 
             if (doubleTap) {
-                int moved = dumpAllCoinsFromInventory(player, be);
-                if (moved > 0) {
-                    sync(be, level, pos, state);
-                }
+                if (depositEveryCoin(player, be)) sync(be, level, pos, state);
                 return true; // handled either way (we suppress other interactions)
             }
         }
 
-        // Single tap behavior:
-        // - sneaking + holding coin → insert WHOLE hand stack
-        // - sneaking + empty hand → arm for double tap (do nothing else)
-        if (isCoin) {
-            long moved = insertFromHeldCoins(held, player, be);
-            if (moved > 0) {
-                sync(be, level, pos, state);
-            }
-            return true;
-        }
-        if (isCoinStack) {
-            long moved = insertFromHeldCoinStack(held, player, be);
-            if (moved > 0) {
-                sync(be, level, pos, state);
-            }
+        // A single tap with coins or a coin stack in hand deposits it; with an empty hand while
+        // sneaking it only arms the double tap
+        if (isCoin || isCoinStack) {
+            if (deposit(held, player, be)) sync(be, level, pos, state);
             return true;
         }
 
@@ -303,55 +259,28 @@ public class CoinBlock extends BaseEntityBlock {
     }
 
 
-    /**
-     * Attempts to insert an item stack, removing the in-hand item stack if the player is not in creative
-     * @param held
-     * @param player
-     * @param be
-     * @return the number of item added from the in-hand stack. (might be less then requested if pile is full)
-     */
-    private static int insertFromHeldCoins(ItemStack held, Player player, CoinBlockEntity be) {
-        int res = 0;
-        if (!held.isEmpty() && CoinItem.isCoinItem(held.getItem())) {
-            var result = be.getCurrency().add(held);
-            be.setCurrency(result.updated());
-            if (!player.getAbilities().instabuild) held.shrink(result.delta());
-            res = result.delta();
-        }
-        return res;
+    /** Puts what fits of a held coin or coin stack into the pile; a creative hand is not charged. */
+    private static boolean deposit(ItemStack held, Player player, CoinBlockEntity be) {
+        Purse before = be.getCurrency();
+        Purse after = CoinDeposits.absorb(before, held, !player.getAbilities().instabuild);
+        if (after.equals(before)) return false;
+        be.setCurrency(after);
+        return true;
     }
 
-    /**
-     * Merges a held coin stack into the pile whole, or not at all if the pile cannot hold it.
-     * @return the number of coins added
-     */
-    private static long insertFromHeldCoinStack(ItemStack held, Player player, CoinBlockEntity be) {
-        long res = 0;
-        if (held.getItem() instanceof CoinStackItem) {
-            var stackData = CurrencyData.getFrom(held);
-            if (!be.getCurrency().canAdd(stackData)) return 0;
-            be.setCurrency(be.getCurrency().add(stackData));
-            if (!player.getAbilities().instabuild) held.shrink(1);
-            res = stackData.totalCount();
-        }
-        return res;
-    }
-
-    private static int dumpAllCoinsFromInventory(Player player, CoinBlockEntity be) {
-        CurrencyData c = be.getCurrency();
-        int movedTotal = 0;
+    /** The double tap: every coin in the inventory, armour and offhand included. */
+    private static boolean depositEveryCoin(Player player, CoinBlockEntity be) {
+        Purse before = be.getCurrency();
+        Purse after = before;
+        boolean consume = !player.getAbilities().instabuild;
         var inv = player.getInventory();
-        // getContainerSize() covers the main inventory, armour and offhand
         for (int i = 0; i < inv.getContainerSize(); i++) {
             ItemStack s = inv.getItem(i);
-            if (s.isEmpty() || !CoinItem.isCoinItem(s.getItem())) continue;
-            var addResult = c.add(s);
-            c = addResult.updated();
-            if (!player.getAbilities().instabuild) s.shrink(addResult.delta());
-            movedTotal += addResult.delta();
+            if (s.getItem() instanceof CoinItem) after = CoinDeposits.absorb(after, s, consume);
         }
-        if (movedTotal > 0) be.setCurrency(c);
-        return movedTotal;
+        if (after.equals(before)) return false;
+        be.setCurrency(after);
+        return true;
     }
 
 }

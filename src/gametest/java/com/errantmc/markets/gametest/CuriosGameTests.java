@@ -2,8 +2,8 @@ package com.errantmc.markets.gametest;
 
 import com.errantmc.markets.ErrantTrade;
 import com.errantmc.markets.compat.CuriosCompat;
-import com.errantmc.markets.component.WalletBalance;
-import com.errantmc.markets.data.CoinDenomination;
+import com.errantmc.markets.component.Purses;
+import com.errantmc.markets.domain.CoinDenomination;
 import com.errantmc.markets.item.TradeItems;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -69,7 +69,7 @@ public final class CuriosGameTests {
 
         ItemStack worn = inventory.get().getStacksHandler(SLOT).orElseThrow().getStacks().getStackInSlot(0);
         assertCount(helper, "gold regals in the worn wallet", 3,
-                WalletBalance.get(worn).getFrom(CoinDenomination.GOLD_REGAL));
+                Purses.get(worn).count(CoinDenomination.GOLD_REGAL));
         assertCount(helper, "coins in the inventory", 0, coinsIn(player));
         helper.succeed();
     }

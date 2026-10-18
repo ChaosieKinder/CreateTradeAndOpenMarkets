@@ -2,9 +2,10 @@ package com.errantmc.markets.screen.wallet;
 
 import com.mojang.logging.LogUtils;
 import com.errantmc.markets.TradeTags;
-import com.errantmc.markets.component.CurrencyData;
-import com.errantmc.markets.component.WalletBalance;
-import com.errantmc.markets.data.CoinDenomination;
+import com.errantmc.markets.domain.Purse;
+import com.errantmc.markets.component.Purses;
+import com.errantmc.markets.domain.CoinDenomination;
+import com.errantmc.markets.item.CoinDeposits;
 import com.errantmc.markets.item.CoinItem;
 import com.errantmc.markets.item.CoinStackItem;
 import com.errantmc.markets.item.wallet.WalletInventory;
@@ -31,16 +32,14 @@ public class WalletMenu extends AbstractContainerMenu {
     private final SimpleContainer walletInv; // working inventory
 
     // Button IDs (unique and stable)
-    // Note: BTN_WITHDRAW_* has an additional option at +1000 for detecting shift state
-    public static final int BTN_WITHDRAW_COPPER_BIT      = 10;
-    public static final int BTN_WITHDRAW_COPPER_SHARD    = 11;
-    public static final int BTN_WITHDRAW_SILVER_BIT      = 12;
-    public static final int BTN_WITHDRAW_SILVER_CROWN    = 13;
-    public static final int BTN_WITHDRAW_GOLD_MARK       = 14;
-    public static final int BTN_WITHDRAW_GOLD_REGAL      = 15;
-    public static final int BTN_WITHDRAW_EMERALD_SUN     = 16;
-    public static final int BTN_WITHDRAW_EMERALD_THRONE  = 17;
-    public static final int BTN_DEPOSIT_ALL = 50; // <— new button id
+    /** Withdraw buttons are 10..17, one per denomination; the screen adds 1000 when shift is held. */
+    private static final int BTN_WITHDRAW_FIRST = 10;
+    private static final int SHIFT = 1000;
+
+    public static int withdrawButton(CoinDenomination denomination) {
+        return BTN_WITHDRAW_FIRST + CoinDenomination.coins().indexOf(denomination);
+    }
+    public static final int BTN_DEPOSIT_ALL = 50;
     private final Inventory playerInv;
 
     public static WalletMenu fromNetwork(int id, Inventory inv, FriendlyByteBuf buf) {
@@ -174,36 +173,26 @@ public class WalletMenu extends AbstractContainerMenu {
     @Override
     public boolean clickMenuButton(Player player, int id) {
         if (!(player instanceof ServerPlayer sp)) return false;
-        boolean isShift = false;
-        if(id > 1000) {
-            id -= 1000;
-            isShift = true;
+        boolean isShift = id > SHIFT;
+        if (isShift) id -= SHIFT;
+        if (id == BTN_DEPOSIT_ALL) {
+            depositAllCoinsFromPlayer(sp);
+            return true;
         }
-        return switch (id) {
-            case BTN_WITHDRAW_COPPER_BIT     -> withdrawCoinsFromWallet(sp, CoinDenomination.COPPER_BIT, isShift);
-            case BTN_WITHDRAW_COPPER_SHARD   -> withdrawCoinsFromWallet(sp, CoinDenomination.COPPER_SHARD, isShift);
-            case BTN_WITHDRAW_SILVER_BIT     -> withdrawCoinsFromWallet(sp, CoinDenomination.SILVER_BIT, isShift);
-            case BTN_WITHDRAW_SILVER_CROWN   -> withdrawCoinsFromWallet(sp, CoinDenomination.SILVER_CROWN, isShift);
-            case BTN_WITHDRAW_GOLD_MARK      -> withdrawCoinsFromWallet(sp, CoinDenomination.GOLD_MARK, isShift);
-            case BTN_WITHDRAW_GOLD_REGAL     -> withdrawCoinsFromWallet(sp, CoinDenomination.GOLD_REGAL, isShift);
-            case BTN_WITHDRAW_EMERALD_SUN    -> withdrawCoinsFromWallet(sp, CoinDenomination.EMERALD_SUN, isShift);
-            case BTN_WITHDRAW_EMERALD_THRONE -> withdrawCoinsFromWallet(sp, CoinDenomination.EMERALD_THRONE, isShift);
-            case BTN_DEPOSIT_ALL -> {
-                depositAllCoinsFromPlayer(sp);
-                yield true;
-            }
-            default -> false;
-        };
+        int coin = id - BTN_WITHDRAW_FIRST;
+        var coins = CoinDenomination.coins();
+        return coin >= 0 && coin < coins.size() && withdrawCoinsFromWallet(sp, coins.get(coin), isShift);
     }
-    private boolean withdrawCoinsFromWallet(ServerPlayer sp, CoinDenomination denomonation, boolean isShift) {
-        var result = WalletBalance.remove(walletStack, denomonation, isShift ? 64 : 1);
-        if (result.delta() == 0) return false; // sanity check
-        WalletBalance.set(walletStack, result.updated());
+
+    private boolean withdrawCoinsFromWallet(ServerPlayer sp, CoinDenomination denomination, boolean isShift) {
+        var result = Purses.remove(walletStack, denomination, isShift ? 64 : 1);
+        if (result.moved() == 0) return false; // sanity check
+        Purses.set(walletStack, result.updated());
         sp.setItemInHand(hand, walletStack);   // re-set same ref to mark the slot dirty
         playerInv.setChanged();                // mark inventory dirty
         // give the coin item
-        var coin = CoinItem.createCurrencyItem(result.denomination(), result.delta());
-        if (result.delta() != 0) {
+        var coin = CoinItem.createCurrencyItem(result.denomination(), result.moved());
+        if (result.moved() != 0) {
             if (!sp.getInventory().add(coin)) {
                 sp.drop(coin, false);
             }
@@ -218,18 +207,18 @@ public class WalletMenu extends AbstractContainerMenu {
     public InteractionHand getHand() { return hand; }
 
     private void depositAllCoinsFromPlayer(ServerPlayer sp) {
-        CurrencyData before = WalletBalance.get(walletStack);
-        CurrencyData cur = absorb(before, getCarried());
+        Purse before = Purses.get(walletStack);
+        Purse cur = CoinDeposits.absorb(before, getCarried());
         // items is the main inventory and hotbar; the open wallet is never a coin, so it is skipped
         for (ItemStack s : playerInv.items) {
-            if (s.is(TradeTags.Items.CURRENCY_ITEMS)) cur = absorb(cur, s);
+            if (s.is(TradeTags.Items.CURRENCY_ITEMS)) cur = CoinDeposits.absorb(cur, s);
         }
         for (ItemStack s : playerInv.offhand) {
-            if (s.is(TradeTags.Items.CURRENCY_ITEMS)) cur = absorb(cur, s);
+            if (s.is(TradeTags.Items.CURRENCY_ITEMS)) cur = CoinDeposits.absorb(cur, s);
         }
 
         if (!cur.equals(before)) {
-            WalletBalance.set(walletStack, cur);
+            Purses.set(walletStack, cur);
             sp.setItemInHand(hand, walletStack);   // re-set same ref to mark the slot dirty
             playerInv.setChanged();
             broadcastChanges();
@@ -238,42 +227,21 @@ public class WalletMenu extends AbstractContainerMenu {
 
     /** Sweep the 3×3 wallet grid, turning coins and coin stacks into balance. */
     private void autoDepositFromSlots() {
-        CurrencyData before = WalletBalance.get(walletStack);
-        CurrencyData cur = before;
+        Purse before = Purses.get(walletStack);
+        Purse cur = before;
         for (int i = 0; i < WalletInventory.SIZE; i++) {
             ItemStack s = walletInv.getItem(i);
             if (s.isEmpty()) continue;
-            cur = absorb(cur, s);
+            cur = CoinDeposits.absorb(cur, s);
             if (s.isEmpty()) walletInv.setItem(i, ItemStack.EMPTY);
         }
 
         if (!cur.equals(before)) {
-            WalletBalance.set(walletStack, cur);
+            Purses.set(walletStack, cur);
             walletInv.setChanged();
             playerInv.setChanged();
             broadcastChanges();
         }
-    }
-
-    /**
-     * Moves what fits of a coin or coin stack into {@code cur}, shrinking {@code s} by what went in.
-     * A coin stack goes in whole or not at all. Anything else is left alone.
-     * @return the balance after
-     */
-    private static CurrencyData absorb(CurrencyData cur, ItemStack s) {
-        if (s.getItem() instanceof CoinItem coin) {
-            var result = cur.add(coin.denom(), s.getCount());
-            s.shrink(result.delta());
-            return result.updated();
-        }
-        if (s.getItem() instanceof CoinStackItem) {
-            CurrencyData data = CurrencyData.getFrom(s);
-            while (!s.isEmpty() && cur.canAdd(data)) {
-                cur = cur.add(data);
-                s.shrink(1);
-            }
-        }
-        return cur;
     }
 
     @Override

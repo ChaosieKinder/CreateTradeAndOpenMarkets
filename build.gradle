@@ -5,6 +5,9 @@ plugins {
     id 'idea'
 }
 
+// The mods block and the jar read the domain's source sets
+evaluationDependsOn(':errant-trade-domain')
+
 tasks.named('wrapper', Wrapper).configure {
     // Define wrapper values here so as to not have to always do so when updating gradlew.properties.
     // Switching this to Wrapper.DistributionType.ALL will download the full gradle sources that comes with
@@ -51,6 +54,7 @@ sourceSets {
 configurations {
     gametestImplementation.extendsFrom implementation
     gametestCompileOnly.extendsFrom compileOnly
+    testCompileOnly.extendsFrom compileOnly
 }
 
 neoForge {
@@ -123,6 +127,8 @@ neoForge {
         "${mod_id}" {
             sourceSet(sourceSets.main)
             sourceSet(sourceSets.gametest)
+            // The domain is part of this mod's module, not a library beside it
+            sourceSet(project(':errant-trade-domain').sourceSets.main)
         }
     }
 
@@ -145,6 +151,9 @@ configurations {
 }
 
 dependencies {
+    // compileOnly: at run time the domain's classes are part of the mod itself (the mods block
+    // above, and the jar task below), so a second copy on the classpath would split its package
+    compileOnly(project(':errant-trade-domain'))
     // Example optional mod dependency with JEI
     // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime
     // compileOnly "mezz.jei:jei-${mc_version}-common-api:${jei_version}"
@@ -189,6 +198,10 @@ dependencies {
     testImplementation(platform("org.junit:junit-bom:${junit_version}"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+
+tasks.named('jar', Jar) {
+    from(project(':errant-trade-domain').sourceSets.main.output)
 }
 
 tasks.named('test', Test) {
