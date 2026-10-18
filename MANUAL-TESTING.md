@@ -80,8 +80,22 @@ Findings go in [Findings](#findings), raw. [Passed](#passed) is what has been si
 On `feature/npc-interactions` (the trader overhaul, in progress):
 
 - [ ] **Right-clicking a villager** opens the mod's interaction screen, titled with the villager's
-      name, showing tabs and the wallet balance (or *Wallet not found*). Trading is not
-      implemented yet, so nothing can be bought or sold.
+      name, showing tabs and the wallet balance (or *Wallet not found*). The player's inventory
+      slots line up with the background.
+- [ ] **Buying.** Click a row: the item arrives, loose coins go first, then the wallet, and the
+      change lands in the wallet. Stock drops by one. Without the money, or out of stock, the
+      action bar says why and nothing changes.
+- [ ] **Selling.** Click a sell row with the goods in your inventory: they go, and the money goes
+      into the wallet (or into the inventory as coins without one).
+- [ ] **A vanilla villager** (say a toolsmith) shows its own offers priced at $1.00 per emerald. A
+      librarian's book trade asks for the book as well. Using an offer up shows stock 0; the
+      villager restocks at its workstation.
+- [ ] **Progression.** Trading enough levels the villager up when the screen closes, and new
+      trades appear. Experience orbs match the trade's worth, not one burst per click.
+- [ ] **Name tags and leads** still work on villagers, babies shake their heads, and walking away
+      closes the shop.
+- [ ] **Restart the world** after buying out an item: it is still bought out that day, and
+      restocks the next.
 - [ ] **The farmer** shows the tabs from `data/erranttrade/npcinteractions/farmer.json`; a
       profession without a definition shows buy and sell tabs derived from its vanilla offers.
 - [ ] **The same tabs** come back on reopening the same day (the stock does not reroll).

@@ -12,12 +12,11 @@ both audits is fixed** ([BACKLOG](docs/BACKLOG.md)). Agents started on the code 
 is also when the mod was renamed from Trade and Open Markets (`tradeandopenmarkets`) and its
 registry IDs were tidied. **No world from before that loads.**
 
-**This branch (`feature/npc-interactions`) also carries the trader overhaul in progress**, merged on
-18 Oct from a second checkout: right-clicking a villager opens the mod's own interaction menu with
-data-driven buy and sell tabs. **It cannot trade yet, and it replaces vanilla trading for every
-villager**, so on this branch villagers do not trade at all. What is unfinished is listed in
-[BACKLOG §npcinteractions](docs/BACKLOG.md#the-npcinteractions-merge-18-oct). Keep this paragraph
-honest; it is the first thing anyone reads.
+**This branch (`feature/npc-interactions`) also carries the trader overhaul**: right-clicking a
+villager opens the mod's own shop instead of vanilla's trading screen, and buying and selling work
+there, in coins. [docs/design/trading.md](docs/design/trading.md) records how it works and what was
+decided; what is still missing (discounts, scrolling, buying several at once) is in its §7. Keep
+this paragraph honest; it is the first thing anyone reads.
 
 ---
 
@@ -189,6 +188,9 @@ Breaking one is a decision for the author, not a refactor.
 | **Only wallet things fit in a wallet**: the `erranttrade:wallet_items` tag (currency, ID cards, debit cards). Never containers | author's decision; nested storage and oversized item data (BACKLOG #19) |
 | **A player is sent live identity-card data only for cards they carry** (inventory, a wallet, a curio), never broadcast | a snapshot holds its subject's position and respawn point (BACKLOG #17) |
 | **The safe is hard to break on purpose**: destroy time 1200, a diamond pickaxe to drop it | author's decision |
+| **Trades happen on the server only.** The client shows the server's tabs and sends a menu button; `ShopTrades` checks stock, items and money before anything moves | [trading §1](docs/design/trading.md#1-who-decides-what) |
+| **Paying takes loose coins first, then the wallet; income goes to the wallet if carried** | author's decision; [trading §3](docs/design/trading.md#3-paying-and-being-paid) |
+| **Experience scales with a trade's coin value**, for the villager and the player alike; never a fixed amount per trade | author's decision; a fixed amount is farmable; [trading §5](docs/design/trading.md#5-progression) |
 | **A large coin pile breaks into one coin stack item**, not thousands of item entities | the README's stated reason for the coin stack item: lag and crashes |
 | **Optional mods stay optional.** The mod loads and works without JEI, Curios or Create | the README says no hard dependencies; CI runs without Curios |
 | **Data component and NBT formats are save formats.** `Purses.CODEC` keeps `CurrencyData`'s field names (`coinsCopperBit` …) and the component keeps the id `currency_data`. Renaming either loses players' money | `PursesCodecTest` reads an old save. Write a migration or keep the old name |

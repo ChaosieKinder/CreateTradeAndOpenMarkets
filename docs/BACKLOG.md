@@ -172,26 +172,27 @@ Fixed while merging:
 - `WalletFinder` reached Curios directly; it goes through `CuriosCompat`.
 - An IDE rename had turned "render" into "renderPanel" inside comments in both renderers.
 
-Still open, as the work stands:
-- [ ] **No trading yet.** The menu shows tabs and the wallet balance, but nothing performs a
-      trade, and `VillagerInteractionEvents` cancels the vanilla interaction for every villager.
-      Either gate the replacement until trading works, or finish trading first. **Decide.**
-- [ ] **The client never reads the tabs the server sends.** The server writes them into the open
-      packet (`InteractionTabManager.writeToStream`); the client constructor reads only the entity
-      id and profession, and `refresh()` resolves its tabs again from local data. Two sources can
-      disagree, and the server's stock rolls are the ones that must count. Read them with
-      `readFromStream`.
-- [ ] **The menu never closes on distance.** `stillValid` is `player.isAlive()`; vanilla's
-      merchant menu closes when the villager is gone or the player walks away.
-- [ ] **Tabs mix drawing into data.** `InteractionTab` and its subclasses carry `GuiGraphics`
-      render methods and call `Minecraft.getInstance().font`, but the server builds them too. That
-      is safe only while the server never calls those methods. Split each tab into its data (common)
-      and a renderer (client).
+Done on 18 Oct, after the merge (`docs/design/trading.md` is the record):
+- [x] **Trading works.** Buying and selling through the menu, paid from loose coins then the
+      wallet, income to the wallet; vanilla villagers trade their own offers at 100 copper bits
+      per emerald; every trade gives villager experience by its coin value. The vanilla takeover
+      stays on: villagers trade through the new menu.
+- [x] The client reads the server's tabs and never resolves its own; the double-written tab type
+      that would have corrupted them is fixed.
+- [x] The menu closes on distance, and the villager is claimed while it is open.
+- [x] The takeover leaves name tags, leads, spawn eggs, sneaking, babies and sleeping villagers to
+      vanilla.
+- [x] Stock is saved on the villager and survives restarts; the static in-memory cache is gone.
+
+Still open (details in [trading §7](design/trading.md#7-not-yet)):
+- [ ] Reputation and Hero of the Village discounts do not apply to converted offers.
+- [ ] At most 11 rows show, and they run over the inventory: scrolling and a fitted layout.
+- [ ] Buying several at once.
+- [ ] **Tabs mix drawing into data.** Split each tab into its data (common) and a renderer
+      (client).
 - [ ] **`docs/ShopTabs.md` describes an older shape**: `ShopTabType`, `ShopTabRegistry`,
-      `ShopDefinitionLoader`, `data/<ns>/shops/`. None of those exist after the rename to
-      `InteractionTab*` and `data/<ns>/npcinteractions/`.
-- [ ] Prices, stock and buybacks should become domain logic (`errant-trade-domain`) before
-      trading is built on them, so they are tested without a world.
-- [ ] The second checkout still holds its uncommitted changes, and a branch
+      `ShopDefinitionLoader`, `data/<ns>/shops/`, all renamed since.
+- [ ] Prices, stock rolls and buybacks could move into the domain, as payment and experience did.
+- [ ] The second checkout still holds its uncommitted changes and a branch
       `wip/npcinteractions-snapshot` created for the merge. Retire that checkout so the two cannot
       diverge again.
