@@ -125,8 +125,8 @@ public final class CoinBlockGameTests {
     }
 
     /**
-     * BUG (BACKLOG #6), pinned as it behaves today: a coin stack places a pile where nothing
-     * supports it, and the next neighbour update would drop the whole balance.
+     * BACKLOG #6: a coin stack used to place a pile where nothing supported it, and the next
+     * neighbour update dropped the whole balance.
      */
     @GameTest(template = ARENA)
     public static void coinStackIsNotPlacedWithoutSupport(GameTestHelper helper) {
@@ -138,8 +138,29 @@ public final class CoinBlockGameTests {
 
         helper.useBlock(clicked, player, hitFace(helper, clicked, Direction.EAST));
 
-        helper.assertBlockPresent(TradeBlocks.COIN_BLOCK.get(), clicked.east());
-        assertTrue(helper, "the coin stack to be consumed", player.getMainHandItem().isEmpty());
+        helper.assertBlockNotPresent(TradeBlocks.COIN_BLOCK.get(), clicked.east());
+        assertTrue(helper, "the coin stack to still be held",
+                player.getMainHandItem().is(TradeItems.COIN_STACK_ITEM.get()));
+        helper.succeed();
+    }
+
+    /** The ordinary case still works: a coin stack on top of a block becomes a pile holding its balance. */
+    @GameTest(template = ARENA)
+    public static void coinStackOnTopBecomesAPile(GameTestHelper helper) {
+        BlockPos clicked = new BlockPos(4, 1, 4);
+        helper.setBlock(clicked, Blocks.STONE);
+        ServerPlayer player = survivalPlayer(helper);
+        player.setItemInHand(InteractionHand.MAIN_HAND,
+                coinStackOf(CurrencyData.newCurrencyFromDenom(CoinDenomination.SILVER_BIT, 7)));
+
+        helper.useBlock(clicked, player, hitFace(helper, clicked, Direction.UP));
+
+        if (!(helper.getBlockEntity(clicked.above()) instanceof CoinBlockEntity be)) {
+            helper.fail("no pile on top of the clicked block", clicked.above());
+            return;
+        }
+        assertCount(helper, "silver bits in the pile", 7, be.getCurrency().getFrom(CoinDenomination.SILVER_BIT));
+        assertTrue(helper, "the coin stack to be used up", player.getMainHandItem().isEmpty());
         helper.succeed();
     }
 

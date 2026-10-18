@@ -10,6 +10,8 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -46,20 +48,23 @@ public class CoinStackItem extends Item {
     @Override
     public InteractionResult useOn(UseOnContext ctx) {
         Level level = ctx.getLevel();
+
+        // Only where the pile can survive: an unsupported one drops its whole balance on the next update
+        BlockPlaceContext placeCtx = new BlockPlaceContext(ctx);
+        BlockPos place = placeCtx.getClickedPos();
+        BlockState state = TradeBlocks.COIN_BLOCK.get().getStateForPlacement(placeCtx);
+        if (!placeCtx.canPlace() || state == null || !state.canSurvive(level, place)) {
+            return InteractionResult.FAIL;
+        }
         if (level.isClientSide) return InteractionResult.SUCCESS;
 
-        BlockPos place = ctx.getClickedPos().relative(ctx.getClickedFace());
-        if (!level.getBlockState(place).canBeReplaced()) return InteractionResult.FAIL;
-
-        BlockState state = TradeBlocks.COIN_BLOCK.get().defaultBlockState();
-        level.setBlock(place, state, Block.UPDATE_ALL_IMMEDIATE);
-
+        if (!level.setBlock(place, state, Block.UPDATE_ALL_IMMEDIATE)) return InteractionResult.FAIL;
         if (level.getBlockEntity(place) instanceof CoinBlockEntity be) {
             be.setCurrency(CurrencyData.getFrom(ctx.getItemInHand()));
-            be.setChanged();
         }
 
-        if (!ctx.getPlayer().getAbilities().instabuild) ctx.getItemInHand().shrink(1);
+        Player player = ctx.getPlayer();
+        if (player == null || !player.getAbilities().instabuild) ctx.getItemInHand().shrink(1);
         return InteractionResult.CONSUME;
     }
 }

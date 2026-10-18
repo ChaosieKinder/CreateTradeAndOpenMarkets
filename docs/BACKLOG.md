@@ -39,7 +39,8 @@ Ordered by severity. **Coin loss or duplication comes first.**
    `useOn` always targets `pos.above()`, whatever face was clicked, and calls `setBlock` without
    checking `canBeReplaced` or `canSurvive`. Clicking the side of a block that has something on
    top replaces that thing with a coin pile.
-6. **The coin stack item can place a pile where it cannot survive.**
+6. ~~**The coin stack item can place a pile where it cannot survive.**~~ Fixed 17 Oct
+   (`CoinBlockGameTests.coinStack*`), along with the null player.
    [CoinStackItem.java:46](../src/main/java/com/errantmc/markets/item/CoinStackItem.java#L46)
    It checks `canBeReplaced` but not `canSurvive`, so a pile placed against a wall or on another
    pile sits unsupported until the next neighbour update drops its whole balance. Also,
