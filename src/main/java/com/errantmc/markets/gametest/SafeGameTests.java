@@ -100,17 +100,31 @@ public final class SafeGameTests {
     }
 
     /**
-     * BUG (BACKLOG #15), pinned as it behaves today: the safe requires the correct tool for drops,
-     * but no tool is correct for it (it is in no {@code mineable/*} tag), so a broken safe is lost.
+     * BACKLOG #15: no tool used to be correct for the safe, so a broken safe was lost. It takes a
+     * diamond pickaxe, and it stays very slow to break on purpose.
      */
     @GameTest(template = ARENA)
-    public static void aPickaxeIsTheRightToolForASafe(GameTestHelper helper) {
+    public static void aDiamondPickaxeIsTheRightToolForASafe(GameTestHelper helper) {
+        ServerPlayer player = survivalPlayer(helper);
+        var safe = TradeBlocks.SAFE_BLOCK.get().defaultBlockState();
+
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.DIAMOND_PICKAXE));
+        assertTrue(helper, "a diamond pickaxe to be correct", player.hasCorrectToolForDrops(safe));
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_PICKAXE));
+        assertTrue(helper, "an iron pickaxe not to be correct", !player.hasCorrectToolForDrops(safe));
+        helper.succeed();
+    }
+
+    @GameTest(template = ARENA)
+    public static void breakingASafeWithADiamondPickaxeDropsTheSafe(GameTestHelper helper) {
+        helper.setBlock(SAFE.below(), net.minecraft.world.level.block.Blocks.STONE);
+        if (placeSafe(helper) == null) return;
         ServerPlayer player = survivalPlayer(helper);
         player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.DIAMOND_PICKAXE));
 
-        assertTrue(helper, "no tool to count as correct for the safe",
-                !player.hasCorrectToolForDrops(TradeBlocks.SAFE_BLOCK.get().defaultBlockState()));
-        helper.succeed();
+        player.gameMode.destroyBlock(helper.absolutePos(SAFE));
+
+        helper.succeedWhen(() -> helper.assertItemEntityCountIs(TradeBlocks.SAFE_BLOCK.get().asItem(), SAFE, 2.0, 1));
     }
 
     private static SafeBlockEntity placeSafe(GameTestHelper helper) {
