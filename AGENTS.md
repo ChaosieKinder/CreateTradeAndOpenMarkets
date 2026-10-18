@@ -177,6 +177,13 @@ Two layers, both run in CI. What still needs covering is in [BACKLOG §Testing](
    static `@GameTest(template = GameTests.ARENA)` method. `CoinBlockGameTests` is the example.
    Build inside the 9×9×9 arena; for anything bigger, make a bigger template with the tool.
    Prefer `succeedWhen` over waiting a fixed number of ticks and then asserting.
+   For a player, use `helper.makeMockServerPlayerInLevel()` and drive it with
+   `helper.useBlock(pos, player)`. Two pitfalls:
+   - **The mock player is creative**, and creative inventories are never charged, so a deposit
+     test passes while moving nothing. `CoinBlockGameTests.survivalPlayer` switches it to survival.
+   - **It joins without our network channel.** Anything that sends it a mod packet must check
+     `connection.hasChannel` first, as `TradeNetwork.sendTo` does. Real fake players from other
+     mods behave the same way.
 
 **Before trusting a new test, make it fail once.** Break the expectation, check that
 `runGameTestServer` reports it, then put it back. `CoinBlockGameTests` was checked this way.
