@@ -163,7 +163,6 @@ public class WalletMenu extends AbstractContainerMenu {
             id -= 1000;
             isShift = true;
         }
-        LOG.info("Click Recieved: id={}, shift={}", id, isShift);
         return switch (id) {
             case BTN_WITHDRAW_COPPER_BIT     -> withdrawCoinsFromWallet(sp, CoinDenomination.COPPER_BIT, isShift);
             case BTN_WITHDRAW_COPPER_SHARD   -> withdrawCoinsFromWallet(sp, CoinDenomination.COPPER_SHARD, isShift);

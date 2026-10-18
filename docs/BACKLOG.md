@@ -1,76 +1,37 @@
 # Backlog: testing, bugs, cleanup
 
-Opened 17 Oct 2026 from a first read of the whole codebase. Line numbers are as of commit
-`5acedc7`. Each bug was found by reading the code, not by running it. Confirm each one with a
-test first, then fix it.
+Opened 17 Oct 2026 from a first read of the whole codebase.
 
 ## Bugs
 
-Ordered by severity. **Coin loss or duplication comes first.**
+All twelve were fixed on 17 Oct. The first eleven were found by reading the code. Bugs 1–6 (and
+#3 at the pile) were reproduced by a test that pinned the wrong behaviour before the fix, and all
+of them behaved as predicted. #7's test was seen to fail without its fix. #9 replaced its
+mechanism outright, so its tests were written against the new one. Each fix is its own commit,
+with the bug's number in the subject. The record stays
+here so the reasoning is not lost, and new bugs are appended with the next number.
 
 ### Coin conservation
 
-1. ~~**Sneak double-tap on a coin block destroys the coins it deposits.**~~ Fixed 17 Oct, covered
-   by `CoinBlockGameTests.sneakDoubleTapDepositsEveryCoinInTheInventory`. The offhand was also
-   counted twice, which only showed in creative.
-   [CoinBlock.java:342](../src/main/java/com/errantmc/markets/block/CoinBlock.java#L342)
-   `dumpAllCoinsFromInventory` adds every stack to the same original `c`, never the running total,
-   so each `setCurrency` overwrites the last. Line 367 then writes the original `c` back. The
-   player's coins are shrunk and the pile ends up unchanged.
-2. ~~**"Deposit all" in the wallet moves the wrong slots.**~~ Fixed 17 Oct (`WalletGameTests`).
-   Coins and coin stacks now go straight into the balance from anywhere in the inventory.
-   [WalletMenu.java:213](../src/main/java/com/errantmc/markets/screen/wallet/WalletMenu.java#L213)
-   For the one non-coin item in `wallet_items`, the coin stack, it calls
-   `quickMoveStack(player, i)` with an *inventory* index, but `quickMoveStack` takes a *menu slot*
-   index. Inventory 0–8 are wallet slots 0–8 in this menu, so a coin stack in hotbar slot *i*
-   moves wallet slot *i* out instead. The offhand loop passes offhand index 0, which is wallet
-   slot 0. Main inventory 9–35 happens to line up. Confirmed by
-   `WalletGameTests.depositAllTakesCoinStacksAndLeavesTheWalletsContents`.
-3. ~~**Coins over `Integer.MAX_VALUE` vanish.**~~ Fixed 17 Oct for the pile, the wallet menu and
-   auto-deposit. Merges are refused when `canAdd` fails, and single coins leave the remainder
-   where it was. `CurrencyData.add` clamps and reports `remaining`,
-   but `WalletBalance.add`, `WalletAutoDeposit` (which discards the item entity anyway),
-   `WalletMenu.depositAllCoinsFromPlayer` and `autoDepositFromSlots` ignore `remaining`.
-   `CurrencyData.add(CurrencyData)` and the 8-int `add` overflow without clamping.
-4. ~~**`CurrencyData.totalCount()` overflows.**~~ Fixed 17 Oct (`CurrencyDataTest`). It sums `int`s before the result widens to `long`.
-   (`CoinItem.appendHoverText`'s `count * value` was suspected too, but its maximum, 64 × 100,000,
-   fits in an `int`.)
-5. ~~**Placing a coin overwrites whatever is above the clicked block.**~~ Fixed 17 Oct
-   (`CoinBlockGameTests.placingACoin*`). A coin now places like any block item: against the
-   clicked face, and only where the pile can survive.
-   [CoinItem.java:57](../src/main/java/com/errantmc/markets/item/CoinItem.java#L57)
-   `useOn` always targets `pos.above()`, whatever face was clicked, and calls `setBlock` without
-   checking `canBeReplaced` or `canSurvive`. Clicking the side of a block that has something on
-   top replaces that thing with a coin pile.
-6. ~~**The coin stack item can place a pile where it cannot survive.**~~ Fixed 17 Oct
-   (`CoinBlockGameTests.coinStack*`), along with the null player.
-   [CoinStackItem.java:46](../src/main/java/com/errantmc/markets/item/CoinStackItem.java#L46)
-   It checks `canBeReplaced` but not `canSurvive`, so a pile placed against a wall or on another
-   pile sits unsupported until the next neighbour update drops its whole balance. Also,
-   `ctx.getPlayer()` can be null (dispensers, fake players).
-7. **`SafeBlockEntity.clearContents` clears slot 0 twenty-five times.**
-   [SafeBlockEntity.java:41](../src/main/java/com/errantmc/markets/block/entity/SafeBlockEntity.java#L41)
-   Not called anywhere yet, which is why it hasn't mattered.
+| # | Bug | Fix | Covered by |
+|---|---|---|---|
+| 1 | The coin pile's sneak double tap added every stack to the pile's *original* balance, then wrote that original back: the inventory emptied, the pile did not change. The offhand was also counted twice (visible only in creative) | running total; one pass over `getContainerSize()` | `CoinBlockGameTests.sneakDoubleTap…` |
+| 2 | The wallet's deposit-all passed inventory indices to `quickMoveStack`, which takes menu slot indices, so a coin stack in hotbar slot *i* moved wallet slot *i* out | deposit-all and the grid sweep share `WalletMenu.absorb`, straight into the balance | `WalletGameTests.depositAll…` |
+| 3 | Coins past `Integer.MAX_VALUE` vanished: merges wrapped negative, and the wallet paths ignored what did not fit | `CurrencyData.canAdd`; merges refused whole; single coins leave the remainder in place; `add(CurrencyData)` throws rather than wrap | `CurrencyDataTest`, `CoinBlockGameTests.coinStackIntoAFullPile…`, `WalletGameTests.*NearlyFull*` |
+| 4 | `CurrencyData.totalCount()` summed `int`s before widening. (The coin tooltip was suspected too, but 64 × 100,000 fits.) | widen first | `CurrencyDataTest` |
+| 5 | Placing a coin always set the block at `pos.above()`, overwriting whatever was there | places like a block item: against the clicked face, only where the pile survives. **Clicking the side of a block no longer puts the pile on top of it** | `CoinBlockGameTests.placingACoin…` |
+| 6 | The coin stack placed piles where they could not survive, and the next neighbour update dropped the whole balance; it also crashed without a player | `canSurvive` check, null player handled | `CoinBlockGameTests.coinStack…` |
+| 7 | `SafeBlockEntity.clearContents` cleared slot 0 once per slot | clear each slot | `SafeGameTests` |
 
 ### Robustness
 
-8. ~~**Curios classes are linked from a class that always loads.**~~ Fixed 17 Oct: `CuriosCompat`
-   is the only class that names Curios. `WalletAutoDeposit` references
-   `CuriosApi` inline behind `isLoaded`. That usually works because the JVM resolves lazily, but
-   it is fragile. Move it to a `CuriosCompat` class that is only touched after the check.
-9. ~~Fixed 17 Oct (`WalletGameTests.picked*`, `coinsStill*`): deposits on
-   `ItemEntityPickupEvent.Pre`, honouring the pickup delay and target.~~ **`WalletAutoDeposit` scans for item entities around every player every tick.** It also
-   ignores `ItemEntity` ownership (`target`/thrower) and other mods' pickup events. Consider
-   `ItemEntityPickupEvent.Pre` instead of a tick scan.
-10. **`CoinBlock.LAST_SNEAK_USE` is a static map that never shrinks.** Small, but it grows by one
-   entry per player per server lifetime.
-11. **`CoinBlock` logs at INFO on every interaction** (`useItemOn`, `useWithoutItem`), and
-    `WalletMenu.clickMenuButton` logs every button press.
-12. ~~**The identity card sync throws for players without our channel.**~~ Fixed 17 Oct.
-    `PacketDistributor` throws when a connection never negotiated the payload, which is true of
-    fake players and gametest mock players. It ran on every login and every 1200 ticks.
-    `TradeNetwork.sendTo` now checks `hasChannel` first. Found by the first gametest that used a
-    player.
+| # | Bug | Fix | Covered by |
+|---|---|---|---|
+| 8 | `WalletAutoDeposit`, which always loads, imported Curios (`compileOnly`) directly | `compat/CuriosCompat` is the only class that names Curios | none: Curios is not in the test runtime |
+| 9 | Auto-deposit scanned for coin entities around every player every tick, and ignored an item's pickup target | handles `ItemEntityPickupEvent.Pre`, honouring the pickup delay and target | `WalletGameTests.picked…`, `coinsStill…` |
+| 10 | `CoinBlock.LAST_SNEAK_USE` grew by one entry per player for the server's lifetime | expired taps are pruned on each tap | none: not observable without reflection |
+| 11 | INFO logging on every coin block interaction and wallet button press | removed | none |
+| 12 | The identity card sync threw for any player without our network channel (fake players, gametest players), on every login and every 1200 ticks. Found by the first gametest with a player | `TradeNetwork.sendTo` checks `hasChannel` | every gametest that makes a player |
 
 ## Testing
 

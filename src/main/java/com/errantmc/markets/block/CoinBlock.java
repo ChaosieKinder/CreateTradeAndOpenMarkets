@@ -201,7 +201,6 @@ public class CoinBlock extends BaseEntityBlock {
                                               Player player,
                                               InteractionHand hand,
                                               BlockHitResult hit) {
-        LOG.info("CoinBlock - useItemOn()");
         boolean did = handleInteraction(state, level, pos, player, held, hand);
         return did
                 ? ItemInteractionResult.sidedSuccess(level.isClientSide)
@@ -214,7 +213,6 @@ public class CoinBlock extends BaseEntityBlock {
                                                BlockPos pos,
                                                Player player,
                                                BlockHitResult hit) {
-        LOG.info("CoinBlock - useWithoutItem()");
         // When sneaking, MC calls this even if the player IS holding a coin.
         // So, peek both hands and pass a coin stack if present.
         ItemStack main = player.getMainHandItem();
@@ -263,6 +261,8 @@ public class CoinBlock extends BaseEntityBlock {
             var id   = player.getUUID();
             var prev = LAST_SNEAK_USE.get(id);
             boolean doubleTap = sneaking && prev != null && prev.pos.equals(pos) && (now - prev.tick) <= DOUBLE_TAP_WINDOW_TICKS;
+            // Expired taps can never complete a double tap; dropping them keeps the map at active players
+            LAST_SNEAK_USE.values().removeIf(t -> now - t.tick() > DOUBLE_TAP_WINDOW_TICKS);
             LAST_SNEAK_USE.put(id, new DoubleTap(now, pos.immutable()));
 
             if (doubleTap) {

@@ -5,8 +5,9 @@ economy with multi-denomination coins, a wallet, coin piles you can place in the
 identity cards, and a reskinned villager trading screen. [README](README.md) has the player-facing
 feature list and the roadmap.
 
-**Status, 17 Oct 2026: early alpha, written by hand. The test infrastructure is in place but
-barely used: 3 unit tests and 1 gametest.** Agents started working on the code on 17 Oct, when the
+**Status, 17 Oct 2026: early alpha, written by hand. 5 unit tests and 13 gametests. Every bug
+found on the first read is fixed** ([BACKLOG](docs/BACKLOG.md#bugs)). Next come characterisation
+tests for the rest, then refactoring. Agents started working on the code on 17 Oct, when the
 mod was also renamed from Trade and Open Markets (`tradeandopenmarkets`). The near-term goal is
 **testing first, then refactoring and cleanup**, in that order. Phase by phase plan and the bugs already found are in
 [docs/BACKLOG.md](docs/BACKLOG.md). Keep this paragraph honest; it is the first thing anyone reads.
