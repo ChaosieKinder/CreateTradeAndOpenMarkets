@@ -10,7 +10,9 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
@@ -49,6 +51,65 @@ public final class WalletGameTests {
         assertCount(helper, "silver bits in the wallet", 6, balance.getFrom(CoinDenomination.SILVER_BIT));
         assertCount(helper, "coins left in the inventory", 0, coinsIn(player));
         helper.succeed();
+    }
+
+    /** Picking up coins with a wallet anywhere in the inventory puts them in the wallet (BACKLOG #9). */
+    @GameTest(template = ARENA)
+    public static void pickedUpCoinsGoIntoTheWallet(GameTestHelper helper) {
+        ServerPlayer player = survivalPlayer(helper);
+        ItemStack wallet = new ItemStack(TradeItems.WALLET_LEATHER_ITEM.get());
+        player.getInventory().setItem(14, wallet);
+        ItemEntity coins = dropAt(helper, new ItemStack(TradeItems.COIN_SILVER_CROWN.get(), 5), true);
+
+        coins.playerTouch(player);
+
+        assertCount(helper, "silver crowns in the wallet", 5,
+                WalletBalance.get(wallet).getFrom(CoinDenomination.SILVER_CROWN));
+        assertCount(helper, "coins in the inventory", 0, coinsIn(player));
+        assertTrue(helper, "the coins on the ground to be gone", coins.isRemoved());
+        helper.succeed();
+    }
+
+    /** Freshly dropped coins keep vanilla's pickup delay; the wallet must not bypass it. */
+    @GameTest(template = ARENA)
+    public static void coinsStillInTheirPickupDelayAreLeftAlone(GameTestHelper helper) {
+        ServerPlayer player = survivalPlayer(helper);
+        ItemStack wallet = new ItemStack(TradeItems.WALLET_LEATHER_ITEM.get());
+        player.getInventory().setItem(14, wallet);
+        ItemEntity coins = dropAt(helper, new ItemStack(TradeItems.COIN_SILVER_CROWN.get(), 5), false);
+
+        coins.playerTouch(player);
+
+        assertCount(helper, "silver crowns in the wallet", 0,
+                WalletBalance.get(wallet).getFrom(CoinDenomination.SILVER_CROWN));
+        assertTrue(helper, "the coins to stay on the ground", !coins.isRemoved());
+        helper.succeed();
+    }
+
+    /** BACKLOG #3: a wallet that cannot hold them all takes what fits; vanilla picks up the rest. */
+    @GameTest(template = ARENA)
+    public static void pickupIntoANearlyFullWalletPutsTheRestInTheInventory(GameTestHelper helper) {
+        ServerPlayer player = survivalPlayer(helper);
+        ItemStack wallet = new ItemStack(TradeItems.WALLET_LEATHER_ITEM.get());
+        WalletBalance.set(wallet, CurrencyData.newCurrencyFromDenom(CoinDenomination.COPPER_BIT, Integer.MAX_VALUE - 1));
+        player.getInventory().setItem(14, wallet);
+        ItemEntity coins = dropAt(helper, new ItemStack(TradeItems.COIN_COPPER_BIT.get(), 5), true);
+
+        coins.playerTouch(player);
+
+        assertCount(helper, "copper bits in the wallet", Integer.MAX_VALUE,
+                WalletBalance.get(wallet).getFrom(CoinDenomination.COPPER_BIT));
+        assertCount(helper, "coins in the inventory", 4, coinsIn(player));
+        helper.succeed();
+    }
+
+    private static ItemEntity dropAt(GameTestHelper helper, ItemStack stack, boolean pickable) {
+        Vec3 at = helper.absoluteVec(new Vec3(4.5, 2, 4.5));
+        ItemEntity entity = new ItemEntity(helper.getLevel(), at.x, at.y, at.z, stack);
+        if (pickable) entity.setNoPickUpDelay();
+        else entity.setDefaultPickUpDelay();
+        helper.getLevel().addFreshEntity(entity);
+        return entity;
     }
 
     /** BACKLOG #3: what does not fit under Integer.MAX_VALUE stays in the inventory. */

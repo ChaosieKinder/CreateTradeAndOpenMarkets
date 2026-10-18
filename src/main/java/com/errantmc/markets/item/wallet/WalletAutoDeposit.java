@@ -1,80 +1,58 @@
 package com.errantmc.markets.item.wallet;
 
-import com.mojang.logging.LogUtils;
 import com.errantmc.markets.compat.CuriosCompat;
 import com.errantmc.markets.component.WalletBalance;
-import com.errantmc.markets.data.CoinDenomination;
 import com.errantmc.markets.item.CoinItem;
-import net.minecraft.core.NonNullList;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
 import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.neoforge.event.tick.PlayerTickEvent;
-import org.slf4j.Logger;
+import net.neoforged.neoforge.common.util.TriState;
+import net.neoforged.neoforge.event.entity.player.ItemEntityPickupEvent;
 
-import java.util.List;
+import javax.annotation.Nullable;
+import java.util.UUID;
 
+/** Coins a player picks up go into the first wallet they carry instead of the inventory. */
 public final class WalletAutoDeposit {
-    public static final Logger LOG = LogUtils.getLogger();
 
+    /**
+     * Fires whenever a player touches an item entity, but before vanilla checks the pickup delay
+     * and the item's target, so both are checked here.
+     */
     @SubscribeEvent
-    public void onPlayerTick(PlayerTickEvent.Post e) {
-        Player player = e.getEntity();
-        Level level = player.level();
-        if (level.isClientSide) return;
+    public void onItemPickup(ItemEntityPickupEvent.Pre event) {
+        Player player = event.getPlayer();
+        ItemEntity entity = event.getItemEntity();
+        if (player.level().isClientSide) return;
 
-        // Find a wallet (hands → hotbar; add Curios scan if you use Curios)
+        ItemStack ground = entity.getItem();
+        if (!(ground.getItem() instanceof CoinItem coin)) return;
+        UUID target = entity.getTarget();
+        if (entity.hasPickUpDelay() || (target != null && !target.equals(player.getUUID()))) return;
+
         ItemStack wallet = findWallet(player);
         if (wallet == null) return;
 
-        //LOG.info("Wallet PlayerTick - Found Wallet");
-        // Find coin item overlapping the player's pickup box (same as vanilla does)
-        // A small inflate helps catch near-misses; tweak if needed.
-        var box = player.getBoundingBox().inflate(1.1,0.6,1.1);
-        List<ItemEntity> items = level.getEntitiesOfClass(ItemEntity.class, box, ie ->
-                ie.isAlive() && !ie.hasPickUpDelay() && ie.getItem().getItem() instanceof CoinItem
-        );
-        if (items.isEmpty()) return;
-        //LOG.info("Wallet PlayerTick - Found Items");
+        var result = WalletBalance.add(wallet, coin.denom(), ground.getCount());
+        if (result.delta() == 0) return; // wallet full: vanilla picks the coins up as usual
 
-        boolean any = false;
-        for (ItemEntity ie : items) {
-            ItemStack ground = ie.getItem();
-
-            if (ground.isEmpty()) continue;
-            CoinDenomination d = ((CoinItem) ground.getItem()).denom();
-            int count = ground.getCount();
-            if (count <= 0) continue;
-
-            // Deposit entire stack; adjust if you enforce a capacity
-            WalletBalance.ensure(wallet);
-            WalletBalance.add(wallet, d, count);
-
-            // Remove the ground entity (consumed by the wallet)
-            ie.discard();
-            any = true;
+        player.take(entity, result.delta()); // pickup animation and sound for everyone watching
+        ground.shrink(result.delta());
+        if (ground.isEmpty()) {
+            entity.discard();
+            event.setCanPickup(TriState.FALSE);
         }
-
-        if (any) {
-            level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                    SoundEvents.ITEM_PICKUP, SoundSource.PLAYERS, 0.2f, 1.0f);
-        }
+        // otherwise vanilla picks up what did not fit
     }
 
-    private static ItemStack findWallet(Player player) {
-        // Hands first
+    private static @Nullable ItemStack findWallet(Player player) {
         ItemStack main = player.getMainHandItem();
         if (main.getItem() instanceof WalletItem) return main;
         ItemStack off = player.getOffhandItem();
         if (off.getItem() instanceof WalletItem) return off;
 
-        // Hotbar
-        NonNullList<ItemStack> items = player.getInventory().items;
-        for (ItemStack s : items) {
+        for (ItemStack s : player.getInventory().items) {
             if (s.getItem() instanceof WalletItem) return s;
         }
 

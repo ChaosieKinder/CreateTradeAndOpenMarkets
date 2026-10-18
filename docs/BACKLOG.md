@@ -17,7 +17,8 @@ Ordered by severity. **Coin loss or duplication comes first.**
    `dumpAllCoinsFromInventory` adds every stack to the same original `c`, never the running total,
    so each `setCurrency` overwrites the last. Line 367 then writes the original `c` back. The
    player's coins are shrunk and the pile ends up unchanged.
-2. **"Deposit all" in the wallet moves the wrong slots.**
+2. ~~**"Deposit all" in the wallet moves the wrong slots.**~~ Fixed 17 Oct (`WalletGameTests`).
+   Coins and coin stacks now go straight into the balance from anywhere in the inventory.
    [WalletMenu.java:213](../src/main/java/com/errantmc/markets/screen/wallet/WalletMenu.java#L213)
    For the one non-coin item in `wallet_items`, the coin stack, it calls
    `quickMoveStack(player, i)` with an *inventory* index, but `quickMoveStack` takes a *menu slot*
@@ -25,7 +26,9 @@ Ordered by severity. **Coin loss or duplication comes first.**
    moves wallet slot *i* out instead. The offhand loop passes offhand index 0, which is wallet
    slot 0. Main inventory 9–35 happens to line up. Confirmed by
    `WalletGameTests.depositAllTakesCoinStacksAndLeavesTheWalletsContents`.
-3. **Coins over `Integer.MAX_VALUE` vanish.** `CurrencyData.add` clamps and reports `remaining`,
+3. ~~**Coins over `Integer.MAX_VALUE` vanish.**~~ Fixed 17 Oct for the pile, the wallet menu and
+   auto-deposit. Merges are refused when `canAdd` fails, and single coins leave the remainder
+   where it was. `CurrencyData.add` clamps and reports `remaining`,
    but `WalletBalance.add`, `WalletAutoDeposit` (which discards the item entity anyway),
    `WalletMenu.depositAllCoinsFromPlayer` and `autoDepositFromSlots` ignore `remaining`.
    `CurrencyData.add(CurrencyData)` and the 8-int `add` overflow without clamping.
@@ -51,10 +54,12 @@ Ordered by severity. **Coin loss or duplication comes first.**
 
 ### Robustness
 
-8. **Curios classes are linked from a class that always loads.** `WalletAutoDeposit` references
+8. ~~**Curios classes are linked from a class that always loads.**~~ Fixed 17 Oct: `CuriosCompat`
+   is the only class that names Curios. `WalletAutoDeposit` references
    `CuriosApi` inline behind `isLoaded`. That usually works because the JVM resolves lazily, but
    it is fragile. Move it to a `CuriosCompat` class that is only touched after the check.
-9. **`WalletAutoDeposit` scans for item entities around every player every tick.** It also
+9. ~~Fixed 17 Oct (`WalletGameTests.picked*`, `coinsStill*`): deposits on
+   `ItemEntityPickupEvent.Pre`, honouring the pickup delay and target.~~ **`WalletAutoDeposit` scans for item entities around every player every tick.** It also
    ignores `ItemEntity` ownership (`target`/thrower) and other mods' pickup events. Consider
    `ItemEntityPickupEvent.Pre` instead of a tick scan.
 10. **`CoinBlock.LAST_SNEAK_USE` is a static map that never shrinks.** Small, but it grows by one
