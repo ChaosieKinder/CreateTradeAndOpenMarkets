@@ -4,8 +4,6 @@ import com.mojang.logging.LogUtils;
 import com.errantmc.markets.npcinteractions.registry.InteractionTabManager;
 import com.errantmc.markets.npcinteractions.components.InteractionTab;
 import com.errantmc.markets.screen.TradeMenus;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -139,16 +137,15 @@ public class VillagerInteractionMenu extends AbstractContainerMenu {
     }
 
     /**
-     * CLIENT SIDE ONLY – uses the synced entityId to find the villager in the client world.
+     * The villager this menu is for, found by its synced entity id in the player's own level. Works
+     * on both sides: this is a common class, so it must not reach for {@code Minecraft}, which a
+     * dedicated server refuses to load.
      */
     @Nullable
     public Villager getClientVillager() {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.level instanceof ClientLevel clientLevel) {
-            Entity e = clientLevel.getEntity(this.villagerEntityId);
-            if (e instanceof Villager villager) {
-                return villager;
-            }
+        Level level = getLevel();
+        if (level != null && level.getEntity(this.villagerEntityId) instanceof Villager villager) {
+            return villager;
         }
         return null;
     }
