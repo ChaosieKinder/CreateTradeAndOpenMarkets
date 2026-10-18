@@ -218,7 +218,7 @@ public record CurrencyData(int coinsCopperBit, int coinsCopperShard,
     }
 
     public long totalCount() {
-        return coinsCopperBit + coinsCopperShard +
+        return (long) coinsCopperBit + coinsCopperShard +
                 coinsSilverBit + coinsSilverCrown +
                 coinsGoldMark + coinsGoldRegal +
                 coinsEmeraldSun+ coinsEmeraldThrone;

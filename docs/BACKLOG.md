@@ -29,7 +29,7 @@ Ordered by severity. **Coin loss or duplication comes first.**
    but `WalletBalance.add`, `WalletAutoDeposit` (which discards the item entity anyway),
    `WalletMenu.depositAllCoinsFromPlayer` and `autoDepositFromSlots` ignore `remaining`.
    `CurrencyData.add(CurrencyData)` and the 8-int `add` overflow without clamping.
-4. **`CurrencyData.totalCount()` overflows.** It sums `int`s before the result widens to `long`.
+4. ~~**`CurrencyData.totalCount()` overflows.**~~ Fixed 17 Oct (`CurrencyDataTest`). It sums `int`s before the result widens to `long`.
    (`CoinItem.appendHoverText`'s `count * value` was suspected too, but its maximum, 64 × 100,000,
    fits in an `int`.)
 5. **Placing a coin overwrites whatever is above the clicked block.**
