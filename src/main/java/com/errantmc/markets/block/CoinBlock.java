@@ -343,25 +343,13 @@ public class CoinBlock extends BaseEntityBlock {
         CurrencyData c = be.getCurrency();
         int movedTotal = 0;
         var inv = player.getInventory();
+        // getContainerSize() covers the main inventory, armour and offhand
         for (int i = 0; i < inv.getContainerSize(); i++) {
             ItemStack s = inv.getItem(i);
             if (s.isEmpty() || !CoinItem.isCoinItem(s.getItem())) continue;
             var addResult = c.add(s);
-            be.setCurrency(addResult.updated());
-            if (!player.getAbilities().instabuild) {
-                s.shrink(addResult.delta());
-                if (s.isEmpty()) inv.setItem(i, ItemStack.EMPTY);
-            }
-            movedTotal += addResult.delta();
-        }
-        // offhand, too
-        ItemStack off = player.getOffhandItem();
-        if (!off.isEmpty() && CoinItem.isCoinItem(off.getItem())) {
-            var addResult = c.add(off);
-            be.setCurrency(addResult.updated());
-            if (!player.getAbilities().instabuild) {
-                off.shrink(addResult.delta());
-            }
+            c = addResult.updated();
+            if (!player.getAbilities().instabuild) s.shrink(addResult.delta());
             movedTotal += addResult.delta();
         }
         if (movedTotal > 0) be.setCurrency(c);

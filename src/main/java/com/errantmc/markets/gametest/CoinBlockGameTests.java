@@ -11,6 +11,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
@@ -40,10 +41,7 @@ public final class CoinBlockGameTests {
         });
     }
 
-    /**
-     * BUG (BACKLOG #1), pinned as it behaves today: the double tap takes every coin out of the
-     * inventory and leaves the pile as it was, so the coins are destroyed.
-     */
+    /** Every coin stack, main inventory and offhand, lands in the pile exactly once (BACKLOG #1). */
     @GameTest(template = GameTests.ARENA)
     public static void sneakDoubleTapDepositsEveryCoinInTheInventory(GameTestHelper helper) {
         CoinBlockEntity be = placePile(helper, CurrencyData.newCurrencyFromDenom(CoinDenomination.COPPER_BIT, 1));
@@ -51,13 +49,16 @@ public final class CoinBlockGameTests {
         ServerPlayer player = survivalPlayer(helper);
         player.getInventory().setItem(5, new ItemStack(TradeItems.COIN_COPPER_BIT.get(), 10));
         player.getInventory().setItem(9, new ItemStack(TradeItems.COIN_SILVER_CROWN.get(), 2));
+        player.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(TradeItems.COIN_COPPER_SHARD.get(), 3));
         player.setPose(Pose.CROUCHING);
 
         helper.useBlock(PILE, player);
         helper.useBlock(PILE, player);
 
-        assertCount(helper, "copper bits in the pile", 1, be.getCurrency().getFrom(CoinDenomination.COPPER_BIT));
-        assertCount(helper, "silver crowns in the pile", 0, be.getCurrency().getFrom(CoinDenomination.SILVER_CROWN));
+        CurrencyData pile = be.getCurrency();
+        assertCount(helper, "copper bits in the pile", 11, pile.getFrom(CoinDenomination.COPPER_BIT));
+        assertCount(helper, "silver crowns in the pile", 2, pile.getFrom(CoinDenomination.SILVER_CROWN));
+        assertCount(helper, "copper shards in the pile", 3, pile.getFrom(CoinDenomination.COPPER_SHARD));
         assertCount(helper, "coins left in the inventory", 0, coinsIn(player));
         helper.succeed();
     }

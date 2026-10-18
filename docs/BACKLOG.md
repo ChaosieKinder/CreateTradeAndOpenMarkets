@@ -10,7 +10,9 @@ Ordered by severity. **Coin loss or duplication comes first.**
 
 ### Coin conservation
 
-1. **Sneak double-tap on a coin block destroys the coins it deposits.**
+1. ~~**Sneak double-tap on a coin block destroys the coins it deposits.**~~ Fixed 17 Oct, covered
+   by `CoinBlockGameTests.sneakDoubleTapDepositsEveryCoinInTheInventory`. The offhand was also
+   counted twice, which only showed in creative.
    [CoinBlock.java:342](../src/main/java/com/errantmc/markets/block/CoinBlock.java#L342)
    `dumpAllCoinsFromInventory` adds every stack to the same original `c`, never the running total,
    so each `setCurrency` overwrites the last. Line 367 then writes the original `c` back. The
@@ -74,9 +76,9 @@ Done 17 Oct.
       codec round-trip (NBT) and stream codec round-trip.
 - [ ] `CoinDenomination` ↔ coin item mapping covers every denomination (registry-list test).
 - [ ] `CoinStackItem.tier` thresholds.
-- [ ] Gametests: coin block place, insert, shift-insert, double-tap deposit (bug 1), left-click
-      withdraw, break with ≤20 stacks, break with >20 stacks (one coin stack item).
-      (Breaking the support block, with 3 coins: done.)
+- [ ] Gametests: coin block place, insert, shift-insert, left-click withdraw, break with ≤20
+      stacks, break with >20 stacks (one coin stack item). Done: breaking the support block, and
+      the double-tap deposit.
 - [ ] Gametests: wallet auto-deposit; wallet withdraw button; deposit-all (bug 2).
 - [ ] Gametest: safe drops its contents when broken.
 - [ ] Coverage tests: every registered item has a lang key and an item model; every item is in
