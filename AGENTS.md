@@ -5,11 +5,10 @@ economy with multi-denomination coins, a wallet, coin piles you can place in the
 identity cards, and a reskinned villager trading screen. [README](README.md) has the player-facing
 feature list and the roadmap.
 
-**Status, 17 Oct 2026: early alpha, written by hand. 5 unit tests and 13 gametests. Every bug
-found on the first read is fixed** ([BACKLOG](docs/BACKLOG.md#bugs)). Next come characterisation
-tests for the rest, then refactoring. Agents started working on the code on 17 Oct, when the
-mod was also renamed from Trade and Open Markets (`tradeandopenmarkets`). The near-term goal is
-**testing first, then refactoring and cleanup**, in that order. Phase by phase plan and the bugs already found are in
+**Status, 17 Oct 2026: early alpha, written by hand. 5 unit tests and 46 gametests, run with and
+without Curios. Every known bug is fixed; the next step is refactoring.** Agents started working on
+the code on 17 Oct, which is also when the mod was renamed from Trade and Open Markets
+(`tradeandopenmarkets`). The bugs, what was fixed and the refactoring plan are in
 [docs/BACKLOG.md](docs/BACKLOG.md). Keep this paragraph honest; it is the first thing anyone reads.
 
 ---
@@ -120,6 +119,7 @@ From PowerShell in the repo root:
 | `.\gradlew.bat runClient` | dev client with JEI |
 | `.\gradlew.bat runServer` | dedicated server (`--nogui`). The check that client code has not leaked into common code |
 | `.\gradlew.bat runGameTestServer` | runs every gametest and exits nonzero on failure. Needs no EULA. Search the log for `required tests` |
+| `.\gradlew.bat runGameTestServer -PnoCurios` | the same without Curios, which is how "optional mods stay optional" is tested. CI runs both |
 | `python tools/make-empty-template.py <name> x y z` | writes an empty gametest template into `data/erranttrade/structure/` |
 | `.\gradlew.bat runData` | datagen into `src/generated/resources`. No providers exist yet |
 
@@ -178,13 +178,20 @@ Two layers, both run in CI. What still needs covering is in [BACKLOG §Testing](
    static `@GameTest(template = GameTests.ARENA)` method. `CoinBlockGameTests` is the example.
    Build inside the 9×9×9 arena; for anything bigger, make a bigger template with the tool.
    Prefer `succeedWhen` over waiting a fixed number of ticks and then asserting.
-   For a player, use `helper.makeMockServerPlayerInLevel()` and drive it with
-   `helper.useBlock(pos, player)`. Two pitfalls:
-   - **The mock player is creative**, and creative inventories are never charged, so a deposit
-     test passes while moving nothing. `CoinBlockGameTests.survivalPlayer` switches it to survival.
-   - **It joins without our network channel.** Anything that sends it a mod packet must check
-     `connection.hasChannel` first, as `TradeNetwork.sendTo` does. Real fake players from other
-     mods behave the same way.
+   For a player, use `GameTests.survivalPlayer(helper)` (or `mockPlayer(helper, mode)`), and
+   drive it with `helper.useBlock(pos, player)`, `item.use(...)`, `entity.playerTouch(player)`, or
+   by posting the NeoForge event the server would fire. Never use
+   `helper.makeMockServerPlayerInLevel()`, for two reasons:
+   - **Its player is creative**, and creative inventories are never charged, so a deposit test
+     passes while moving nothing.
+   - **Its connection negotiated no mod channels**, so the first mod to send it a payload on
+     login throws. Curios does this. `mockPlayer` sets the connection up with NeoForge's
+     `NetworkRegistry.configureMockConnection`. Our own sends still check `hasChannel`
+     (`TradeNetwork.sendTo`), because fake players from other mods have the same problem.
+
+   **Curios tests** live in `CuriosGameTests` and start with
+   `if (!CuriosCompat.isLoaded()) { helper.succeed(); return; }`, so they pass trivially in the
+   `-PnoCurios` run. Only test code and `CuriosCompat` may name Curios classes.
 
 **Before trusting a new test, make it fail once.** Break the expectation, check that
 `runGameTestServer` reports it, then put it back. `CoinBlockGameTests` was checked this way.

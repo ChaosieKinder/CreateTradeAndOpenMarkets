@@ -33,6 +33,13 @@ here so the reasoning is not lost, and new bugs are appended with the next numbe
 | 11 | INFO logging on every coin block interaction and wallet button press | removed | none |
 | 12 | The identity card sync threw for any player without our network channel (fake players, gametest players), on every login and every 1200 ticks. Found by the first gametest with a player | `TradeNetwork.sendTo` checks `hasChannel` | every gametest that makes a player |
 
+### Found by the gameplay tests
+
+| # | Bug | Fix | Covered by |
+|---|---|---|---|
+| 13 | The wallet could not be worn in the Curios wallet slot, despite the README. Curios accepts items in the `curios:wallet` tag, and the mod had tagged its wallets `erranttrade:wallet` | `data/curios/tags/item/wallet.json` includes `#erranttrade:wallet` | `CuriosGameTests.theWalletFitsTheWalletSlot` |
+| 14 | The coin stack had no name and showed as `item.erranttrade.coin_stack` | lang entry "Coin Stack" | `ContentGameTests.everyItemHasAName` |
+
 ## Testing
 
 ### Phase 1: test infrastructure
@@ -41,20 +48,33 @@ Done 17 Oct.
       tests may touch registries. Keep logic pure where you can anyway.
 - [x] Gametest holder (`CoinBlockGameTests`) and an empty 9×9×9 `arena` template from
       `tools/make-empty-template.py`.
-- [x] CI runs `runGameTestServer` after `build`.
+- [x] CI runs `runGameTestServer` after `build`, then again with `-PnoCurios`. Curios is in the
+      dev and test runtime (`localRuntime`).
 
-### Phase 2: characterisation tests (pin current behaviour, bugs included)
-- [ ] `CurrencyData`: add, remove, clamping, `totalValue`, `totalCount`, `getHighestDenomonation`,
-      codec round-trip (NBT) and stream codec round-trip.
-- [ ] `CoinDenomination` ↔ coin item mapping covers every denomination (registry-list test).
-- [ ] `CoinStackItem.tier` thresholds.
-- [ ] Gametests: coin block place, insert, shift-insert, left-click withdraw, break with ≤20
-      stacks, break with >20 stacks (one coin stack item). Done: breaking the support block, and
-      the double-tap deposit.
-- [ ] Gametests: wallet auto-deposit; wallet withdraw button; deposit-all (bug 2).
-- [ ] Gametest: safe drops its contents when broken.
-- [ ] Coverage tests: every registered item has a lang key and an item model; every item is in
-      the creative tab.
+### Phase 2: gameplay tests for existing behaviour
+Mostly done 17 Oct, 46 gametests in total:
+- [x] Coin pile: placing; depositing (right-click, coin stack, double tap); withdrawing (one coin,
+      a stack, the last coin); breaking (support, small pile, big pile into one coin stack,
+      creative); overflow; saving and loading.
+- [x] Wallet: auto-deposit (inventory, Curios, pickup delay, overflow); withdraw (one, a stack,
+      empty denomination, full inventory); deposit-all; the grid (coins become balance, contents
+      saved on close, no wallet inside a wallet); balance through saving.
+- [x] Safe: drops when broken, 25-per-slot limit, faces the player, opens its menu, clearContents.
+- [x] ID card: binds on sneak-use, not otherwise, and never rebinds.
+- [x] Content: every coin recipe conserves value, every denomination converts both ways, the
+      safe is the banker's job site, and every item has a name, a model and a creative tab entry.
+
+Still to do:
+- [ ] Unit: `CurrencyData` codec and stream-codec round trips, pinning the field names (a save
+      format), `getHighestDenomonation`, and `CoinStackItem.tier` thresholds.
+- [ ] A banker villager actually claiming a safe. That needs a villager and many ticks, so it is
+      slow and possibly flaky. The POI wiring is covered.
+- [ ] Client-only behaviour (the shop screen replacing the merchant UI, tooltips, renderers) has
+      no automated coverage, because gametests run on a dedicated server.
+
+### Noticed while writing them (not bugs, but worth a decision)
+- The README says right-click deposits coins and "shift for a whole stack", but a plain
+  right-click has always deposited the whole held stack. The test pins what the code does.
 
 ## Refactoring and cleanup
 
