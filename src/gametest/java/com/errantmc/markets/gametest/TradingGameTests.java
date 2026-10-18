@@ -178,9 +178,15 @@ public final class TradingGameTests {
         menu.clickMenuButton(player, VillagerInteractionMenu.tradeButton(BUY, BREAD));
 
         assertCount(helper, "villager experience gained", 2, farmer.getVillagerXp() - xpBefore);
-        int orbs = helper.getLevel().getEntitiesOfClass(ExperienceOrb.class, farmer.getBoundingBox().inflate(3))
-                .stream().mapToInt(ExperienceOrb::getValue).sum();
-        assertCount(helper, "player experience in orbs", 2, orbs);
+        // Collected rather than summed: vanilla merges equal orbs into one with a count, by entity id
+        int before = player.totalExperience;
+        for (ExperienceOrb orb : helper.getLevel().getEntitiesOfClass(ExperienceOrb.class, farmer.getBoundingBox().inflate(3))) {
+            while (!orb.isRemoved()) {
+                player.takeXpDelay = 0;
+                orb.playerTouch(player);
+            }
+        }
+        assertCount(helper, "player experience in orbs", 2, player.totalExperience - before);
         helper.succeed();
     }
 
