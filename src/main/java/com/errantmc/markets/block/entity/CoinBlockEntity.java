@@ -18,7 +18,7 @@ public class CoinBlockEntity extends BlockEntity {
     private CurrencyData currency = CurrencyData.EMPTY;
 
     public CoinBlockEntity(BlockPos pos, BlockState state) {
-        super(TradeBlockEntities.COIN_BLOCKENTITY.get(), pos, state);
+        super(TradeBlockEntities.COIN_PILE.get(), pos, state);
     }
 
     // ---------- Persistent save/load ----------

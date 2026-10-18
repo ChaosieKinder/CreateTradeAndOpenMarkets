@@ -64,7 +64,7 @@ public class ErrantTradeClient {
     @SubscribeEvent
     public static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(
-                TradeBlockEntities.COIN_BLOCKENTITY.get(),
+                TradeBlockEntities.COIN_PILE.get(),
                 CoinBlockEntityRenderer::new
         );
     }

@@ -17,8 +17,8 @@ public class TradeVillagers {
     public static final DeferredRegister<VillagerProfession> VILLAGER_PROFESSIONS =
             DeferredRegister.create(BuiltInRegistries.VILLAGER_PROFESSION, ErrantTrade.MOD_ID);
 
-    public static final Holder<PoiType> BANKER_POI = POI_TYPES.register("banker_poi",
-            () -> new PoiType(ImmutableSet.copyOf(TradeBlocks.SAFE_BLOCK.get().getStateDefinition().getPossibleStates()), 1, 1));
+    public static final Holder<PoiType> BANKER_POI = POI_TYPES.register("banker",
+            () -> new PoiType(ImmutableSet.copyOf(TradeBlocks.SAFE.get().getStateDefinition().getPossibleStates()), 1, 1));
 
     public static final Holder<VillagerProfession> BANKER_PROFESSION = VILLAGER_PROFESSIONS.register("banker",
             () -> new VillagerProfession("banker", holder -> holder.value() == BANKER_POI.value(),

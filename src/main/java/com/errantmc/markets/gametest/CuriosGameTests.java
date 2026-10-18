@@ -43,7 +43,7 @@ public final class CuriosGameTests {
     public static void theWalletFitsTheWalletSlot(GameTestHelper helper) {
         if (!CuriosCompat.isLoaded()) { helper.succeed(); return; }
         ServerPlayer player = survivalPlayer(helper);
-        ItemStack wallet = new ItemStack(TradeItems.WALLET_LEATHER_ITEM.get());
+        ItemStack wallet = new ItemStack(TradeItems.LEATHER_WALLET.get());
 
         var slots = CuriosApi.getItemStackSlots(wallet, player);
         assertTrue(helper, "the wallet to be valid in the '" + SLOT + "' slot, but it fits " + slots.keySet(),
@@ -55,7 +55,7 @@ public final class CuriosGameTests {
     public static void pickedUpCoinsGoIntoAWalletWornAsACurio(GameTestHelper helper) {
         if (!CuriosCompat.isLoaded()) { helper.succeed(); return; }
         ServerPlayer player = survivalPlayer(helper);
-        ItemStack wallet = new ItemStack(TradeItems.WALLET_LEATHER_ITEM.get());
+        ItemStack wallet = new ItemStack(TradeItems.LEATHER_WALLET.get());
         var inventory = CuriosApi.getCuriosInventory(player);
         if (inventory.isEmpty()) { helper.fail("player has no curios inventory"); return; }
         inventory.get().setEquippedCurio(SLOT, 0, wallet);

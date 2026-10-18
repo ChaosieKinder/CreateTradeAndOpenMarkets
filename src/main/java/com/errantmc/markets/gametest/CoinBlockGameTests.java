@@ -43,7 +43,7 @@ public final class CoinBlockGameTests {
         helper.destroyBlock(PILE.below());
 
         helper.succeedWhen(() -> {
-            helper.assertBlockNotPresent(TradeBlocks.COIN_BLOCK.get(), PILE);
+            helper.assertBlockNotPresent(TradeBlocks.COIN_PILE.get(), PILE);
             helper.assertItemEntityCountIs(TradeItems.COIN_COPPER_BIT.get(), PILE, 2.0, 3);
         });
     }
@@ -107,7 +107,7 @@ public final class CoinBlockGameTests {
         helper.useBlock(clicked, player, hitFace(helper, clicked, Direction.EAST));
 
         helper.assertBlockPresent(Blocks.OAK_PLANKS, clicked.above());
-        helper.assertBlockNotPresent(TradeBlocks.COIN_BLOCK.get(), clicked.east());
+        helper.assertBlockNotPresent(TradeBlocks.COIN_PILE.get(), clicked.east());
         assertCount(helper, "coins still held", 1, player.getMainHandItem().getCount());
         helper.succeed();
     }
@@ -145,7 +145,7 @@ public final class CoinBlockGameTests {
 
         helper.useBlock(clicked, player, hitFace(helper, clicked, Direction.EAST));
 
-        helper.assertBlockNotPresent(TradeBlocks.COIN_BLOCK.get(), clicked.east());
+        helper.assertBlockNotPresent(TradeBlocks.COIN_PILE.get(), clicked.east());
         assertTrue(helper, "the coin stack to still be held",
                 player.getMainHandItem().is(TradeItems.COIN_STACK_ITEM.get()));
         helper.succeed();
@@ -250,7 +250,7 @@ public final class CoinBlockGameTests {
 
         leftClick(helper, player, PILE);
 
-        helper.assertBlockNotPresent(TradeBlocks.COIN_BLOCK.get(), PILE);
+        helper.assertBlockNotPresent(TradeBlocks.COIN_PILE.get(), PILE);
         helper.assertItemEntityCountIs(TradeItems.COIN_EMERALD_SUN.get(), PILE, 2.0, 1);
         helper.succeed();
     }
@@ -304,7 +304,7 @@ public final class CoinBlockGameTests {
 
         player.gameMode.destroyBlock(helper.absolutePos(PILE));
 
-        helper.assertBlockNotPresent(TradeBlocks.COIN_BLOCK.get(), PILE);
+        helper.assertBlockNotPresent(TradeBlocks.COIN_PILE.get(), PILE);
         helper.runAfterDelay(2, () -> {
             helper.assertItemEntityNotPresent(TradeItems.COIN_GOLD_REGAL.get(), PILE, 2.0);
             helper.succeed();
@@ -345,7 +345,7 @@ public final class CoinBlockGameTests {
     /** A pile at {@link #PILE} on a stone support, holding {@code currency}; null after failing the test. */
     private static CoinBlockEntity placePile(GameTestHelper helper, CurrencyData currency) {
         helper.setBlock(PILE.below(), Blocks.STONE);
-        helper.setBlock(PILE, TradeBlocks.COIN_BLOCK.get());
+        helper.setBlock(PILE, TradeBlocks.COIN_PILE.get());
         if (!(helper.getBlockEntity(PILE) instanceof CoinBlockEntity be)) {
             helper.fail("coin block has no block entity", PILE);
             return null;

@@ -29,7 +29,7 @@ public final class SafeGameTests {
     /** BACKLOG #7: clearContents used to clear slot 0 once per slot and leave the rest. */
     @GameTest(template = ARENA)
     public static void clearContentsEmptiesEverySlot(GameTestHelper helper) {
-        helper.setBlock(SAFE, TradeBlocks.SAFE_BLOCK.get());
+        helper.setBlock(SAFE, TradeBlocks.SAFE.get());
         if (!(helper.getBlockEntity(SAFE) instanceof SafeBlockEntity safe)) {
             helper.fail("safe has no block entity", SAFE);
             return;
@@ -80,7 +80,7 @@ public final class SafeGameTests {
         helper.setBlock(SAFE, net.minecraft.world.level.block.Blocks.STONE);
         ServerPlayer player = survivalPlayer(helper);
         player.setYRot(0); // looking south
-        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(TradeBlocks.SAFE_BLOCK.get()));
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(TradeBlocks.SAFE.get()));
 
         helper.useBlock(SAFE, player, hitFace(helper, SAFE, Direction.UP));
 
@@ -106,7 +106,7 @@ public final class SafeGameTests {
     @GameTest(template = ARENA)
     public static void aDiamondPickaxeIsTheRightToolForASafe(GameTestHelper helper) {
         ServerPlayer player = survivalPlayer(helper);
-        var safe = TradeBlocks.SAFE_BLOCK.get().defaultBlockState();
+        var safe = TradeBlocks.SAFE.get().defaultBlockState();
 
         player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.DIAMOND_PICKAXE));
         assertTrue(helper, "a diamond pickaxe to be correct", player.hasCorrectToolForDrops(safe));
@@ -124,11 +124,11 @@ public final class SafeGameTests {
 
         player.gameMode.destroyBlock(helper.absolutePos(SAFE));
 
-        helper.succeedWhen(() -> helper.assertItemEntityCountIs(TradeBlocks.SAFE_BLOCK.get().asItem(), SAFE, 2.0, 1));
+        helper.succeedWhen(() -> helper.assertItemEntityCountIs(TradeBlocks.SAFE.get().asItem(), SAFE, 2.0, 1));
     }
 
     private static SafeBlockEntity placeSafe(GameTestHelper helper) {
-        helper.setBlock(SAFE, TradeBlocks.SAFE_BLOCK.get());
+        helper.setBlock(SAFE, TradeBlocks.SAFE.get());
         if (!(helper.getBlockEntity(SAFE) instanceof SafeBlockEntity safe)) {
             helper.fail("safe has no block entity", SAFE);
             return null;

@@ -20,9 +20,8 @@ public final class TradeBlocks {
     public static final DeferredRegister.Blocks BLOCKS =
             DeferredRegister.createBlocks(ErrantTrade.MOD_ID);
 
-    // safe_block registration
-    public static final Supplier<SafeBlock> SAFE_BLOCK =
-            registerBlockItem("safe_block", () ->
+    public static final Supplier<SafeBlock> SAFE =
+            registerBlockItem("safe", () ->
                     new SafeBlock(BlockBehaviour.Properties.of()
                             .strength(1200.0F)
                             .requiresCorrectToolForDrops()
@@ -31,9 +30,8 @@ public final class TradeBlocks {
                     )
             );
 
-    // coin_block registration
-    public static final Supplier<CoinBlock> COIN_BLOCK =
-            registerBlock("coin_block", () ->
+    public static final Supplier<CoinBlock> COIN_PILE =
+            registerBlock("coin_pile", () ->
                     new CoinBlock(BlockBehaviour.Properties.of())
             );
 

@@ -17,7 +17,7 @@ public class TradeCreativeModeTabs {
             DeferredRegister.create(Registries.CREATIVE_MODE_TAB,  ErrantTrade.MOD_ID);
 
     public static final Supplier<CreativeModeTab> ITEMS_TAB = CREATIVE_MODE_TAB.register("erranttrade_tab",
-            () -> CreativeModeTab.builder().icon(() -> new ItemStack(TradeBlocks.SAFE_BLOCK.get().asItem()))
+            () -> CreativeModeTab.builder().icon(() -> new ItemStack(TradeBlocks.SAFE.get().asItem()))
                     .title(Component.translatable("creativetab.erranttrade.items_tab"))
                     .displayItems((itemDisplayParameters, output) -> {
                         output.accept(TradeItems.COIN_COPPER_BIT.get());
@@ -28,9 +28,9 @@ public class TradeCreativeModeTabs {
                         output.accept(TradeItems.COIN_GOLD_REGAL.get());
                         output.accept(TradeItems.COIN_EMERALD_SUN.get());
                         output.accept(TradeItems.COIN_EMERALD_THRONE.get());
-                        output.accept(TradeItems.WALLET_LEATHER_ITEM.get());
+                        output.accept(TradeItems.LEATHER_WALLET.get());
                         output.accept(TradeItems.ID_CARD.get());
-                        output.accept(TradeBlocks.SAFE_BLOCK.get());
+                        output.accept(TradeBlocks.SAFE.get());
                     }).build());
 
     public static void register(IEventBus bus) {

@@ -99,6 +99,6 @@ public class SafeMenu extends AbstractContainerMenu {
     @Override
     public boolean stillValid(Player player) {
         return stillValid(ContainerLevelAccess.create(level, safeBlockEntity.getBlockPos()),
-                player, TradeBlocks.SAFE_BLOCK.get());
+                player, TradeBlocks.SAFE.get());
     }
 }

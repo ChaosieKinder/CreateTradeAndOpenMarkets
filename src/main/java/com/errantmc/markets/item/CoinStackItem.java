@@ -52,7 +52,7 @@ public class CoinStackItem extends Item {
         // Only where the pile can survive: an unsupported one drops its whole balance on the next update
         BlockPlaceContext placeCtx = new BlockPlaceContext(ctx);
         BlockPos place = placeCtx.getClickedPos();
-        BlockState state = TradeBlocks.COIN_BLOCK.get().getStateForPlacement(placeCtx);
+        BlockState state = TradeBlocks.COIN_PILE.get().getStateForPlacement(placeCtx);
         if (!placeCtx.canPlace() || state == null || !state.canSurvive(level, place)) {
             return InteractionResult.FAIL;
         }

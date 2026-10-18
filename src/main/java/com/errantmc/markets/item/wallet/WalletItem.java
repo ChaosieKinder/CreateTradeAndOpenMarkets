@@ -34,7 +34,7 @@ public class WalletItem extends Item {
             WalletBalance.ensure(stack);   // CurrencyInfo
             ((ServerPlayer) player).openMenu(
                     new SimpleMenuProvider((id, inv, p) -> new WalletMenu(id, inv, hand),
-                            Component.translatable("item.erranttrade.wallet_leather")),
+                            Component.translatable("item.erranttrade.leather_wallet")),
                     buf -> buf.writeEnum(hand)
             );
         }

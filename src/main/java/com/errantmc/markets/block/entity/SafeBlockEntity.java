@@ -37,7 +37,7 @@ public class SafeBlockEntity extends BlockEntity implements MenuProvider {
     };
 
     public SafeBlockEntity(BlockPos pos, BlockState state) {
-        super(TradeBlockEntities.SAFE_BLOCKENTITY.get(), pos, state);
+        super(TradeBlockEntities.SAFE.get(), pos, state);
     }
 
     public void clearContents() {

@@ -1,7 +1,7 @@
 {
   "render_type": "translucent",
   "textures": {
-    "particle": "erranttrade:block/coin_block"
+    "particle": "erranttrade:block/coin_pile"
   },
   "elements": [
   ],

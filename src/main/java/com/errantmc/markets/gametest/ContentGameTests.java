@@ -112,7 +112,7 @@ public final class ContentGameTests {
     /** Every state of the safe, whichever way it faces, is the banker's job site, and villagers may claim it. */
     @GameTest(template = ARENA)
     public static void theSafeIsTheBankersJobSite(GameTestHelper helper) {
-        for (BlockState state : TradeBlocks.SAFE_BLOCK.get().getStateDefinition().getPossibleStates()) {
+        for (BlockState state : TradeBlocks.SAFE.get().getStateDefinition().getPossibleStates()) {
             var poi = PoiTypes.forState(state);
             assertTrue(helper, state + " to be the banker's job site",
                     poi.isPresent() && poi.get().value() == TradeVillagers.BANKER_POI.value());

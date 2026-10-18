@@ -51,7 +51,7 @@ public class CoinItem extends Item {
     @Override
     public boolean doesSneakBypassUse(ItemStack stack, LevelReader level, BlockPos pos, Player player) {
         // Allow block activation while sneaking when clicking a CoinBlock
-        return level.getBlockState(pos).is(TradeBlocks.COIN_BLOCK.get());
+        return level.getBlockState(pos).is(TradeBlocks.COIN_PILE.get());
     }
 
     @Override
@@ -60,14 +60,14 @@ public class CoinItem extends Item {
         Level level   = ctx.getLevel();
 
         // Clicking an existing pile is the pile's business (single and double tap)
-        if (level.getBlockState(ctx.getClickedPos()).is(TradeBlocks.COIN_BLOCK.get())) {
+        if (level.getBlockState(ctx.getClickedPos()).is(TradeBlocks.COIN_PILE.get())) {
             return InteractionResult.PASS;
         }
 
         // Places like any block item: against the clicked face, or into a replaceable block
         BlockPlaceContext placeCtx = new BlockPlaceContext(ctx);
         BlockPos placePos = placeCtx.getClickedPos();
-        BlockState toPlace = TradeBlocks.COIN_BLOCK.get().getStateForPlacement(placeCtx);
+        BlockState toPlace = TradeBlocks.COIN_PILE.get().getStateForPlacement(placeCtx);
         if (!placeCtx.canPlace() || toPlace == null || !toPlace.canSurvive(level, placePos)) {
             return InteractionResult.FAIL;
         }

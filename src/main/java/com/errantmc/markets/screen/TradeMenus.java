@@ -18,10 +18,10 @@ public class TradeMenus {
             DeferredRegister.create(Registries.MENU, ErrantTrade.MOD_ID);
 
     public static final DeferredHolder<MenuType<?>, MenuType<SafeMenu>> SAFE_MENU =
-            registerMenuType("safe_menu", SafeMenu::new);
+            registerMenuType("safe", SafeMenu::new);
 
     public static final DeferredHolder<MenuType<?>, MenuType<WalletMenu>> WALLET_MENU =
-            registerMenuType("wallet_menu", WalletMenu::new);
+            registerMenuType("wallet", WalletMenu::new);
 
     private static <T extends AbstractContainerMenu>DeferredHolder<MenuType<?>, MenuType<T>> registerMenuType(String name,
         IContainerFactory<T> factory) {

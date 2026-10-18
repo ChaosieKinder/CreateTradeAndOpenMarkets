@@ -24,7 +24,7 @@ public final class CoinBlockLeftClickHandler {
         BlockPos pos = e.getPos();
         BlockState state = level.getBlockState(pos);
 
-        if (!state.is(TradeBlocks.COIN_BLOCK.get())) return;
+        if (!state.is(TradeBlocks.COIN_PILE.get())) return;
 
         // Always cancel on client so the hand animation plays but mining doesn't start
         if (level.isClientSide) {

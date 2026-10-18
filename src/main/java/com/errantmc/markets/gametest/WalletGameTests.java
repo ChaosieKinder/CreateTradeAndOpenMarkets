@@ -37,7 +37,7 @@ public final class WalletGameTests {
     @GameTest(template = ARENA)
     public static void depositAllTakesCoinStacksAndLeavesTheWalletsContents(GameTestHelper helper) {
         ServerPlayer player = survivalPlayer(helper);
-        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(TradeItems.WALLET_LEATHER_ITEM.get()));
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(TradeItems.LEATHER_WALLET.get()));
         player.getInventory().setItem(2, coinStackOf(CurrencyData.newCurrencyFromDenom(CoinDenomination.COPPER_BIT, 5)));
         player.setItemInHand(InteractionHand.OFF_HAND,
                 coinStackOf(CurrencyData.newCurrencyFromDenom(CoinDenomination.GOLD_MARK, 2)));
@@ -64,7 +64,7 @@ public final class WalletGameTests {
     @GameTest(template = ARENA)
     public static void pickedUpCoinsGoIntoTheWallet(GameTestHelper helper) {
         ServerPlayer player = survivalPlayer(helper);
-        ItemStack wallet = new ItemStack(TradeItems.WALLET_LEATHER_ITEM.get());
+        ItemStack wallet = new ItemStack(TradeItems.LEATHER_WALLET.get());
         player.getInventory().setItem(14, wallet);
         ItemEntity coins = dropAt(helper, new ItemStack(TradeItems.COIN_SILVER_CROWN.get(), 5), true);
 
@@ -81,7 +81,7 @@ public final class WalletGameTests {
     @GameTest(template = ARENA)
     public static void coinsStillInTheirPickupDelayAreLeftAlone(GameTestHelper helper) {
         ServerPlayer player = survivalPlayer(helper);
-        ItemStack wallet = new ItemStack(TradeItems.WALLET_LEATHER_ITEM.get());
+        ItemStack wallet = new ItemStack(TradeItems.LEATHER_WALLET.get());
         player.getInventory().setItem(14, wallet);
         ItemEntity coins = dropAt(helper, new ItemStack(TradeItems.COIN_SILVER_CROWN.get(), 5), false);
 
@@ -97,7 +97,7 @@ public final class WalletGameTests {
     @GameTest(template = ARENA)
     public static void pickupIntoANearlyFullWalletPutsTheRestInTheInventory(GameTestHelper helper) {
         ServerPlayer player = survivalPlayer(helper);
-        ItemStack wallet = new ItemStack(TradeItems.WALLET_LEATHER_ITEM.get());
+        ItemStack wallet = new ItemStack(TradeItems.LEATHER_WALLET.get());
         WalletBalance.set(wallet, CurrencyData.newCurrencyFromDenom(CoinDenomination.COPPER_BIT, Integer.MAX_VALUE - 1));
         player.getInventory().setItem(14, wallet);
         ItemEntity coins = dropAt(helper, new ItemStack(TradeItems.COIN_COPPER_BIT.get(), 5), true);
@@ -179,7 +179,7 @@ public final class WalletGameTests {
     @GameTest(template = ARENA)
     public static void coinsPutInTheGridBecomeBalance(GameTestHelper helper) {
         ServerPlayer player = survivalPlayer(helper);
-        ItemStack wallet = new ItemStack(TradeItems.WALLET_LEATHER_ITEM.get());
+        ItemStack wallet = new ItemStack(TradeItems.LEATHER_WALLET.get());
         player.setItemInHand(InteractionHand.MAIN_HAND, wallet);
         WalletMenu menu = new WalletMenu(0, player.getInventory(), InteractionHand.MAIN_HAND);
         menu.getSlot(4).set(new ItemStack(TradeItems.COIN_COPPER_SHARD.get(), 10));
@@ -199,7 +199,7 @@ public final class WalletGameTests {
     @GameTest(template = ARENA)
     public static void closingTheWalletKeepsWhatIsInItsGrid(GameTestHelper helper) {
         ServerPlayer player = survivalPlayer(helper);
-        ItemStack wallet = new ItemStack(TradeItems.WALLET_LEATHER_ITEM.get());
+        ItemStack wallet = new ItemStack(TradeItems.LEATHER_WALLET.get());
         player.setItemInHand(InteractionHand.MAIN_HAND, wallet);
         WalletMenu menu = new WalletMenu(0, player.getInventory(), InteractionHand.MAIN_HAND);
         menu.getSlot(1).set(new ItemStack(TradeItems.ID_CARD.get()));
@@ -222,7 +222,7 @@ public final class WalletGameTests {
     @GameTest(template = ARENA)
     public static void throwingTheOpenWalletDoesNotDuplicateItsGrid(GameTestHelper helper) {
         ServerPlayer player = survivalPlayer(helper);
-        ItemStack wallet = new ItemStack(TradeItems.WALLET_LEATHER_ITEM.get());
+        ItemStack wallet = new ItemStack(TradeItems.LEATHER_WALLET.get());
         List<ItemStack> grid = new ArrayList<>(WalletInventory.read(wallet));
         grid.set(1, new ItemStack(TradeItems.ID_CARD.get()));
         WalletInventory.write(wallet, grid);
@@ -248,7 +248,7 @@ public final class WalletGameTests {
     @GameTest(template = ARENA)
     public static void aNumberKeyCannotSwapTheOpenWalletAway(GameTestHelper helper) {
         ServerPlayer player = survivalPlayer(helper);
-        ItemStack wallet = new ItemStack(TradeItems.WALLET_LEATHER_ITEM.get());
+        ItemStack wallet = new ItemStack(TradeItems.LEATHER_WALLET.get());
         player.setItemInHand(InteractionHand.MAIN_HAND, wallet); // hotbar 0
         WalletMenu menu = new WalletMenu(0, player.getInventory(), InteractionHand.MAIN_HAND);
 
@@ -262,7 +262,7 @@ public final class WalletGameTests {
     @GameTest(template = ARENA)
     public static void theGridIsSavedAsItChanges(GameTestHelper helper) {
         ServerPlayer player = survivalPlayer(helper);
-        ItemStack wallet = new ItemStack(TradeItems.WALLET_LEATHER_ITEM.get());
+        ItemStack wallet = new ItemStack(TradeItems.LEATHER_WALLET.get());
         player.setItemInHand(InteractionHand.MAIN_HAND, wallet);
         WalletMenu menu = new WalletMenu(0, player.getInventory(), InteractionHand.MAIN_HAND);
 
@@ -277,7 +277,7 @@ public final class WalletGameTests {
     @GameTest(template = ARENA)
     public static void theGridTakesOnlyWalletThings(GameTestHelper helper) {
         ServerPlayer player = survivalPlayer(helper);
-        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(TradeItems.WALLET_LEATHER_ITEM.get()));
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(TradeItems.LEATHER_WALLET.get()));
         WalletMenu menu = new WalletMenu(0, player.getInventory(), InteractionHand.MAIN_HAND);
         var grid = menu.getSlot(0);
 
@@ -294,7 +294,7 @@ public final class WalletGameTests {
     @GameTest(template = ARENA)
     public static void depositAllLeavesIdCardsInTheInventory(GameTestHelper helper) {
         ServerPlayer player = survivalPlayer(helper);
-        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(TradeItems.WALLET_LEATHER_ITEM.get()));
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(TradeItems.LEATHER_WALLET.get()));
         player.getInventory().setItem(7, new ItemStack(TradeItems.ID_CARD.get()));
         WalletMenu menu = new WalletMenu(0, player.getInventory(), InteractionHand.MAIN_HAND);
 
@@ -307,12 +307,12 @@ public final class WalletGameTests {
     @GameTest(template = ARENA)
     public static void aWalletCannotGoInsideAWallet(GameTestHelper helper) {
         ServerPlayer player = survivalPlayer(helper);
-        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(TradeItems.WALLET_LEATHER_ITEM.get()));
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(TradeItems.LEATHER_WALLET.get()));
         WalletMenu menu = new WalletMenu(0, player.getInventory(), InteractionHand.MAIN_HAND);
 
         for (int slot = 0; slot < WalletInventory.SIZE; slot++) {
             assertTrue(helper, "grid slot " + slot + " to refuse a wallet",
-                    !menu.getSlot(slot).mayPlace(new ItemStack(TradeItems.WALLET_LEATHER_ITEM.get())));
+                    !menu.getSlot(slot).mayPlace(new ItemStack(TradeItems.LEATHER_WALLET.get())));
         }
         helper.succeed();
     }
@@ -334,7 +334,7 @@ public final class WalletGameTests {
     }
 
     private static ItemStack walletHolding(CurrencyData balance) {
-        ItemStack wallet = new ItemStack(TradeItems.WALLET_LEATHER_ITEM.get());
+        ItemStack wallet = new ItemStack(TradeItems.LEATHER_WALLET.get());
         WalletBalance.set(wallet, balance);
         return wallet;
     }
@@ -352,7 +352,7 @@ public final class WalletGameTests {
     @GameTest(template = ARENA)
     public static void depositAllIntoANearlyFullWalletLeavesTheRest(GameTestHelper helper) {
         ServerPlayer player = survivalPlayer(helper);
-        ItemStack wallet = new ItemStack(TradeItems.WALLET_LEATHER_ITEM.get());
+        ItemStack wallet = new ItemStack(TradeItems.LEATHER_WALLET.get());
         WalletBalance.set(wallet, CurrencyData.newCurrencyFromDenom(CoinDenomination.COPPER_BIT, Integer.MAX_VALUE - 1));
         player.setItemInHand(InteractionHand.MAIN_HAND, wallet);
         player.getInventory().setItem(5, new ItemStack(TradeItems.COIN_COPPER_BIT.get(), 5));

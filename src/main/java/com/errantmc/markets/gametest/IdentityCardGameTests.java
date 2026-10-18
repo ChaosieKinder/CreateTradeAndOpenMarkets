@@ -106,7 +106,7 @@ public final class IdentityCardGameTests {
         ServerPlayer viewer = survivalPlayer(helper);
         ItemStack card = new ItemStack(TradeItems.ID_CARD.get());
         IdentityCardComponent.set(card, IdentityCardData.of(owner));
-        ItemStack wallet = new ItemStack(TradeItems.WALLET_LEATHER_ITEM.get());
+        ItemStack wallet = new ItemStack(TradeItems.LEATHER_WALLET.get());
         List<ItemStack> grid = new ArrayList<>(WalletInventory.read(wallet));
         grid.set(4, card);
         WalletInventory.write(wallet, grid);

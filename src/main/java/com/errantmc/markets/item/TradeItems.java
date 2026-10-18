@@ -37,7 +37,7 @@ public class TradeItems {
     public static final DeferredItem<Item> COIN_EMERALD_THRONE  = ITEMS.register("coin_emerald_throne",
             () -> new CoinItem(new Item.Properties(), CoinDenomination.EMERALD_THRONE));
 
-    public static final DeferredItem<Item> WALLET_LEATHER_ITEM  = ITEMS.register("wallet_leather",
+    public static final DeferredItem<Item> LEATHER_WALLET  = ITEMS.register("leather_wallet",
             () -> new WalletItem(new Item.Properties()));
 
     public static final DeferredItem<Item> ID_CARD = ITEMS.register("id_card",

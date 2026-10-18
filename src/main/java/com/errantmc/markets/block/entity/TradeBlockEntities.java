@@ -16,24 +16,24 @@ public final class TradeBlockEntities {
             DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE, ErrantTrade.MOD_ID);
 
     // Register your BE type (note the 2-arg factory expected by vanilla)
-    public static final Supplier<BlockEntityType<SafeBlockEntity>> SAFE_BLOCKENTITY =
-            BLOCK_ENTITIES.register("safe_blockentity", () ->
+    public static final Supplier<BlockEntityType<SafeBlockEntity>> SAFE =
+            BLOCK_ENTITIES.register("safe", () ->
                     BlockEntityType.Builder.of(
                             // uses the 2-arg ctor shown below
                             SafeBlockEntity::new,
-                            // works whether SAFE_BLOCK is a BlockEntry or a RegistryObject
-                            TradeBlocks.SAFE_BLOCK.get()
+                            // works whether SAFE is a BlockEntry or a RegistryObject
+                            TradeBlocks.SAFE.get()
                     ).build(null)
             );
 
     // Register your BE type (note the 2-arg factory expected by vanilla)
-    public static final Supplier<BlockEntityType<CoinBlockEntity>> COIN_BLOCKENTITY =
-            BLOCK_ENTITIES.register("coin_blockentity", () ->
+    public static final Supplier<BlockEntityType<CoinBlockEntity>> COIN_PILE =
+            BLOCK_ENTITIES.register("coin_pile", () ->
                     BlockEntityType.Builder.of(
                             // uses the 2-arg ctor shown below
                             CoinBlockEntity::new,
-                            // works whether SAFE_BLOCK is a BlockEntry or a RegistryObject
-                            TradeBlocks.COIN_BLOCK.get()
+                            // works whether SAFE is a BlockEntry or a RegistryObject
+                            TradeBlocks.COIN_PILE.get()
                     ).build(null)
             );
 

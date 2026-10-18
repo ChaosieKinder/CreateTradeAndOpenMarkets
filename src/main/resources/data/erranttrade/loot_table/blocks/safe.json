@@ -11,11 +11,11 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "erranttrade:safe_block"
+          "name": "erranttrade:safe"
         }
       ],
       "rolls": 1.0
     }
   ],
-  "random_sequence": "erranttrade:blocks/safe_block"
+  "random_sequence": "erranttrade:blocks/safe"
 }

@@ -172,14 +172,14 @@ public class CoinBlock extends BaseEntityBlock {
         // Either of these is fine; pick one:
         // return Block.canSupportCenter(level, below, Direction.UP);
         return below.isFaceSturdy(level, belowPos, Direction.UP)
-                && !below.is(TradeBlocks.COIN_BLOCK.get());
+                && !below.is(TradeBlocks.COIN_PILE.get());
     }
 
     @Override
     public @Nullable BlockState getStateForPlacement(BlockPlaceContext ctx) {
         BlockPos pos = ctx.getClickedPos();
         BlockState below = ctx.getLevel().getBlockState(pos.below());
-        if (below.is(TradeBlocks.COIN_BLOCK.get())) return null; // disallow stacking
+        if (below.is(TradeBlocks.COIN_PILE.get())) return null; // disallow stacking
         return super.getStateForPlacement(ctx); // or return defaultBlockState();
     }
 
