@@ -56,7 +56,6 @@ public class InteractionDefinitionLoader extends SimpleJsonResourceReloadListene
             }
         });
         this.definitions = Map.copyOf(parsed);
-        InteractionTabManager.INSTANCE.invalidate();
     }
 
     private InteractionDefinition parseDefinition(ResourceLocation fileId, JsonObject jsonObject) {

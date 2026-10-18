@@ -8,7 +8,11 @@ import com.errantmc.markets.npcinteractions.tabs.buy.BuyShopTab;
 import com.errantmc.markets.npcinteractions.tabs.buy.BuyShopTabType;
 import com.errantmc.markets.npcinteractions.tabs.sell.SellShopTab;
 import com.errantmc.markets.npcinteractions.tabs.sell.SellShopTabType;
+import com.errantmc.markets.npcinteractions.components.SimpleShopTab;
 import com.errantmc.markets.npcinteractions.trading.ShopEntry;
+import com.errantmc.markets.npcinteractions.trading.ShopStock;
+import com.errantmc.markets.npcinteractions.trading.TradeAttachments;
+import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
@@ -32,8 +36,6 @@ public final class InteractionTabManager {
     public static final Logger LOG = LogUtils.getLogger();
     public static final InteractionTabManager INSTANCE = new InteractionTabManager();
 
-    private final Map<InteractionTabGenerationContext.CacheKey, List<InteractionTab>> cachedTabs = new HashMap<>();
-    private long cachedDayIndex = Long.MIN_VALUE;
 
     private InteractionTabManager() {
         InteractionTabRegistry.register(new BuyShopTabType());
@@ -73,25 +75,12 @@ public final class InteractionTabManager {
         LOG.debug("resolveTabs context.merchant: {}", context.getMerchant());
 
 
-        if (context.getDayIndex() != this.cachedDayIndex) {
-            this.cachedDayIndex = context.getDayIndex();
-            this.cachedTabs.clear();
-        }
-
         List<InteractionTab> result = new ArrayList<>();
-        var cacheKey = context.getCacheKey();
-        if (cacheKey.isPresent()) {
-            List<InteractionTab> cached = this.cachedTabs.get(cacheKey.get());
-            if (cached != null) {
-                return cached;
-            }
-        }
 
         InteractionDefinitionLoader.getInstance().getAllDefinitions().forEach((tab) -> {
             LOG.debug("resolveTabs available definition: {}", tab.profession());
         });
 
-        boolean usedDefinition = false;
         if (context.getProfessionId().isPresent()) {
             LOG.debug("resolveTabs using profession id {}", context.getProfessionId().get());
             InteractionDefinitionLoader.getInstance().getDefinition(context.getProfessionId().get())
@@ -107,16 +96,12 @@ public final class InteractionTabManager {
                             tabDef.getType(), context.getProfessionId().get());
                     result.add(type.create(tabDef, context));
                 }));
-            usedDefinition = !result.isEmpty();
         }
 
         if (!result.isEmpty()) {
             applyAutoBuybacks(result);
-            List<InteractionTab> immutable = List.copyOf(result);
-            if (usedDefinition && cacheKey != null) {
-                this.cachedTabs.put(cacheKey.get(), immutable);
-            }
-            return immutable;
+            if (merchant instanceof Villager villager) applyStoredStock(villager, result, context.getDayIndex());
+            return List.copyOf(result);
         }
 
         LOG.debug("No tabs found from definition, falling back to offers for merchant {}", merchant);
@@ -126,9 +111,41 @@ public final class InteractionTabManager {
         return fallback.isEmpty() ? List.of() : List.copyOf(fallback);
     }
 
-    public synchronized void invalidate() {
-        this.cachedTabs.clear();
-        this.cachedDayIndex = Long.MIN_VALUE;
+    /**
+     * A defined shop's tabs are rebuilt on every resolve, from the definition and a random seeded
+     * by the day and the villager, so they come out the same all day; what has been bought since
+     * is the villager's {@link ShopStock}, laid over them. Nothing is cached, so nothing is lost
+     * when the server stops and nothing is shared between a client and a server in one process.
+     */
+    private static void applyStoredStock(Villager villager, List<InteractionTab> tabs, long day) {
+        ShopStock stored = villager.getData(TradeAttachments.SHOP_STOCK);
+        if (stored.day() != day) return; // a new day: fresh stock, as rolled
+        forEachLimitedEntry(tabs, (key, entry) -> {
+            Integer remaining = stored.remaining().get(key);
+            if (remaining != null) entry.setStock(remaining);
+        });
+    }
+
+    /** Records a defined shop's stock on the villager after a trade. Converted vanilla offers keep their own. */
+    public void saveStock(Villager villager, List<InteractionTab> tabs, Level level) {
+        Map<String, Integer> remaining = new HashMap<>();
+        forEachLimitedEntry(tabs, (key, entry) -> {
+            if (!entry.fromVanillaOffer()) remaining.put(key, entry.stock());
+        });
+        if (!remaining.isEmpty()) {
+            villager.setData(TradeAttachments.SHOP_STOCK, new ShopStock(level.getDayTime() / 24000L, remaining));
+        }
+    }
+
+    private static void forEachLimitedEntry(List<InteractionTab> tabs, java.util.function.BiConsumer<String, ShopEntry> action) {
+        for (int t = 0; t < tabs.size(); t++) {
+            if (!(tabs.get(t) instanceof SimpleShopTab shop)) continue;
+            var entries = shop.entries();
+            for (int e = 0; e < entries.size(); e++) {
+                ShopEntry entry = entries.get(e);
+                if (entry.hasLimitedStock()) action.accept(ShopStock.key(t, e, entry.item()), entry);
+            }
+        }
     }
 
     /**

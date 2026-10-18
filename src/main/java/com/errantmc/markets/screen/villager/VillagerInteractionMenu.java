@@ -147,7 +147,8 @@ public class VillagerInteractionMenu extends AbstractContainerMenu {
             serverPlayer.displayClientMessage(Component.translatable(result.messageKey()), true);
             return true;
         }
-        // Stock and vanilla offer uses changed: the client is sent the server's tabs again
+        // Stock and vanilla offer uses changed: saved on the villager, then the client is sent the tabs again
+        InteractionTabManager.INSTANCE.saveStock(this.villager, this.tabs, getLevel());
         this.tabs = InteractionTabManager.INSTANCE.resolveTabs(this.villager, this.villager.getOffers(), getLevel());
         TradeNetwork.sendTo(serverPlayer, new InteractionTabsSyncMessage(this.containerId, this.tabs));
         broadcastChanges();

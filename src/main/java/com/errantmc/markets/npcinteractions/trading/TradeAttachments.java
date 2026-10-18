@@ -20,6 +20,10 @@ public final class TradeAttachments {
     public static final Supplier<AttachmentType<Long>> XP_REMAINDER = ATTACHMENT_TYPES.register("trade_xp_remainder",
             () -> AttachmentType.builder(() -> 0L).serialize(Codec.LONG).build());
 
+    /** Today's remaining stock of the villager's defined shop (see ShopStock). */
+    public static final Supplier<AttachmentType<ShopStock>> SHOP_STOCK = ATTACHMENT_TYPES.register("shop_stock",
+            () -> AttachmentType.builder(() -> ShopStock.NONE).serialize(ShopStock.CODEC).build());
+
     public static void register(IEventBus modBus) {
         ATTACHMENT_TYPES.register(modBus);
     }

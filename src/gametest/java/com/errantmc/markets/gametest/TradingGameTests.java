@@ -7,9 +7,14 @@ import com.errantmc.markets.domain.Purse;
 import com.errantmc.markets.item.PlayerMoney;
 import com.errantmc.markets.item.TradeItems;
 import com.errantmc.markets.npcinteractions.components.SimpleShopTab;
+import com.errantmc.markets.npcinteractions.registry.InteractionTabManager;
 import com.errantmc.markets.npcinteractions.trading.ShopEntry;
+import com.errantmc.markets.npcinteractions.trading.ShopStock;
+import com.errantmc.markets.npcinteractions.trading.TradeAttachments;
 import com.errantmc.markets.screen.villager.VillagerInteractionMenu;
 import net.minecraft.gametest.framework.GameTest;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -20,6 +25,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
+
+import java.util.Map;
 
 import static com.errantmc.markets.gametest.GameTests.*;
 
@@ -174,6 +181,47 @@ public final class TradingGameTests {
         int orbs = helper.getLevel().getEntitiesOfClass(ExperienceOrb.class, farmer.getBoundingBox().inflate(3))
                 .stream().mapToInt(ExperienceOrb::getValue).sum();
         assertCount(helper, "player experience in orbs", 2, orbs);
+        helper.succeed();
+    }
+
+    // ---------- stock over time ----------
+
+    /** Stock is saved with the villager, so a restart does not refill a shop someone bought out. */
+    @GameTest(template = ARENA)
+    public static void stockSurvivesSavingAndLoadingTheVillager(GameTestHelper helper) {
+        Villager farmer = VillagerInteractionGameTests.farmer(helper);
+        ServerPlayer player = survivalPlayer(helper);
+        player.getInventory().setItem(3, new ItemStack(TradeItems.COIN_SILVER_CROWN.get(), 1));
+        VillagerInteractionMenu menu = open(helper, player, farmer);
+        if (menu == null) return;
+        int stockBefore = entry(menu, BUY, BREAD).stock();
+        menu.clickMenuButton(player, VillagerInteractionMenu.tradeButton(BUY, BREAD));
+        player.closeContainer();
+
+        CompoundTag saved = new CompoundTag();
+        farmer.save(saved);
+        Villager reloaded = EntityType.VILLAGER.create(helper.getLevel());
+        reloaded.load(saved);
+        var tabs = InteractionTabManager.INSTANCE.resolveTabs(reloaded, reloaded.getOffers(), helper.getLevel());
+
+        assertCount(helper, "bread stock after reloading", stockBefore - 1,
+                ((SimpleShopTab) tabs.get(BUY)).entries().get(BREAD).stock());
+        helper.succeed();
+    }
+
+    /** Stock recorded on another day is ignored: each day the shop restocks as rolled. */
+    @GameTest(template = ARENA)
+    public static void aNewDayRestocks(GameTestHelper helper) {
+        Villager farmer = VillagerInteractionGameTests.farmer(helper);
+        var fresh = InteractionTabManager.INSTANCE.resolveTabs(farmer, farmer.getOffers(), helper.getLevel());
+        int rolled = ((SimpleShopTab) fresh.get(BUY)).entries().get(BREAD).stock();
+        long yesterday = helper.getLevel().getDayTime() / 24000L - 1;
+        String key = ShopStock.key(BUY, BREAD, new ItemStack(Items.BREAD));
+        farmer.setData(TradeAttachments.SHOP_STOCK, new ShopStock(yesterday, Map.of(key, 0)));
+
+        var tabs = InteractionTabManager.INSTANCE.resolveTabs(farmer, farmer.getOffers(), helper.getLevel());
+
+        assertCount(helper, "bread stock today", rolled, ((SimpleShopTab) tabs.get(BUY)).entries().get(BREAD).stock());
         helper.succeed();
     }
 
