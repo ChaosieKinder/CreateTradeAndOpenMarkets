@@ -5,9 +5,10 @@ economy with multi-denomination coins, a wallet, coin piles you can place in the
 identity cards, and a reskinned villager trading screen. [README](README.md) has the player-facing
 feature list and the roadmap.
 
-**Status, 17 Oct 2026: early alpha, written by hand, with no tests yet.** This is the first
-session in which an agent has worked on the code. The near-term goal is **testing first, then
-refactoring and cleanup**, in that order. Phase by phase plan and the bugs already found are in
+**Status, 17 Oct 2026: early alpha, written by hand. The test infrastructure is in place but
+barely used: 3 unit tests and 1 gametest.** Agents started working on the code on 17 Oct, when the
+mod was also renamed from Trade and Open Markets (`tradeandopenmarkets`). The near-term goal is
+**testing first, then refactoring and cleanup**, in that order. Phase by phase plan and the bugs already found are in
 [docs/BACKLOG.md](docs/BACKLOG.md). Keep this paragraph honest; it is the first thing anyone reads.
 
 ---
@@ -55,7 +56,9 @@ CreateTradeAndOpenMarkets/
 ```
 
 There is **no datagen yet**: all JSON under `src/main/resources` is hand-written, though
-`build.gradle` already wires `src/generated/resources` in. There is **no test source set yet**.
+`build.gradle` already wires `src/generated/resources` in. Unit tests live in `src/test/java`.
+Gametests live in `src/main/java/.../gametest/`, because the game discovers them from the mod
+itself, and their templates are in `data/erranttrade/structure/`.
 
 The directory is named `CreateTradeAndOpenMarkets`, but **Create is not a dependency today**.
 Its lines in `build.gradle` are commented out and `neoforge.mods.toml` lists it as optional.
@@ -111,10 +114,12 @@ From PowerShell in the repo root:
 
 | Command | Does |
 |---|---|
-| `.\gradlew.bat build` | compile and jar. Today this is the only automated check |
+| `.\gradlew.bat build` | compile, jar, and run the JUnit tests |
+| `.\gradlew.bat test` | JUnit tests only, with FML booted (`neoForge.unitTest`) |
 | `.\gradlew.bat runClient` | dev client with JEI |
 | `.\gradlew.bat runServer` | dedicated server (`--nogui`). The check that client code has not leaked into common code |
-| `.\gradlew.bat runGameTestServer` | runs registered gametests and exits. **There are none yet, and with none registered the server crashes**; that is the MDK's behaviour, not a bug of ours |
+| `.\gradlew.bat runGameTestServer` | runs every gametest and exits nonzero on failure. Needs no EULA. Search the log for `required tests` |
+| `python tools/make-empty-template.py <name> x y z` | writes an empty gametest template into `data/erranttrade/structure/` |
 | `.\gradlew.bat runData` | datagen into `src/generated/resources`. No providers exist yet |
 
 **Do not build while a dev client is running.** A rebuild replaces classes under a running game
@@ -160,16 +165,21 @@ What the code already does, and what to converge on during cleanup:
 
 ## 7. Testing
 
-There are no tests. The plan, in [BACKLOG §Testing](docs/BACKLOG.md#testing), is two layers:
+Two layers, both run in CI. What still needs covering is in [BACKLOG §Testing](docs/BACKLOG.md#testing).
 
-1. **JUnit unit tests** for pure logic: `CurrencyData` arithmetic and overflow, denomination
-   lookup, coin-stack tier, change making. Needs a `src/test/java` source set and JUnit 5 in
-   `build.gradle`. MDG's `neoForge.unitTest` can boot FML for tests that need registries, but
-   prefer extracting the logic so it doesn't need them.
-2. **NeoForge gametests** (1.21.1: `@GameTestHolder(MOD_ID)` + `@GameTest`, templates under
-   `data/erranttrade/structure/`) for in-world behaviour: coin block insert, withdraw,
-   break and drop, wallet auto-deposit, safe drops. `runGameTestServer` becomes the CI check once
-   at least one exists.
+1. **JUnit unit tests** (`src/test/java`) for pure logic: `CurrencyData` arithmetic and overflow,
+   denomination lookup, coin-stack tier, change making. `neoForge.unitTest` boots FML, so a test
+   *may* touch registries, but prefer extracting the logic so it doesn't need to.
+   `CurrencyDataTest` is the example.
+2. **NeoForge gametests** for in-world behaviour: coin block insert, withdraw, break and drop,
+   wallet auto-deposit, safe drops. On 1.21.1 a holder class carries
+   `@GameTestHolder(ErrantTrade.MOD_ID)` and `@PrefixGameTestTemplate(false)`, and each test is a
+   static `@GameTest(template = GameTests.ARENA)` method. `CoinBlockGameTests` is the example.
+   Build inside the 9×9×9 arena; for anything bigger, make a bigger template with the tool.
+   Prefer `succeedWhen` over waiting a fixed number of ticks and then asserting.
+
+**Before trusting a new test, make it fail once.** Break the expectation, check that
+`runGameTestServer` reports it, then put it back. `CoinBlockGameTests` was checked this way.
 
 **A test that calls a helper directly proves the helper, not the feature.** For the coin block,
 break the block in the gametest and count the item entities, instead of calling `onRemove`.

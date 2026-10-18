@@ -57,12 +57,12 @@ Ordered by severity. **Coin loss or duplication comes first.**
 ## Testing
 
 ### Phase 1: test infrastructure
-- [ ] Add a `src/test/java` source set and JUnit 5 (`testImplementation` + `useJUnitPlatform()`).
-- [ ] Decide whether unit tests run with `neoForge.unitTest { enable() }`, which boots FML, or
-      stay pure. Prefer pure; see the refactor item below.
-- [ ] Add a gametest holder class and one trivial gametest so `runGameTestServer` passes. Add the
-      empty structure template it needs.
-- [ ] Add `runGameTestServer` to CI after `build`.
+Done 17 Oct.
+- [x] `src/test/java` with JUnit 5, run by `build`. Uses `neoForge.unitTest`, so FML boots and
+      tests may touch registries. Keep logic pure where you can anyway.
+- [x] Gametest holder (`CoinBlockGameTests`) and an empty 9×9×9 `arena` template from
+      `tools/make-empty-template.py`.
+- [x] CI runs `runGameTestServer` after `build`.
 
 ### Phase 2: characterisation tests (pin current behaviour, bugs included)
 - [ ] `CurrencyData`: add, remove, clamping, `totalValue`, `totalCount`, `getHighestDenomonation`,
@@ -70,8 +70,8 @@ Ordered by severity. **Coin loss or duplication comes first.**
 - [ ] `CoinDenomination` ↔ coin item mapping covers every denomination (registry-list test).
 - [ ] `CoinStackItem.tier` thresholds.
 - [ ] Gametests: coin block place, insert, shift-insert, double-tap deposit (bug 1), left-click
-      withdraw, break with ≤20 stacks, break with >20 stacks (one coin stack item), break the
-      support block.
+      withdraw, break with ≤20 stacks, break with >20 stacks (one coin stack item).
+      (Breaking the support block, with 3 coins: done.)
 - [ ] Gametests: wallet auto-deposit; wallet withdraw button; deposit-all (bug 2).
 - [ ] Gametest: safe drops its contents when broken.
 - [ ] Coverage tests: every registered item has a lang key and an item model; every item is in
