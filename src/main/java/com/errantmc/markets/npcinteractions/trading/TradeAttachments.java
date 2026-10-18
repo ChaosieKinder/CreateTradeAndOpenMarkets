@@ -24,6 +24,13 @@ public final class TradeAttachments {
     public static final Supplier<AttachmentType<ShopStock>> SHOP_STOCK = ATTACHMENT_TYPES.register("shop_stock",
             () -> AttachmentType.builder(() -> ShopStock.NONE).serialize(ShopStock.CODEC).build());
 
+    /**
+     * The villager's till, in copper bits (see VillagerBalance). {@link VillagerBalance#UNSET} until
+     * it first trades, when it gets its starting balance.
+     */
+    public static final Supplier<AttachmentType<Long>> BALANCE = ATTACHMENT_TYPES.register("balance",
+            () -> AttachmentType.builder(() -> VillagerBalance.UNSET).serialize(Codec.LONG).build());
+
     public static void register(IEventBus modBus) {
         ATTACHMENT_TYPES.register(modBus);
     }

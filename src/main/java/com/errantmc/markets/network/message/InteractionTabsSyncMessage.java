@@ -12,8 +12,8 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import java.util.List;
 
-/** The server's tabs after a trade changed them, for the client's open interaction menu. */
-public record InteractionTabsSyncMessage(int containerId, List<InteractionTab> tabs) implements CustomPacketPayload {
+/** The server's tabs and the villager's till after a trade changed them, for the client's open menu. */
+public record InteractionTabsSyncMessage(int containerId, List<InteractionTab> tabs, long villagerBalance) implements CustomPacketPayload {
     public static final Type<InteractionTabsSyncMessage> TYPE =
             new Type<>(ResourceLocation.fromNamespaceAndPath(ErrantTrade.MOD_ID, "interaction_tabs_sync"));
 
@@ -21,8 +21,9 @@ public record InteractionTabsSyncMessage(int containerId, List<InteractionTab> t
             (buf, message) -> {
                 buf.writeVarInt(message.containerId());
                 InteractionTabManager.INSTANCE.writeToStream(buf, message.tabs());
+                buf.writeVarLong(message.villagerBalance());
             },
-            buf -> new InteractionTabsSyncMessage(buf.readVarInt(), InteractionTabManager.INSTANCE.readFromStream(buf)));
+            buf -> new InteractionTabsSyncMessage(buf.readVarInt(), InteractionTabManager.INSTANCE.readFromStream(buf), buf.readVarLong()));
 
     @Override
     public Type<? extends CustomPacketPayload> type() {
@@ -33,7 +34,7 @@ public record InteractionTabsSyncMessage(int containerId, List<InteractionTab> t
         context.enqueueWork(() -> {
             if (context.player().containerMenu instanceof VillagerInteractionMenu menu
                     && menu.containerId == message.containerId()) {
-                menu.setTabs(message.tabs());
+                menu.update(message.tabs(), message.villagerBalance());
             }
         });
     }

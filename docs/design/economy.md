@@ -1,6 +1,6 @@
 # The economy: NPC wallets and where money comes from
 
-**Status: decided 18 Oct, not yet built.** §1–§5 describe how shops work today, the problem NPC
+**Status: decided 18 Oct; step 1 (NPC balances) built 18 Oct, steps 2–6 not yet.** §1–§5 describe how shops work today, the problem NPC
 wallets solve, and the options; §6 records what the author chose, and §7 the model that follows
 from it. Build order in §8.
 
@@ -26,7 +26,8 @@ What this cannot express yet:
   a novice offer the same goods; only stock differs.
 - **Prices are fixed.** Nothing moves them: not supply, not demand, not reputation (for defined
   shops), not how much money is around.
-- **A villager buys while its stock lasts**, with money it does not have.
+- **A villager buys while its stock lasts**, with money it does not have. *(Fixed by step 1: a
+  villager now pays from its till, `VillagerBalance`, and the farmer's sell tab has no stock caps.)*
 
 ## 2. Where money comes from today
 
@@ -150,7 +151,11 @@ In rough order of how much each depends on the ones before:
 
 1. **NPC balance.** An attachment, with its starting balance; shown in the shop. Selling to a player
    pays into it, buying from one pays out of it, refused when it runs dry; the sell tab's daily
-   stock becomes an optional cap. Conservation tests.
+   stock becomes an optional cap. Conservation tests. **Built 18 Oct:** the `erranttrade:balance`
+   attachment, set lazily to `startingBalance` + `startingBalancePerLevel` × (level − 1) (config,
+   1000 and 1000 bits); applies to vanilla-converted shops as well as defined ones. The till shows
+   in the shop's header and in the sell tooltips; `EconomyGameTests` covers conservation, refusal
+   and buying until the till runs dry.
 2. **The treasury.** Villages by meeting point, the treasury as SavedData, trade fees into it.
 3. **The daily settlement.** Treasury income, wages, upkeep and restocking, lazily, with their
    config.

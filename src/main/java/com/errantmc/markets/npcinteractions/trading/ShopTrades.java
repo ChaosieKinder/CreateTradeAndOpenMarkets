@@ -27,7 +27,8 @@ import java.util.function.Predicate;
 
 /**
  * Buying from and selling to a villager's shop, on the server. Every check comes before anything
- * moves, so a refused trade changes nothing.
+ * moves, so a refused trade changes nothing. Money moves between the player and the villager's
+ * till ({@link VillagerBalance}); a trade neither creates nor destroys it.
  */
 public final class ShopTrades {
     private static final Logger LOG = LogUtils.getLogger();
@@ -35,7 +36,7 @@ public final class ShopTrades {
     private ShopTrades() {}
 
     public enum Result {
-        DONE, NO_SUCH_ENTRY, OUT_OF_STOCK, MISSING_ITEMS, CANNOT_AFFORD;
+        DONE, NO_SUCH_ENTRY, OUT_OF_STOCK, MISSING_ITEMS, CANNOT_AFFORD, VILLAGER_CANNOT_AFFORD;
 
         /** What the player is told when the trade is refused. */
         public String messageKey() {
@@ -59,6 +60,7 @@ public final class ShopTrades {
         PlayerMoney.give(player, payment.change());
         take(player, extra, entry.extraCost().getCount());
         PlayerMoney.giveItem(player, entry.item().copy());
+        VillagerBalance.deposit(villager, entry.price()); // what the player paid, less change, is the price
         entry.decreaseStock(1);
         if (offer != null) offer.increaseUses();
         progress(player, villager, entry.price(), entry.item());
@@ -75,6 +77,8 @@ public final class ShopTrades {
         if (!has(player, wanted, entry.item().getCount()) || !has(player, extra, entry.extraCost().getCount())) {
             return Result.MISSING_ITEMS;
         }
+        // The villager pays from its till; it buys only while it can afford to (economy §3)
+        if (!VillagerBalance.withdraw(villager, entry.price())) return Result.VILLAGER_CANNOT_AFFORD;
 
         take(player, wanted, entry.item().getCount());
         take(player, extra, entry.extraCost().getCount());

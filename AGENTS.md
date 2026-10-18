@@ -190,6 +190,7 @@ Breaking one is a decision for the author, not a refactor.
 | **The safe is hard to break on purpose**: destroy time 1200, a diamond pickaxe to drop it | author's decision |
 | **Trades happen on the server only.** The client shows the server's tabs and sends a menu button; `ShopTrades` checks stock, items and money before anything moves | [trading §1](docs/design/trading.md#1-who-decides-what) |
 | **Paying takes loose coins first, then the wallet; income goes to the wallet if carried** | author's decision; [trading §3](docs/design/trading.md#3-paying-and-being-paid) |
+| **A trade moves money between the player and the villager's till; it never creates or destroys it.** A villager refuses to buy when its till is short | `EconomyGameTests`; [economy §3](docs/design/economy.md#3-the-proposal-every-npc-has-a-balance) |
 | **Experience scales with a trade's coin value**, for the villager and the player alike; never a fixed amount per trade | author's decision; a fixed amount is farmable; [trading §5](docs/design/trading.md#5-progression) |
 | **A large coin pile breaks into one coin stack item**, not thousands of item entities | the README's stated reason for the coin stack item: lag and crashes |
 | **Optional mods stay optional.** The mod loads and works without JEI, Curios or Create | the README says no hard dependencies; CI runs without Curios |

@@ -78,6 +78,9 @@ public class VillagerInteractionScreen extends AbstractContainerScreen<VillagerI
         Component title = this.villager != null ? this.villager.getDisplayName() : this.getTitle();
         guiGraphics.drawString(this.font, title, this.leftPos + 18, this.topPos + 19, 0x404040, false);
         renderWalletBalance(guiGraphics);
+        // The villager's till, centred between its name and the player's wallet
+        Component till = Component.translatable("screen.erranttrade.npcinteractions.till", MoneyFormat.format(this.menu.getVillagerBalance()));
+        guiGraphics.drawString(this.font, till, this.leftPos + (SCREEN_WIDTH - this.font.width(till)) / 2, this.topPos + 19, 0x404040, false);
     }
 
     @Override
@@ -169,6 +172,9 @@ public class VillagerInteractionScreen extends AbstractContainerScreen<VillagerI
         SimpleShopTab.TradeView view = new SimpleShopTab.TradeView() {
             @Override public long money() {
                 return PlayerMoney.loose(player).totalValue() + PlayerMoney.wallet(player).totalValue();
+            }
+            @Override public long villagerMoney() {
+                return VillagerInteractionScreen.this.menu.getVillagerBalance();
             }
             @Override public int count(ItemStack item) {
                 int n = 0;

@@ -150,64 +150,56 @@
               "id": "minecraft:wheat",
               "count": 20
             },
-            "price": 100,
-            "stock": 6
+            "price": 100
           },
           {
             "item": {
               "id": "minecraft:beetroot",
               "count": 26
             },
-            "price": 100,
-            "stock": 6
+            "price": 100
           },
           {
             "item": {
               "id": "minecraft:carrot",
               "count": 22
             },
-            "price": 100,
-            "stock": 6
+            "price": 100
           },
           {
             "item": {
               "id": "minecraft:potato",
               "count": 26
             },
-            "price": 100,
-            "stock": 6
+            "price": 100
           },
           {
             "item": {
               "id": "minecraft:pumpkin",
               "count": 12
             },
-            "price": 100,
-            "stock": 6
+            "price": 100
           },
           {
             "item": {
               "id": "minecraft:melon_slice",
               "count": 20
             },
-            "price": 100,
-            "stock": 6
+            "price": 100
           },
           {
             "item": {
               "id": "minecraft:sweet_berries",
               "count": 20
             },
-            "price": 80,
-            "stock": 8
+            "price": 80
           },
           {
             "item": {
               "id": "minecraft:honey_bottle",
               "count": 4
             },
-            "price": 180,
-            "stock": 4
+            "price": 180
           }
         ]
       }

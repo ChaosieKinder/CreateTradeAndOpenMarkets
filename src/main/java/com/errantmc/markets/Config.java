@@ -56,6 +56,23 @@ public class Config {
 
     static {
         BUILDER.pop();
+        BUILDER.push("economy");
+    }
+
+    public static final ModConfigSpec.LongValue STARTING_BALANCE = BUILDER
+            .comment(
+                    "What a villager has in its till the first time it trades, in copper bits, at novice level.",
+                    "A villager pays players only from its till, so this is how much it can buy before it",
+                    "has sold something back. 1000 copper bits is $10.00."
+            )
+            .defineInRange("startingBalance", 1000L, 0L, Long.MAX_VALUE / 2);
+
+    public static final ModConfigSpec.LongValue STARTING_BALANCE_PER_LEVEL = BUILDER
+            .comment("Added to the starting balance for each level above novice (a master gets four times this more).")
+            .defineInRange("startingBalancePerLevel", 1000L, 0L, Long.MAX_VALUE / 8);
+
+    static {
+        BUILDER.pop();
     }
 
     static final ModConfigSpec SPEC = BUILDER.build();

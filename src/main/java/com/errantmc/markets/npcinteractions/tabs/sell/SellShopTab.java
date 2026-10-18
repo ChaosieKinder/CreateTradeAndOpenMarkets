@@ -95,6 +95,9 @@ public class SellShopTab extends SimpleShopTab {
     @Override
     protected Component status(ShopEntry entry, TradeView view) {
         if (!entry.inStock()) return null;
+        if (view.villagerMoney() < entry.price()) {
+            return Component.translatable("screen.erranttrade.npcinteractions.villager_cannot_afford").withStyle(ChatFormatting.RED);
+        }
         int have = view.count(entry.item());
         if (have < entry.item().getCount()) {
             return Component.translatable("screen.erranttrade.npcinteractions.you_have", have, entry.item().getCount())

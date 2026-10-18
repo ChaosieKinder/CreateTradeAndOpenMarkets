@@ -57,6 +57,12 @@
   "erranttrade.configuration.emeraldValue": "Emerald value (copper bits)",
   "erranttrade.configuration.bitsPerVillagerXp": "Copper bits per villager experience point",
   "erranttrade.configuration.trading": "Trading",
+  "screen.erranttrade.npcinteractions.till": "Till: %s",
+  "screen.erranttrade.npcinteractions.villager_cannot_afford": "The villager can't afford this",
+  "message.erranttrade.shop.villager_cannot_afford": "The villager can't afford that.",
+  "erranttrade.configuration.economy": "Economy",
+  "erranttrade.configuration.startingBalance": "Villager's starting balance (copper bits)",
+  "erranttrade.configuration.startingBalancePerLevel": "Starting balance added per level",
   "screen.erranttrade.npcinteractions.offers": "%s offers, %s sold out",
   "screen.erranttrade.npcinteractions.wallet_balance": "Wallet Balance: %s",
   "screen.erranttrade.npcinteractions.wallet_missing": "Wallet not found"

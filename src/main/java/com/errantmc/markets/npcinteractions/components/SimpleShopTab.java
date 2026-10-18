@@ -144,6 +144,9 @@ public abstract class SimpleShopTab extends InteractionTab {
     public interface TradeView {
         long money();
 
+        /** The villager's till. */
+        long villagerMoney();
+
         int count(ItemStack item);
     }
 

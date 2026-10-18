@@ -92,6 +92,9 @@ On `feature/npc-interactions` (the trader overhaul, in progress):
       action bar says why and nothing changes.
 - [ ] **Selling.** Click a sell row with the goods in your inventory: they go, and the money goes
       into the wallet (or into the inventory as coins without one).
+- [ ] **The till.** The header shows *Till: $X* between the villager's name and your wallet. Buying
+      raises it by the price, selling lowers it. Keep selling wheat to a farmer: it buys until the
+      till is short, then the sell rows turn red and the action bar says it can't afford that.
 - [ ] **A vanilla villager** (say a toolsmith) shows its own offers priced at $1.00 per emerald. A
       librarian's book trade asks for the book as well. Using an offer up shows stock 0; the
       villager restocks at its workstation.

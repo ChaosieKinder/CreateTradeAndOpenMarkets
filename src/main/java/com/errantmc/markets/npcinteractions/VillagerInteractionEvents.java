@@ -2,6 +2,7 @@ package com.errantmc.markets.npcinteractions;
 
 import com.errantmc.markets.npcinteractions.registry.InteractionDefinitionLoader;
 import com.errantmc.markets.npcinteractions.registry.InteractionTabManager;
+import com.errantmc.markets.npcinteractions.trading.VillagerBalance;
 import com.errantmc.markets.screen.villager.VillagerInteractionMenu;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerPlayer;
@@ -63,6 +64,7 @@ public final class VillagerInteractionEvents {
                     buf.writeVarInt(villager.getId());
                     buf.writeResourceLocation(BuiltInRegistries.VILLAGER_PROFESSION.getKey(villager.getVillagerData().getProfession()));
                     InteractionTabManager.INSTANCE.writeToStream(buf, tabs);
+                    buf.writeVarLong(VillagerBalance.get(villager));
                 });
     }
 }
