@@ -13,11 +13,11 @@ import com.errantmc.markets.item.wallet.WalletTooltip;
 import com.errantmc.markets.item.wallet.WalletTooltipClient;
 import com.errantmc.markets.screen.TradeMenus;
 import com.errantmc.markets.screen.safe.SafeScreen;
-import com.errantmc.markets.screen.shop.ShopMenu;
 import com.errantmc.markets.screen.shop.ShopScreen;
 import com.errantmc.markets.screen.wallet.WalletScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
+import net.neoforged.fml.config.ModConfig;
 import net.minecraft.client.gui.screens.inventory.MerchantScreen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
@@ -56,6 +56,7 @@ public class ErrantTradeClient {
         // The config screen is accessed by going to the Mods screen > clicking on your mod > clicking on config.
         // Do not forget to add translations for your config options to the en_us.json file.
         container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
+        container.registerConfig(ModConfig.Type.CLIENT, ClientConfig.SPEC);
 
     }
 
@@ -102,22 +103,13 @@ public class ErrantTradeClient {
 
     @SubscribeEvent
     public static void onScreenOpening(ScreenEvent.Opening event) {
-        Screen screen = event.getScreen();
-        if (!(screen instanceof MerchantScreen merchantScreen)) {
-            return;
-        }
-        if (screen instanceof ShopScreen) {
-            return;
-        }
-
+        if (!ClientConfig.REPLACE_TRADING_SCREEN.get()) return;
+        if (!(event.getScreen() instanceof MerchantScreen merchantScreen)) return;
         LocalPlayer player = Minecraft.getInstance().player;
-        if (player == null) {
-            return;
-        }
+        if (player == null) return;
 
-        ShopMenu shopMenu = new ShopMenu(merchantScreen.getMenu().containerId, merchantScreen.getMenu(), player.getInventory(), merchantScreen.getTitle());
-        ShopScreen shopScreen = new ShopScreen(shopMenu, player.getInventory(), merchantScreen.getTitle());
-        event.setNewScreen(shopScreen);
+        // Same menu, new paint: the server keeps running vanilla's MerchantMenu (see ShopScreen)
+        event.setNewScreen(new ShopScreen(merchantScreen.getMenu(), player.getInventory(), merchantScreen.getTitle()));
     }
 
 

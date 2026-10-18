@@ -14,7 +14,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.neoforge.items.SlotItemHandler;
 
-import static com.errantmc.markets.util.InventoryHelper.*;
 
 public class SafeMenu extends AbstractContainerMenu {
 
@@ -59,8 +58,11 @@ public class SafeMenu extends AbstractContainerMenu {
         }
     }
 
-    // THIS YOU HAVE TO DEFINE!
-    private static final int TE_INVENTORY_SLOT_COUNT = 25;  // must be the number of slots you have!
+    // Slot order: the player inventory (27), the hotbar (9), then the safe (25)
+    private static final int VANILLA_SLOT_COUNT = 36;
+    private static final int VANILLA_FIRST_SLOT_INDEX = 0;
+    private static final int TE_INVENTORY_FIRST_SLOT_INDEX = VANILLA_FIRST_SLOT_INDEX + VANILLA_SLOT_COUNT;
+    private static final int TE_INVENTORY_SLOT_COUNT = 25;
 
     @Override
     public ItemStack quickMoveStack(Player playerIn, int pIndex) {
@@ -82,7 +84,6 @@ public class SafeMenu extends AbstractContainerMenu {
                 return ItemStack.EMPTY;
             }
         } else {
-            System.out.println("Invalid slotIndex:" + pIndex);
             return ItemStack.EMPTY;
         }
         // If stack size == 0 (the entire stack was moved) set slot contents to null

@@ -2,147 +2,88 @@ package com.errantmc.markets.screen.shop;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.errantmc.markets.ErrantTrade;
-import com.errantmc.markets.screen.safe.SafeMenu;
-import com.errantmc.markets.util.InventoryHelper;
-import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.Nameable;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.item.trading.Merchant;
+import net.minecraft.world.inventory.MerchantMenu;
 import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.item.trading.MerchantOffers;
-import org.jetbrains.annotations.Nullable;
 
 /**
- * Replacement shop screen that renders a bespoke background while exposing the
- * active merchant offers and trader information supplied by {@link ShopMenu}.
+ * Replacement trading screen, drawn over vanilla's own {@link MerchantMenu}.
+ *
+ * <p>It must be that menu, not a client-side copy of it: the server runs vanilla's
+ * {@code MerchantMenu}, and every click a screen sends is applied to the server's menu by slot
+ * index (BACKLOG #18). That also means the slots sit where vanilla puts them; a layout of our own
+ * needs a server-side menu of our own, which is the trader overhaul's job. Until then the screen
+ * is off by default ({@code ClientConfig.REPLACE_TRADING_SCREEN}).
  */
-public class ShopScreen extends AbstractContainerScreen<ShopMenu> {
-    private static final ResourceLocation SHOP_TEXTURE = ResourceLocation.fromNamespaceAndPath(
-            ErrantTrade.MOD_ID,
-            "textures/gui/shop/shop_base.png"
-    );
-
+public class ShopScreen extends AbstractContainerScreen<MerchantMenu> {
+    private static final ResourceLocation SHOP_TEXTURE = texture("textures/gui/shop/shop_base.png");
+    private static final ResourceLocation TAB = texture("textures/gui/components/tab_deselected.png");
+    private static final ResourceLocation TAB_SELECTED = texture("textures/gui/components/tab_selected.png");
+    private static final ResourceLocation TAB_HOVER = texture("textures/gui/components/tab_hover.png");
     private static final int TEXTURE_WIDTH = 276;
     private static final int TEXTURE_HEIGHT = 209;
+    private static final int TAB_WIDTH = 38;
+    private static final int TAB_HEIGHT = 17;
 
-    private int leftPos;
-    private int topPos;
-
-    public ShopScreen(ShopMenu menu, Inventory playerInventory, Component title) {
+    public ShopScreen(MerchantMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
-    }
-
-    @Override
-    protected void init() {
-        super.init();
-        this.leftPos = (this.width - TEXTURE_WIDTH) / 2;
-        this.topPos = (this.height - TEXTURE_HEIGHT) / 2;
+        this.imageWidth = TEXTURE_WIDTH;
+        this.imageHeight = TEXTURE_HEIGHT;
     }
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        // draw tabs
-        InventoryHelper.drawTab(guiGraphics, this.font, "Buy", this.leftPos + 12, this.topPos + 1, mouseX, mouseY, true);
-        InventoryHelper.drawTab(guiGraphics, this.font, "Sell", this.leftPos + 51, this.topPos + 1, mouseX, mouseY, false);
-
+        drawTab(guiGraphics, this.font, Component.translatable("screen.erranttrade.shop.buy"),
+                this.leftPos + 12, this.topPos + 1, mouseX, mouseY, true);
+        drawTab(guiGraphics, this.font, Component.translatable("screen.erranttrade.shop.sell"),
+                this.leftPos + 51, this.topPos + 1, mouseX, mouseY, false);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
-        this.renderTooltip(guiGraphics, mouseX, mouseY);  // 3) draws slot tooltips on top
+        this.renderTooltip(guiGraphics, mouseX, mouseY);
     }
 
     @Override
-    protected void renderBg(GuiGraphics guiGraphics, float v, int i, int i1) {
+    protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-
-
-        // draw main background
-        RenderSystem.setShaderTexture(0, SHOP_TEXTURE);
         guiGraphics.blit(SHOP_TEXTURE, this.leftPos, this.topPos,
                 0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT, TEXTURE_WIDTH, TEXTURE_HEIGHT);
-
-        // draw shop title - this is the profession of the shop
-        guiGraphics.drawString(this.font, this.menu.getTitle(),
-                this.leftPos + 18, this.topPos + 19, 0x404040, false);
-
-        //renderTraderDetails(guiGraphics);
-        //renderOfferSummary(guiGraphics);
+        // The shop's title is the trader's profession
+        guiGraphics.drawString(this.font, this.title, this.leftPos + 18, this.topPos + 19, 0x404040, false);
     }
 
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        //super.renderLabels(guiGraphics, mouseX, mouseY);
-        //renderTraderDetails(guiGraphics);
-        //renderOfferSummary(guiGraphics);
+        // The title is drawn with the background; the trade list is still to come
     }
 
-
-
-    private void renderTraderDetails(GuiGraphics guiGraphics) {
-        @Nullable Merchant trader = this.menu.getTrader();
-        if (trader == null) {
-            return;
-        }
-
-        Component traderName = resolveTraderName(trader);
-        if (traderName == null) {
-            return;
-        }
-        int x = this.leftPos + 12;
-        int y = this.topPos + 20;
-        guiGraphics.drawString(this.font, traderName, x, y, 0x404040, false);
-    }
-
+    /** Not drawn yet: a count of the trader's offers, for the trade list to come. */
+    @SuppressWarnings("unused")
     private void renderOfferSummary(GuiGraphics guiGraphics) {
         MerchantOffers offers = this.menu.getOffers();
-        int offerCount = offers.size();
         int outOfStock = 0;
         for (MerchantOffer offer : offers) {
-            if (offer.isOutOfStock()) {
-                outOfStock++;
-            }
+            if (offer.isOutOfStock()) outOfStock++;
         }
-
-        int x = this.leftPos + 12;
-        int y = this.topPos + 34;
-        Component summary = Component.translatable(
-                "screen.%s.shop.offers".formatted(ErrantTrade.MOD_ID),
-                offerCount,
-                outOfStock
-        );
-        guiGraphics.drawString(this.font, summary, x, y, 0x404040, false);
+        Component summary = Component.translatable("screen.erranttrade.shop.offers", offers.size(), outOfStock);
+        guiGraphics.drawString(this.font, summary, this.leftPos + 12, this.topPos + 34, 0x404040, false);
     }
 
-    @Nullable
-    private Component resolveTraderName(Merchant trader) {
-        if (trader instanceof Nameable nameable) {
-            return nameable.getDisplayName();
-        }
-
-        return null;
+    private static void drawTab(GuiGraphics guiGraphics, Font font, Component text,
+                                int x, int y, int mouseX, int mouseY, boolean selected) {
+        boolean hovered = mouseX >= x && mouseX <= x + TAB_WIDTH && mouseY >= y && mouseY <= y + TAB_HEIGHT;
+        ResourceLocation texture = hovered ? TAB_HOVER : selected ? TAB_SELECTED : TAB;
+        guiGraphics.blit(texture, x, y, 0, 0, TAB_WIDTH, TAB_HEIGHT, TAB_WIDTH, TAB_HEIGHT);
+        guiGraphics.drawString(font, text, x + 8, y + 5, 0xFFFFFF, false);
     }
 
-    @Override
-    public void onClose() {
-        super.onClose();
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft != null && minecraft.player != null) {
-            minecraft.player.closeContainer();
-        }
-    }
-
-    @Override
-    public boolean shouldCloseOnEsc() {
-        return true;
-    }
-
-    @Override
-    public boolean isPauseScreen() {
-        return false;
+    private static ResourceLocation texture(String path) {
+        return ResourceLocation.fromNamespaceAndPath(ErrantTrade.MOD_ID, path);
     }
 }
