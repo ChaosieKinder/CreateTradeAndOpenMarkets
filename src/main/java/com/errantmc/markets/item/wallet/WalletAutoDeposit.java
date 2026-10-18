@@ -1,6 +1,7 @@
 package com.errantmc.markets.item.wallet;
 
 import com.mojang.logging.LogUtils;
+import com.errantmc.markets.compat.CuriosCompat;
 import com.errantmc.markets.component.WalletBalance;
 import com.errantmc.markets.data.CoinDenomination;
 import com.errantmc.markets.item.CoinItem;
@@ -12,13 +13,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
-import org.jline.utils.Log;
 import org.slf4j.Logger;
-import top.theillusivec4.curios.api.CuriosApi;
-import top.theillusivec4.curios.api.type.capability.ICuriosItemHandler;
-import top.theillusivec4.curios.api.type.inventory.IDynamicStackHandler;
 
 import java.util.List;
 
@@ -82,23 +78,10 @@ public final class WalletAutoDeposit {
             if (s.getItem() instanceof WalletItem) return s;
         }
 
-        // Curios (soft)
-        if (ModList.get().isLoaded("curios")) {
-            var opt = CuriosApi.getCuriosInventory(player);
-            if (opt.isPresent()) {
-                ICuriosItemHandler inv = opt.orElseThrow();
-                for (var entry : inv.getCurios().entrySet()) {
-                    IDynamicStackHandler stacks = entry.getValue().getStacks();
-                    for (int i = 0; i < stacks.getSlots(); i++) {
-                        ItemStack s = stacks.getStackInSlot(i);
-                        if (!s.isEmpty() && s.getItem() instanceof WalletItem) {
-                            return s; // Works: we only mutate its Data Components
-                        }
-                    }
-                }
-            }
+        // Mutating a curio stack's components in place is enough; Curios syncs it
+        if (CuriosCompat.isLoaded()) {
+            return CuriosCompat.findCurio(player, s -> s.getItem() instanceof WalletItem);
         }
-
         return null;
     }
 }
