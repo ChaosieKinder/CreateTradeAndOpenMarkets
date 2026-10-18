@@ -86,8 +86,8 @@ public final class CoinBlockGameTests {
     }
 
     /**
-     * BUG (BACKLOG #5), pinned as it behaves today: clicking the side of a block with a coin
-     * replaces whatever sits on top of that block.
+     * BACKLOG #5: clicking the side of a block used to replace whatever sat on top of it. The
+     * coin now places against the clicked face, and here nothing supports that cell.
      */
     @GameTest(template = ARENA)
     public static void placingACoinNeverReplacesABlock(GameTestHelper helper) {
@@ -99,8 +99,28 @@ public final class CoinBlockGameTests {
 
         helper.useBlock(clicked, player, hitFace(helper, clicked, Direction.EAST));
 
-        helper.assertBlockPresent(TradeBlocks.COIN_BLOCK.get(), clicked.above());
-        assertTrue(helper, "the coin to be consumed", player.getMainHandItem().isEmpty());
+        helper.assertBlockPresent(Blocks.OAK_PLANKS, clicked.above());
+        helper.assertBlockNotPresent(TradeBlocks.COIN_BLOCK.get(), clicked.east());
+        assertCount(helper, "coins still held", 1, player.getMainHandItem().getCount());
+        helper.succeed();
+    }
+
+    /** The ordinary case still works: a coin on top of a block starts a pile of one. */
+    @GameTest(template = ARENA)
+    public static void placingACoinOnTopStartsAPile(GameTestHelper helper) {
+        BlockPos clicked = new BlockPos(4, 1, 4);
+        helper.setBlock(clicked, Blocks.STONE);
+        ServerPlayer player = survivalPlayer(helper);
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(TradeItems.COIN_GOLD_MARK.get(), 2));
+
+        helper.useBlock(clicked, player, hitFace(helper, clicked, Direction.UP));
+
+        if (!(helper.getBlockEntity(clicked.above()) instanceof CoinBlockEntity be)) {
+            helper.fail("no pile on top of the clicked block", clicked.above());
+            return;
+        }
+        assertCount(helper, "gold marks in the pile", 1, be.getCurrency().getFrom(CoinDenomination.GOLD_MARK));
+        assertCount(helper, "coins still held", 1, player.getMainHandItem().getCount());
         helper.succeed();
     }
 

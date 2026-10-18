@@ -32,7 +32,9 @@ Ordered by severity. **Coin loss or duplication comes first.**
 4. ~~**`CurrencyData.totalCount()` overflows.**~~ Fixed 17 Oct (`CurrencyDataTest`). It sums `int`s before the result widens to `long`.
    (`CoinItem.appendHoverText`'s `count * value` was suspected too, but its maximum, 64 × 100,000,
    fits in an `int`.)
-5. **Placing a coin overwrites whatever is above the clicked block.**
+5. ~~**Placing a coin overwrites whatever is above the clicked block.**~~ Fixed 17 Oct
+   (`CoinBlockGameTests.placingACoin*`). A coin now places like any block item: against the
+   clicked face, and only where the pile can survive.
    [CoinItem.java:57](../src/main/java/com/errantmc/markets/item/CoinItem.java#L57)
    `useOn` always targets `pos.above()`, whatever face was clicked, and calls `setBlock` without
    checking `canBeReplaced` or `canSurvive`. Clicking the side of a block that has something on

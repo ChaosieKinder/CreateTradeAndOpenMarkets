@@ -16,6 +16,7 @@ import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
 import org.slf4j.Logger;
@@ -57,50 +58,35 @@ public class CoinItem extends Item {
     public InteractionResult useOn(UseOnContext ctx) {
         Player player = ctx.getPlayer();
         Level level   = ctx.getLevel();
-        BlockPos pos  = ctx.getClickedPos();
 
-        // If clicking an existing CoinBlock, let the block handle (single or double tap)
-        //  and don't allow placing coin blocks on top of coin blocks
-        if (level.getBlockState(pos).is(TradeBlocks.COIN_BLOCK.get())) {
+        // Clicking an existing pile is the pile's business (single and double tap)
+        if (level.getBlockState(ctx.getClickedPos()).is(TradeBlocks.COIN_BLOCK.get())) {
             return InteractionResult.PASS;
         }
 
-        // Build placement context so the block can choose its proper state (orientation, etc.)
+        // Places like any block item: against the clicked face, or into a replaceable block
         BlockPlaceContext placeCtx = new BlockPlaceContext(ctx);
+        BlockPos placePos = placeCtx.getClickedPos();
         BlockState toPlace = TradeBlocks.COIN_BLOCK.get().getStateForPlacement(placeCtx);
-
-        if (toPlace == null) {
-            // Fallback if your block doesn’t use orientation
-            toPlace = TradeBlocks.COIN_BLOCK.get().defaultBlockState();
+        if (!placeCtx.canPlace() || toPlace == null || !toPlace.canSurvive(level, placePos)) {
+            return InteractionResult.FAIL;
         }
 
         if (level.isClientSide) {
-            return InteractionResult.sidedSuccess(level.isClientSide);
+            return InteractionResult.SUCCESS;
         }
 
-        BlockPos placePos = pos.above();
-        // Place the block (flag 11: neighbors + client update)
-        boolean placed = level.setBlock(placePos, toPlace, 11);
-        if (!placed) return InteractionResult.FAIL;
-
+        if (!level.setBlock(placePos, toPlace, Block.UPDATE_ALL_IMMEDIATE)) return InteractionResult.FAIL;
         level.gameEvent(player, GameEvent.BLOCK_PLACE, placePos);
 
-        // Initialize the just-created BlockEntity with 1 coin of this denomination
         if (level.getBlockEntity(placePos) instanceof CoinBlockEntity be) {
-            be.setCurrency(
-                    CurrencyData.newCurrencyFromDenom(
-                            getDenomination(ctx.getItemInHand().getItem()), 1));
-            be.setChanged();
-            level.sendBlockUpdated(placePos, toPlace, toPlace, 3);
+            be.setCurrency(CurrencyData.newCurrencyFromDenom(denom, 1));
         }
 
-        // Consume one coin unless in creative
-        ItemStack held = ctx.getItemInHand();
-        if (!player.getAbilities().instabuild) {
-            held.shrink(1);
+        if (player == null || !player.getAbilities().instabuild) {
+            ctx.getItemInHand().shrink(1);
         }
-
-        return InteractionResult.sidedSuccess(level.isClientSide());
+        return InteractionResult.CONSUME;
     }
 
     public static CoinDenomination getDenomination(Item item) {
