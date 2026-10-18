@@ -2,6 +2,7 @@ package com.errantmc.markets.screen;
 
 import com.errantmc.markets.ErrantTrade;
 import com.errantmc.markets.screen.safe.SafeMenu;
+import com.errantmc.markets.screen.villager.VillagerInteractionMenu;
 import com.errantmc.markets.screen.wallet.WalletMenu;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -22,6 +23,9 @@ public class TradeMenus {
 
     public static final DeferredHolder<MenuType<?>, MenuType<WalletMenu>> WALLET_MENU =
             registerMenuType("wallet", WalletMenu::new);
+
+    public static final DeferredHolder<MenuType<?>, MenuType<VillagerInteractionMenu>> VILLAGER_INTERACTION_MENU =
+            registerMenuType("villager_interaction_menu", VillagerInteractionMenu::new);
 
     private static <T extends AbstractContainerMenu>DeferredHolder<MenuType<?>, MenuType<T>> registerMenuType(String name,
         IContainerFactory<T> factory) {

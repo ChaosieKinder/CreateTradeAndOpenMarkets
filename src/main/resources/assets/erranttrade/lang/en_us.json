@@ -28,10 +28,6 @@
   "item.erranttrade.id_card.already_bound": "This card is already assigned.",
   "block.erranttrade.safe": "Safe",
   "screen.erranttrade.wallet_name": "",
-  "screen.erranttrade.shop.buy": "Buy",
-  "screen.erranttrade.shop.sell": "Sell",
-  "screen.erranttrade.shop.offers": "%s offers, %s sold out",
-  "erranttrade.configuration.replaceTradingScreen": "Replace the trading screen (work in progress)",
   "creativetab.erranttrade.items_tab": "Errant Trade and Markets",
   "sounds.erranttrade.coin_drop": "Coins drop and spin",
   "entity.minecraft.villager.erranttrade.banker": "Banker",
@@ -39,5 +35,8 @@
   "tooltip.erranttrade.coin_stack.coins": "Coins: %s",
   "tooltip.erranttrade.coin_stack.value": "Value: %s",
   "tooltip.erranttrade.id_card.owner": "Holder: %s",
-  "tooltip.erranttrade.id_card.created": "Issued: %s"
+  "tooltip.erranttrade.id_card.created": "Issued: %s",
+  "screen.erranttrade.npcinteractions.offers": "%s offers, %s sold out",
+  "screen.erranttrade.npcinteractions.wallet_balance": "Wallet Balance: %s",
+  "screen.erranttrade.npcinteractions.wallet_missing": "Wallet not found"
 }

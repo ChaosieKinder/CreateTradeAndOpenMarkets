@@ -1,6 +1,5 @@
 package com.errantmc.markets.item.wallet;
 
-import com.errantmc.markets.compat.CuriosCompat;
 import com.errantmc.markets.component.Purses;
 import com.errantmc.markets.item.CoinItem;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -10,7 +9,6 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.common.util.TriState;
 import net.neoforged.neoforge.event.entity.player.ItemEntityPickupEvent;
 
-import javax.annotation.Nullable;
 import java.util.UUID;
 
 /** Coins a player picks up go into the first wallet they carry instead of the inventory. */
@@ -31,8 +29,8 @@ public final class WalletAutoDeposit {
         UUID target = entity.getTarget();
         if (entity.hasPickUpDelay() || (target != null && !target.equals(player.getUUID()))) return;
 
-        ItemStack wallet = findWallet(player);
-        if (wallet == null) return;
+        ItemStack wallet = WalletFinder.findWallet(player);
+        if (wallet.isEmpty()) return;
 
         var result = Purses.add(wallet, coin.denom(), ground.getCount());
         if (result.moved() == 0) return; // wallet full: vanilla picks the coins up as usual
@@ -44,22 +42,5 @@ public final class WalletAutoDeposit {
             event.setCanPickup(TriState.FALSE);
         }
         // otherwise vanilla picks up what did not fit
-    }
-
-    private static @Nullable ItemStack findWallet(Player player) {
-        ItemStack main = player.getMainHandItem();
-        if (main.getItem() instanceof WalletItem) return main;
-        ItemStack off = player.getOffhandItem();
-        if (off.getItem() instanceof WalletItem) return off;
-
-        for (ItemStack s : player.getInventory().items) {
-            if (s.getItem() instanceof WalletItem) return s;
-        }
-
-        // Mutating a curio stack's components in place is enough; Curios syncs it
-        if (CuriosCompat.isLoaded()) {
-            return CuriosCompat.findCurio(player, s -> s.getItem() instanceof WalletItem);
-        }
-        return null;
     }
 }

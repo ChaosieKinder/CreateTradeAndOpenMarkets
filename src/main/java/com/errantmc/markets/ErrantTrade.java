@@ -8,6 +8,7 @@ import com.errantmc.markets.item.TradeItems;
 import com.errantmc.markets.item.idcard.IdentityCardDataSyncHandler;
 import com.errantmc.markets.item.wallet.WalletAutoDeposit;
 import com.errantmc.markets.network.TradeNetwork;
+import com.errantmc.markets.npcinteractions.VillagerInteractionEvents;
 import com.errantmc.markets.registry.*;
 import com.errantmc.markets.screen.TradeMenus;
 import com.errantmc.markets.villager.TradeVillagers;
@@ -57,6 +58,7 @@ public class ErrantTrade {
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(CoinBlockLeftClickHandler::onLeftClickBlock);
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.register(new WalletAutoDeposit());
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.register(new IdentityCardDataSyncHandler());
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.register(new VillagerInteractionEvents());
         // Register our mod's ModConfigSpec so that FML can create and load the config file for us
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
     }
@@ -64,6 +66,7 @@ public class ErrantTrade {
     private void commonSetup(FMLCommonSetupEvent event) {
         // Some common setup code
     }
+
 
 
 

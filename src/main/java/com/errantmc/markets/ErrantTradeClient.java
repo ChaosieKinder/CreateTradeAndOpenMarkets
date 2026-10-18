@@ -13,22 +13,12 @@ import com.errantmc.markets.item.wallet.WalletTooltip;
 import com.errantmc.markets.item.wallet.WalletTooltipClient;
 import com.errantmc.markets.screen.TradeMenus;
 import com.errantmc.markets.screen.safe.SafeScreen;
-import com.errantmc.markets.screen.shop.ShopScreen;
+import com.errantmc.markets.screen.villager.VillagerInteractionScreen;
 import com.errantmc.markets.screen.wallet.WalletScreen;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.Screen;
-import net.neoforged.fml.config.ModConfig;
-import com.errantmc.markets.item.idcard.client.IdentityCardClientCache;
-import net.minecraft.client.gui.screens.inventory.MerchantScreen;
-import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.client.renderer.item.ItemProperties;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.ContainerHelper;
-import net.minecraft.world.inventory.ContainerData;
-import net.minecraft.world.inventory.MenuType;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
+import com.errantmc.markets.item.idcard.client.IdentityCardClientCache;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
@@ -36,11 +26,9 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.*;
-import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
 // This class will not load on dedicated servers. Accessing client side code from here is safe.
@@ -57,7 +45,6 @@ public class ErrantTradeClient {
         // The config screen is accessed by going to the Mods screen > clicking on your mod > clicking on config.
         // Do not forget to add translations for your config options to the en_us.json file.
         container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
-        container.registerConfig(ModConfig.Type.CLIENT, ClientConfig.SPEC);
 
     }
 
@@ -85,6 +72,7 @@ public class ErrantTradeClient {
     public static void registerScreens(RegisterMenuScreensEvent event) {
         event.register(TradeMenus.SAFE_MENU.get(), SafeScreen::new);
         event.register(TradeMenus.WALLET_MENU.get(), WalletScreen::new);
+        event.register(TradeMenus.VILLAGER_INTERACTION_MENU.get(), VillagerInteractionScreen::new);
     }
 
 
@@ -106,18 +94,6 @@ public class ErrantTradeClient {
     public static void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
         IdentityCardClientCache.clear();
     }
-
-    @SubscribeEvent
-    public static void onScreenOpening(ScreenEvent.Opening event) {
-        if (!ClientConfig.REPLACE_TRADING_SCREEN.get()) return;
-        if (!(event.getScreen() instanceof MerchantScreen merchantScreen)) return;
-        LocalPlayer player = Minecraft.getInstance().player;
-        if (player == null) return;
-
-        // Same menu, new paint: the server keeps running vanilla's MerchantMenu (see ShopScreen)
-        event.setNewScreen(new ShopScreen(merchantScreen.getMenu(), player.getInventory(), merchantScreen.getTitle()));
-    }
-
 
 
 }
