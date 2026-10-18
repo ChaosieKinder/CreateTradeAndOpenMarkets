@@ -52,6 +52,10 @@ A villager with no shop definition trades its own vanilla offers, converted:
   book), matched by the offer's own `ItemCost`. An offer with two such costs is skipped.
 - **Each entry stays linked to its offer.** Stock is the offer's remaining uses, a trade uses it
   up, and the villager restocks at its workstation as in vanilla.
+- **Discounts are vanilla's.** Opening the shop calls `Villager.updateSpecialPrices` (opened by
+  an access transformer), as vanilla's `startTrading` does: reputation and Hero of the Village
+  lower the offers' costs, and closing the shop resets them. A cheaper offer is simply fewer
+  emeralds, so it costs fewer coins.
 
 ## 5. Progression
 
@@ -89,9 +93,8 @@ pins it to the art.
 
 ## 8. Not yet
 
-- **Reputation and Hero of the Village discounts do not apply.** Vanilla sets them in
-  `Villager.updateSpecialPrices` when trading starts, a private method this menu does not call,
-  so converted prices are always the undiscounted ones.
+- **Shops from a definition have no discounts.** Reputation and Hero of the Village lower
+  converted vanilla offers only; a defined entry has no offer to lower. See the economy proposal.
 - **One click is one trade.** There is no buying several at once.
 - **Tabs mix drawing into data**: `InteractionTab` and its subclasses carry client drawing code in
   objects the server also builds. Split each into its data and a client renderer.

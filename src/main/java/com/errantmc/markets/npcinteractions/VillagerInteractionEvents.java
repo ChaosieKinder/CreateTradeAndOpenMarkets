@@ -48,6 +48,9 @@ public final class VillagerInteractionEvents {
     }
 
     private static void open(ServerPlayer player, Villager villager) {
+        // As vanilla's startTrading: this player's reputation and Hero of the Village lower the
+        // offers' prices until the menu closes, when setTradingPlayer(null) resets them
+        villager.updateSpecialPrices(player);
         var tabs = InteractionTabManager.INSTANCE.resolveTabs(villager, villager.getOffers(), player.level());
         // Claimed as vanilla does, so the villager stands still and no one else can trade with it
         villager.setTradingPlayer(player);

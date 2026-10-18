@@ -13,6 +13,9 @@ import com.errantmc.markets.screen.villager.VillagerInteractionMenu;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.ai.gossip.GossipType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
@@ -162,6 +165,52 @@ public final class VanillaTradingGameTests {
         assertCount(helper, "books left", 0, TradingGameTests.count(player, Items.BOOK));
         assertCount(helper, "coins left", 0, PlayerMoney.loose(player).totalValue());
         helper.succeed();
+    }
+
+    // ---------- discounts, as vanilla's ----------
+
+    /** A reputation of 20 takes floor(20 × 0.05) = 1 emerald off the 5-emerald book trade. */
+    @GameTest(template = ARENA)
+    public static void reputationLowersPrices(GameTestHelper helper) {
+        Villager toolsmith = toolsmith(helper);
+        ServerPlayer player = survivalPlayer(helper);
+        toolsmith.getGossips().add(player.getUUID(), GossipType.MINOR_POSITIVE, 20);
+        assertCount(helper, "reputation", 20, toolsmith.getPlayerReputation(player));
+
+        assertCount(helper, "book trade price", 4L * Config.EMERALD_VALUE.get(), bookPrice(helper, player, toolsmith));
+        helper.succeed();
+    }
+
+    /** Hero of the Village I takes floor(0.3 × 5) = 1 emerald off the book trade. */
+    @GameTest(template = ARENA)
+    public static void heroOfTheVillageLowersPrices(GameTestHelper helper) {
+        Villager toolsmith = toolsmith(helper);
+        ServerPlayer player = survivalPlayer(helper);
+        player.addEffect(new MobEffectInstance(MobEffects.HERO_OF_THE_VILLAGE, 1200, 0));
+
+        assertCount(helper, "book trade price", 4L * Config.EMERALD_VALUE.get(), bookPrice(helper, player, toolsmith));
+        helper.succeed();
+    }
+
+    /** The discount is for whoever is trading: it is gone when the shop closes, as in vanilla. */
+    @GameTest(template = ARENA)
+    public static void aDiscountEndsWhenTheShopCloses(GameTestHelper helper) {
+        Villager toolsmith = toolsmith(helper);
+        ServerPlayer player = survivalPlayer(helper);
+        toolsmith.getGossips().add(player.getUUID(), GossipType.MINOR_POSITIVE, 20);
+        bookPrice(helper, player, toolsmith);
+
+        player.closeContainer();
+
+        assertCount(helper, "special price left on the offer", 0, toolsmith.getOffers().get(BOOK_AND_QUILL).getSpecialPriceDiff());
+        helper.succeed();
+    }
+
+    private static long bookPrice(GameTestHelper helper, ServerPlayer player, Villager toolsmith) {
+        VillagerInteractionMenu menu = TradingGameTests.open(helper, player, toolsmith);
+        if (menu == null) return -1;
+        int tab = tabOf(menu, BuyShopTab.class);
+        return TradingGameTests.entry(menu, tab, indexOfOffer(menu, tab, BOOK_AND_QUILL)).price();
     }
 
     private static Villager toolsmith(GameTestHelper helper) {
