@@ -65,8 +65,9 @@ Mostly done 17 Oct, 46 gametests in total:
       safe is the banker's job site, and every item has a name, a model and a creative tab entry.
 
 Still to do:
-- [ ] Unit: `CurrencyData` codec and stream-codec round trips, pinning the field names (a save
-      format), `getHighestDenomonation`, and `CoinStackItem.tier` thresholds.
+- [x] Unit: the purse codec pins the save format (`PursesCodecTest`), and the domain covers
+      `Purse`, `MoneyFormat` and the coin pile layout.
+- [ ] `CoinStackItem.tier` thresholds.
 - [ ] A banker villager actually claiming a safe. That needs a villager and many ticks, so it is
       slow and possibly flaky. The POI wiring is covered.
 - [ ] Client-only behaviour (the shop screen replacing the merchant UI, tooltips, renderers) has
@@ -78,116 +79,77 @@ Still to do:
 
 ## Audit, 17 Oct (second pass)
 
-A second read of the whole codebase after the gameplay tests went in. Findings are ordered by
-severity. Each **Open** item is either pinned by a test (named) or argued from the code.
+A second read of the whole codebase after the gameplay tests went in. Everything it found is
+fixed. #15 and #16 were pinned by tests before their fixes; #17–#19 were decided by the author
+first.
 
-### Open bugs
+### Bugs it found
 
-| # | Bug | Evidence | Suggested fix |
+| # | Bug | Fix | Covered by |
 |---|---|---|---|
-| 16 | **Wallet duplication.** The open wallet sits in one of the menu's own hotbar slots, and the grid is written back on close only if the wallet is still in hand. Take an item out of the grid, throw or move the wallet out of its slot, and the wallet keeps its old contents: the item now exists twice. The opposite order loses items | pinned: `WalletGameTests.throwingTheOpenWalletDoesNotDuplicateItsGrid` (one card becomes two) | lock the open wallet's slot (a `Slot` whose `mayPickup` is false for that stack, as bundle and backpack mods do), and write the grid through on every change instead of on close |
-| 17 | **The identity card sync broadcasts every player's location.** Every 60 s (and on each login) every client receives every online player's position, dimension, respawn point, health, armour, XP and playtime, whether or not it holds anyone's card. Any client, modded or not, can read it | `IdentityCardDataSyncHandler.broadcastToAll`, `IdentityCardPlayerSnapshot` | send a snapshot only for cards the client is actually showing (on request when a card is rendered or opened, or for the holder's own card), and decide which fields a card may show at all. **Product decision** |
-| 15 | **A broken safe is lost.** It sets `requiresCorrectToolForDrops`, but is in no `mineable/*` tag, so no tool is correct and it never drops itself (its contents do). Its destroy time of 1200 also makes it near-unbreakable | pinned: `SafeGameTests.aPickaxeIsTheRightToolForASafe` | add it to `mineable/pickaxe` (and `needs_iron_tool` or `needs_diamond_tool`). Whether it should be this hard to break is a **product decision** |
-| 18 | **The shop screen talks to a different menu than the server.** It swaps the client's `MerchantScreen` for a `ShopScreen` over a client-only `ShopMenu` with its own 36 slots, but the server still runs vanilla's `MerchantMenu` (3 trade slots, then the inventory), and `player.containerMenu` stays that menu. Clicks are sent with `ShopMenu` slot indices and applied to `MerchantMenu` slots, so clicking the top-left inventory slot acts on the payment slot. The server stays authoritative, so this desyncs rather than dupes. The code is marked WIP | argued from the code: `ErrantTradeClient.onScreenOpening`, `ShopMenu`. Client-only, so no gametest can reach it | make `ShopScreen` an `AbstractContainerScreen<MerchantMenu>` over the real menu, and only redraw it. Drop `ShopMenu` and the unused `SHOP_MENU` registration, which crashes if ever opened (`merchantMenu` is null there) |
-| 19 | **The wallet grid accepts any item**, shulker boxes and other containers included: unlimited nested storage, and a classic route to oversized-NBT packets. The README describes it as storage for "security cards, cashiers checks, etc.", and the tags `id_card_items` and `debit_items` exist for that but are unused | `WalletMenu` slots' `mayPlace` refuses only wallets | accept only tagged items (coins, coin stacks, ID cards, debit cards). **Product decision** |
+| 15 | **A broken safe was lost.** It required the correct tool for drops but was in no `mineable/*` tag, so no tool was correct | `mineable/pickaxe` and `needs_diamond_tool`. Its destroy time of 1200 stays: a safe is meant to be hard to break into (author) | `SafeGameTests.aDiamondPickaxeIsTheRightToolForASafe`, `breakingASafeWithADiamondPickaxeDropsTheSafe` |
+| 16 | **Wallet duplication.** The open wallet sat in an ordinary slot of its own menu and the grid was written back on close only if it was still in hand, so taking an item out and then throwing or moving the wallet left both | the wallet's slot is locked, number-key and offhand swaps cannot target it, and the grid is written through on every change | `WalletGameTests.throwingTheOpenWalletDoesNotDuplicateItsGrid`, `aNumberKeyCannotSwapTheOpenWalletAway`, `theGridIsSavedAsItChanges` |
+| 17 | **The identity card sync broadcast every player's location**, respawn point, health and playtime to every client, every 60 s | each player is sent snapshots only for the cards they carry (inventory, inside a wallet, worn as a curio). The client cache is replaced by each sync and cleared on leaving a server. Binding a card sends its data at once (author) | `IdentityCardGameTests.aPlayerWithoutCardsIsSentNoOnesData`, `carryingSomeonesCardSendsOnlyTheirData`, `aCardInsideAWalletCounts` |
+| 18 | **The shop screen clicked a different menu than the server's**: a client-only `ShopMenu` with its own slots, over the server's vanilla `MerchantMenu` | `ShopScreen` now draws over the `MerchantMenu` itself; `ShopMenu` and its broken `SHOP_MENU` registration are gone. The unfinished layout does not match vanilla's slot positions, so the swap is behind `ClientConfig.replaceTradingScreen`, off by default | none: client-only. The client was started and loads cleanly |
+| 19 | **The wallet grid accepted any item**, containers included | only `erranttrade:wallet_items` (currency, ID cards, debit cards); deposit-all sweeps `currency_items` only (author) | `WalletGameTests.theGridTakesOnlyWalletThings`, `depositAllLeavesIdCardsInTheInventory` |
+| 20 | **The coin pile's particle texture did not exist**, so breaking a pile threw missing-texture particles. Found while renaming its ID | it uses the gold mark's texture | `ContentGameTests.everyModelAndTextureThatIsNamedExists` (seen failing first) |
 
 ### Smaller defects
 
-- `ShopScreen` declares its own `leftPos`/`topPos`, shadowing `AbstractContainerScreen`'s, so the
-  background and the slots are positioned from different origins.
-- `InventoryHelper` mixes slot constants used by common menus with client-only drawing
-  (`GuiGraphics`, `RenderSystem`). It works because the constants are inlined at compile time;
-  the first non-constant use from a menu breaks the dedicated server. Split it.
-- `IdentityCardClientCache` is never cleared, so data from one server carries over to the next.
-- `IdentityCardItem` imports client classes (`BlockEntityWithoutLevelRenderer`,
-  `IClientItemExtensions`) that it does not use.
+Fixed: `ShopScreen` shadowing `leftPos`/`topPos` (gone with the rewrite); `InventoryHelper`
+mixing common constants with client drawing (deleted: constants into `SafeMenu`, drawing into
+`ShopScreen`); `IdentityCardClientCache` never cleared; `IdentityCardItem`'s client imports; `§`
+colour codes (`CoinStyle`); the Buy/Sell and coin stack literals; the coin pile renderer laying
+out every pile every frame (cached per balance).
+
+Still open:
 - `WalletTooltip.createClientTooltipComponent` and `IdentityCardTooltip.createClientTooltipComponent`
-  are dead (the factories are registered in `ErrantTradeClient`) and name client types from common
-  classes.
-- `CoinDenomination.format` holds legacy `§` colour codes. Use `ChatFormatting`/`TextColor`.
-- Player-facing literals: "Buy"/"Sell" (shop), "Safe" (safe title), the coin stack's "Coins:" and
-  "Value:".
-- The coin pile renderer recomputes its whole layout, and allocates `ItemStack`s, for every pile
-  every frame. The layout depends only on the balance, so it can be cached per balance.
+  are dead and name client types from common classes.
+- The safe's title is a literal ("Safe").
 
-### Structure: a pure `-domain` module
+### Structure: the `-domain` module (done)
 
-**Recommended.** Split the logic that has no business knowing about Minecraft into a plain
-`java-library` subproject, `errant-trade-domain`, which declares no Minecraft dependency. The
-compiler then enforces the boundary. This is the shape errant-metalworks uses (ARCHITECTURE §4.2
-there).
+`errant-trade-domain` is a plain `java-library` with no Minecraft dependency, holding
+`CoinDenomination`, `Purse` (replacing `CurrencyData`), `MoneyFormat` and `PileLayout`. Its 19
+tests run in milliseconds. How it is wired, and why it must stay Minecraft-free, is in
+[AGENTS §2](../AGENTS.md#the-domain-module). New logic about money starts there: change-making,
+bank balances, note values, trader pricing, inflation detection.
 
-What moves (about 400 lines today):
-
-- **Denominations and value**: `CoinDenomination` minus its colour, and `CurrencyData`'s arithmetic
-  as a `Purse` value type (counts per denomination, `canAdd`, `add`, `remove`, totals) with no
-  `ItemStack`, no codecs and no registry access. The mod keeps a thin adapter: the codecs (which
-  are the save format, so the field names stay), the data component and `ItemStack` access.
-- **The deposit rule**: what `WalletMenu.absorb`, the pile and auto-deposit each do ("take what
-  fits, report the rest") as one function over counts. Bugs 1–3 came from four copies of it.
-- **Money formatting**, locale-independent, in one place.
-- **The coin pile layout** (`ringSlots`, `getStacks`, `thickenFullStacks`): pure geometry, today
-  untestable inside a renderer.
-- **Everything on the roadmap that is economics**: change-making, bank balances, note values,
-  trader pricing, inflation detection. These are the parts most worth testing, and they start
-  life in the domain.
-
-Why it is worth it now:
-
-- **Fast tests.** Domain tests are plain JUnit in milliseconds. Today every unit test boots FML
-  (`neoForge.unitTest`), about 10 s before the first assertion.
-- **The boundary is enforced, not hoped for.** A `-domain` project that cannot see Minecraft
-  cannot grow an `ItemStack` dependency.
-- **It is cheap now and expensive later.** Most upcoming features are domain-heavy.
-
-Cost: a multi-project build (`settings.gradle` include, the mod depending on the domain and
-shipping it inside its jar with Jar-in-Jar or by merging the classes), and keeping the domain's
-package unique (`com.errantmc.markets.domain`; AGENTS §3).
-
-**Not recommended: a library shared with errant-metalworks.** It is on Minecraft 26.2 and this
-mod is on 1.21.1, so no Minecraft-facing code can be shared, and the two mods have no domain logic
-in common. What is shared is ideas: the gametest player, the registry-list tests, the empty
+**Not done, on purpose: a library shared with errant-metalworks.** It is on Minecraft 26.2 and
+this mod is on 1.21.1, so no Minecraft-facing code can be shared, and the two mods have no domain
+logic in common. What is shared is ideas: the gametest player, the registry-list tests, the empty
 template tool. Copy those. Revisit this if the two mods ever share a Minecraft version, or if an
 economy API for other mods to call becomes a goal (that would be its own `-api` artifact).
 
 ### Build and tests
 
-- **Gametests ship to players.** They live in `src/main/java` with their structure template, so
-  every release jar carries them. Move them to a `gametest` source set that is on the gametest
-  run's classpath and not in the jar.
-- **Datagen for what is derivable.** The 18 coin recipes follow from `CoinDenomination` values,
-  so generate them and the value test becomes a check on the generator. Lang, item models and
-  tags are small but would stop drifting. The `src/generated/resources` wiring already exists.
-- **Registry IDs, while worlds are already broken.** The rename already invalidated every saved
-  world, so this is the cheapest moment to tidy IDs: `safe_block` to `safe`, `coin_block` to
-  `coin_pile`, `wallet_leather` to `leather_wallet`, and `safe_blockentity` and `coin_blockentity`
-  to `safe` and `coin_pile`. After the first public release each rename needs a migration.
-  **Decide before release.**
+- [x] Gametests no longer ship to players: they live in a `gametest` source set.
+- [x] Registry IDs tidied while worlds were already broken: `safe`, `coin_pile`,
+      `leather_wallet`, the block entities `safe` and `coin_pile`, the POI `banker`, the menus
+      `safe` and `wallet`. **From the first public release on, every rename needs a migration.**
+- [ ] **Datagen for what is derivable.** The 18 coin recipes follow from `CoinDenomination`
+      values, so generate them, and the value test becomes a check on the generator. Lang, item
+      models and tags are small but would stop drifting. The `src/generated/resources` wiring
+      already exists.
 
 ## Refactoring and cleanup
 
-Do these after their area has tests. Most of the first three come for free with the domain split.
-
-- [ ] **One source of truth for denominations.** Give each `CoinDenomination` a way to get its
-      item (or have `CoinItem` own the mapping by `denom()`), and replace the eight-way
-      `if`/`switch` blocks in `CoinItem.getDenomination`, `createCurrencyItem`, `isCoinItem`,
-      `CoinBlock.onRemove`, `CoinBlockEntityRenderer.getStacks`, `WalletScreen`'s button ids and
-      `CurrencyData`. Consider storing `CurrencyData` as a map or array keyed by denomination.
-      **The codec field names are a save format** (AGENTS §5), so keep them or migrate.
-- [ ] Split `CurrencyData` into a pure value type (no `ItemStack`, no `CoinItem`) plus an adapter,
-      so it can be unit-tested without FML.
-- [ ] One "deposit coins into a balance" routine shared by the coin block, the wallet menu and
-      auto-deposit (the wallet menu's `absorb` is the start of it).
-- [ ] Replace `CoinBlockEntity`'s `System.err`, and the `System.out` in `SafeMenu` and `ShopMenu`,
-      with the logger.
+- [x] **One source of truth for denominations.** `CoinDenomination.coins()` plus
+      `CoinItem.forDenomination` / `denom()`. The eight-way switches are gone from `CoinItem`,
+      `CoinBlock`, the renderer, the wallet screen and menu.
+- [x] `CurrencyData` split into the domain `Purse` and the mod's `Purses` adapter. The save format
+      is unchanged (`PursesCodecTest`).
+- [x] One deposit routine: `CoinDeposits.absorb`.
+- [x] `System.out`/`err` replaced by the logger, or deleted along with the code around them.
+- [x] Locale-independent money formatting (`MoneyFormat`).
+- [x] `getHighestDenomonation` is `Purse.highest()`.
 - [ ] Remove the MDK example config entries (`logDirtBlock`, `magicNumber` …) and the unused
       `validateItemName`. **This changes the config file**, so mention it in the changelog.
 - [ ] Remove dead code: `TradeComponents.register(String, …)`, commented-out blocks in the mod
       constructor, `if(false && …)` in `SafeBlock.useItemOn`, `lib/net/Codecs` and
       `lib/ui/GuiHelpers` (never used), the dead `createClientTooltipComponent` methods, and the
-      unused tags `CURRENCY_ITEMS` and `WALLET_SLOT_ITEM` (or put them to work, as #19 suggests).
-- [ ] Locale-independent money formatting (AGENTS §6).
-- [ ] Literal strings to translation keys (see Smaller defects).
-- [ ] Fix the spelling of `getHighestDenomonation` / `denomonation` (public API, so rename in one change).
-- [ ] Strip the remaining tutorial comments ("your logger here", "works whether SAFE_BLOCK is a
-      BlockEntry or a RegistryObject", "THIS YOU HAVE TO DEFINE!").
+      unused tag constants `ID_CARD_ITEMS`, `DEBIT_CARD_ITEMS` and `WALLET_SLOT_ITEM` (the tags
+      themselves are used, through `wallet_items` and Curios).
+- [ ] The safe's title as a translation key.
+- [ ] Strip the remaining tutorial comments ("works whether SAFE_BLOCK is a BlockEntry or a
+      RegistryObject", "THIS YOU HAVE TO DEFINE!", "your existing Codec").
