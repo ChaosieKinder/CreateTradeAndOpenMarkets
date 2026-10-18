@@ -19,16 +19,19 @@ Ordered by severity. **Coin loss or duplication comes first.**
    player's coins are shrunk and the pile ends up unchanged.
 2. **"Deposit all" in the wallet moves the wrong slots.**
    [WalletMenu.java:213](../src/main/java/com/errantmc/markets/screen/wallet/WalletMenu.java#L213)
-   For non-coin wallet items it calls `quickMoveStack(player, i)` with an *inventory* index, but
-   `quickMoveStack` takes a *menu slot* index. Inventory 0–8 are wallet slots 0–8 in this menu,
-   so the hotbar sweep moves wallet contents out. The offhand loop at line 226 passes offhand
-   index 0, which is wallet slot 0.
+   For the one non-coin item in `wallet_items`, the coin stack, it calls
+   `quickMoveStack(player, i)` with an *inventory* index, but `quickMoveStack` takes a *menu slot*
+   index. Inventory 0–8 are wallet slots 0–8 in this menu, so a coin stack in hotbar slot *i*
+   moves wallet slot *i* out instead. The offhand loop passes offhand index 0, which is wallet
+   slot 0. Main inventory 9–35 happens to line up. Confirmed by
+   `WalletGameTests.depositAllTakesCoinStacksAndLeavesTheWalletsContents`.
 3. **Coins over `Integer.MAX_VALUE` vanish.** `CurrencyData.add` clamps and reports `remaining`,
    but `WalletBalance.add`, `WalletAutoDeposit` (which discards the item entity anyway),
    `WalletMenu.depositAllCoinsFromPlayer` and `autoDepositFromSlots` ignore `remaining`.
    `CurrencyData.add(CurrencyData)` and the 8-int `add` overflow without clamping.
 4. **`CurrencyData.totalCount()` overflows.** It sums `int`s before the result widens to `long`.
-   The same pattern appears in `CoinItem.appendHoverText` (`int total = count * value`).
+   (`CoinItem.appendHoverText`'s `count * value` was suspected too, but its maximum, 64 × 100,000,
+   fits in an `int`.)
 5. **Placing a coin overwrites whatever is above the clicked block.**
    [CoinItem.java:57](../src/main/java/com/errantmc/markets/item/CoinItem.java#L57)
    `useOn` always targets `pos.above()`, whatever face was clicked, and calls `setBlock` without

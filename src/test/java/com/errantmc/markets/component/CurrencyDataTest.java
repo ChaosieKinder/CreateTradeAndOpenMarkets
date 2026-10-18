@@ -27,6 +27,15 @@ class CurrencyDataTest {
         assertEquals(0, result.updated().getFrom(CoinDenomination.GOLD_MARK));
     }
 
+    /** BUG (BACKLOG #4), pinned as it behaves today: the int sum wraps before widening. */
+    @Test
+    void totalCountDoesNotOverflow() {
+        CurrencyData c = CurrencyData.newCurrencyFromDenom(CoinDenomination.COPPER_BIT, Integer.MAX_VALUE)
+                .add(CoinDenomination.COPPER_SHARD, Integer.MAX_VALUE).updated();
+
+        assertEquals(-2L, c.totalCount());
+    }
+
     @Test
     void addClampsAtIntMaxAndReportsTheRest() {
         CurrencyData c = CurrencyData.newCurrencyFromDenom(CoinDenomination.COPPER_BIT, Integer.MAX_VALUE - 1);
