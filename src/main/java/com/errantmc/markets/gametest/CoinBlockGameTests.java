@@ -65,8 +65,8 @@ public final class CoinBlockGameTests {
     }
 
     /**
-     * BUG (BACKLOG #3), pinned as it behaves today: merging a coin stack into a nearly full pile
-     * wraps the count negative and consumes the stack.
+     * BACKLOG #3: merging a coin stack into a nearly full pile used to wrap the count negative and
+     * consume the stack. It is now refused whole.
      */
     @GameTest(template = ARENA)
     public static void coinStackIntoAFullPileIsRefused(GameTestHelper helper) {
@@ -79,9 +79,10 @@ public final class CoinBlockGameTests {
 
         helper.useBlock(PILE, player);
 
-        assertCount(helper, "copper bits in the pile", Integer.MIN_VALUE + 3,
+        assertCount(helper, "copper bits in the pile", Integer.MAX_VALUE - 1,
                 be.getCurrency().getFrom(CoinDenomination.COPPER_BIT));
-        assertTrue(helper, "the coin stack to be consumed", player.getMainHandItem().isEmpty());
+        assertTrue(helper, "the coin stack to still be held",
+                player.getMainHandItem().is(TradeItems.COIN_STACK_ITEM.get()));
         helper.succeed();
     }
 

@@ -38,10 +38,12 @@ public final class WalletBalance {
         wallet.set(type, c);
     }
 
-    // add/remove can stay the same, but call typeOrNull() via get()/set()/ensure()
-    public static void add(ItemStack wallet, CoinDenomination d, int count) {
+    /** Adds what fits; the result's {@code delta} is what went in and {@code remaining} is what did not. */
+    public static CurrencyData.CoinsChangeResult add(ItemStack wallet, CoinDenomination d, int count) {
         ensure(wallet);
-        set(wallet, get(wallet).add(d, count).updated());
+        var result = get(wallet).add(d, count);
+        set(wallet, result.updated());
+        return result;
     }
 
     public static CurrencyData.CoinsChangeResult remove(ItemStack wallet, CoinDenomination d, int count) {

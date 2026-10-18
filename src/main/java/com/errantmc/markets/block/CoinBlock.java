@@ -322,16 +322,14 @@ public class CoinBlock extends BaseEntityBlock {
     }
 
     /**
-     * Attempts to insert an CoinStack, removing the in-hand stack if the player is not in creative
-     * @param held
-     * @param player
-     * @param be
-     * @return the number of item added from the in-hand stack. (might be less then requested if pile is full)
+     * Merges a held coin stack into the pile whole, or not at all if the pile cannot hold it.
+     * @return the number of coins added
      */
     private static long insertFromHeldCoinStack(ItemStack held, Player player, CoinBlockEntity be) {
         long res = 0;
-        if (held.getItem() instanceof CoinStackItem coinStackItem) {
+        if (held.getItem() instanceof CoinStackItem) {
             var stackData = CurrencyData.getFrom(held);
+            if (!be.getCurrency().canAdd(stackData)) return 0;
             be.setCurrency(be.getCurrency().add(stackData));
             if (!player.getAbilities().instabuild) held.shrink(1);
             res = stackData.totalCount();

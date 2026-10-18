@@ -4,6 +4,9 @@ import com.errantmc.markets.data.CoinDenomination;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CurrencyDataTest {
 
@@ -34,6 +37,18 @@ class CurrencyDataTest {
                 .add(CoinDenomination.COPPER_SHARD, Integer.MAX_VALUE).updated();
 
         assertEquals(2L * Integer.MAX_VALUE, c.totalCount());
+    }
+
+    @Test
+    void mergingBalancesThatWouldOverflowIsRefusedNotWrapped() {
+        CurrencyData nearlyFull = CurrencyData.newCurrencyFromDenom(CoinDenomination.EMERALD_SUN, Integer.MAX_VALUE - 1);
+        CurrencyData one = CurrencyData.newCurrencyFromDenom(CoinDenomination.EMERALD_SUN, 1);
+        CurrencyData two = CurrencyData.newCurrencyFromDenom(CoinDenomination.EMERALD_SUN, 2);
+
+        assertTrue(nearlyFull.canAdd(one));
+        assertEquals(Integer.MAX_VALUE, nearlyFull.add(one).getFrom(CoinDenomination.EMERALD_SUN));
+        assertFalse(nearlyFull.canAdd(two));
+        assertThrows(ArithmeticException.class, () -> nearlyFull.add(two));
     }
 
     @Test

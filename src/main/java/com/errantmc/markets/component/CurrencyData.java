@@ -115,29 +115,28 @@ public record CurrencyData(int coinsCopperBit, int coinsCopperShard,
         };
     }
 
-    public CurrencyData add(CurrencyData d) {
-        return new CurrencyData(
-        coinsCopperBit + d.coinsCopperBit,
-        coinsCopperShard + d.coinsCopperShard,
-        coinsSilverBit + d.coinsSilverBit,
-        coinsSilverCrown + d.coinsSilverCrown,
-        coinsGoldMark + d.coinsGoldMark,
-        + coinsGoldRegal + d.coinsGoldRegal,
-        coinsEmeraldSun + d.coinsEmeraldSun,
-        coinsEmeraldThrone + d.coinsEmeraldThrone
-        );
+    /** Whether {@link #add(CurrencyData)} would fit: no denomination may pass {@code Integer.MAX_VALUE}. */
+    public boolean canAdd(CurrencyData d) {
+        for (CoinDenomination denom : CoinDenomination.values()) {
+            if ((long) getFrom(denom) + d.getFrom(denom) > Integer.MAX_VALUE) return false;
+        }
+        return true;
     }
 
-    public CurrencyData add(int c1, int c2, int s1, int s2, int g1, int g2, int e1, int e2) {
+    /**
+     * Merges two balances. Callers check {@link #canAdd} first and refuse the merge when it fails;
+     * an overflow here throws rather than silently losing or wrapping coins.
+     */
+    public CurrencyData add(CurrencyData d) {
         return new CurrencyData(
-        coinsCopperBit + c1,
-        coinsCopperShard + c2,
-        coinsSilverBit + s1,
-        coinsSilverCrown + s2,
-        coinsGoldMark + g1,
-        coinsGoldRegal + g2,
-        coinsEmeraldSun + e1,
-        coinsEmeraldThrone + e2
+        Math.addExact(coinsCopperBit, d.coinsCopperBit),
+        Math.addExact(coinsCopperShard, d.coinsCopperShard),
+        Math.addExact(coinsSilverBit, d.coinsSilverBit),
+        Math.addExact(coinsSilverCrown, d.coinsSilverCrown),
+        Math.addExact(coinsGoldMark, d.coinsGoldMark),
+        Math.addExact(coinsGoldRegal, d.coinsGoldRegal),
+        Math.addExact(coinsEmeraldSun, d.coinsEmeraldSun),
+        Math.addExact(coinsEmeraldThrone, d.coinsEmeraldThrone)
         );
     }
 
