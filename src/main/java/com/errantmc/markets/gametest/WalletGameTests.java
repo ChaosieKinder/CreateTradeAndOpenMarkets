@@ -22,24 +22,50 @@ public final class WalletGameTests {
     private WalletGameTests() {}
 
     /**
-     * BUG (BACKLOG #2), pinned as it behaves today: "deposit all" passes a hotbar index where a
-     * menu slot index belongs, so a coin stack in hotbar slot 2 moves wallet slot 2 out instead.
+     * BACKLOG #2: "deposit all" used to pass a hotbar index where a menu slot index belongs, so a
+     * coin stack in hotbar slot 2 moved wallet slot 2 out instead.
      */
     @GameTest(template = ARENA)
     public static void depositAllTakesCoinStacksAndLeavesTheWalletsContents(GameTestHelper helper) {
         ServerPlayer player = survivalPlayer(helper);
         player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(TradeItems.WALLET_LEATHER_ITEM.get()));
         player.getInventory().setItem(2, coinStackOf(CurrencyData.newCurrencyFromDenom(CoinDenomination.COPPER_BIT, 5)));
+        player.setItemInHand(InteractionHand.OFF_HAND,
+                coinStackOf(CurrencyData.newCurrencyFromDenom(CoinDenomination.GOLD_MARK, 2)));
+        player.getInventory().setItem(20, new ItemStack(TradeItems.COIN_SILVER_BIT.get(), 6));
         WalletMenu menu = new WalletMenu(0, player.getInventory(), InteractionHand.MAIN_HAND);
+        menu.getSlot(0).set(new ItemStack(TradeItems.ID_CARD.get()));
         menu.getSlot(2).set(new ItemStack(TradeItems.ID_CARD.get()));
 
         menu.clickMenuButton(player, WalletMenu.BTN_DEPOSIT_ALL);
 
-        assertTrue(helper, "wallet slot 2 to be emptied", menu.getSlot(2).getItem().isEmpty());
-        assertTrue(helper, "the coin stack to stay in the hotbar",
-                player.getInventory().getItem(2).is(TradeItems.COIN_STACK_ITEM.get()));
-        assertCount(helper, "copper bits in the wallet", 0,
+        assertTrue(helper, "wallet slot 0 to keep its card", menu.getSlot(0).getItem().is(TradeItems.ID_CARD.get()));
+        assertTrue(helper, "wallet slot 2 to keep its card", menu.getSlot(2).getItem().is(TradeItems.ID_CARD.get()));
+        assertTrue(helper, "the hotbar coin stack to be taken", player.getInventory().getItem(2).isEmpty());
+        assertTrue(helper, "the offhand coin stack to be taken", player.getOffhandItem().isEmpty());
+        CurrencyData balance = WalletBalance.get(menu.getWalletStack());
+        assertCount(helper, "copper bits in the wallet", 5, balance.getFrom(CoinDenomination.COPPER_BIT));
+        assertCount(helper, "gold marks in the wallet", 2, balance.getFrom(CoinDenomination.GOLD_MARK));
+        assertCount(helper, "silver bits in the wallet", 6, balance.getFrom(CoinDenomination.SILVER_BIT));
+        assertCount(helper, "coins left in the inventory", 0, coinsIn(player));
+        helper.succeed();
+    }
+
+    /** BACKLOG #3: what does not fit under Integer.MAX_VALUE stays in the inventory. */
+    @GameTest(template = ARENA)
+    public static void depositAllIntoANearlyFullWalletLeavesTheRest(GameTestHelper helper) {
+        ServerPlayer player = survivalPlayer(helper);
+        ItemStack wallet = new ItemStack(TradeItems.WALLET_LEATHER_ITEM.get());
+        WalletBalance.set(wallet, CurrencyData.newCurrencyFromDenom(CoinDenomination.COPPER_BIT, Integer.MAX_VALUE - 1));
+        player.setItemInHand(InteractionHand.MAIN_HAND, wallet);
+        player.getInventory().setItem(5, new ItemStack(TradeItems.COIN_COPPER_BIT.get(), 5));
+        WalletMenu menu = new WalletMenu(0, player.getInventory(), InteractionHand.MAIN_HAND);
+
+        menu.clickMenuButton(player, WalletMenu.BTN_DEPOSIT_ALL);
+
+        assertCount(helper, "copper bits in the wallet", Integer.MAX_VALUE,
                 WalletBalance.get(menu.getWalletStack()).getFrom(CoinDenomination.COPPER_BIT));
+        assertCount(helper, "coins left in the inventory", 4, coinsIn(player));
         helper.succeed();
     }
 }

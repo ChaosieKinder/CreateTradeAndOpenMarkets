@@ -203,90 +203,62 @@ public class WalletMenu extends AbstractContainerMenu {
     public InteractionHand getHand() { return hand; }
 
     private void depositAllCoinsFromPlayer(ServerPlayer sp) {
-        CurrencyData cur = WalletBalance.get(walletStack);
-        boolean changed = false;
-
-        // 1) sweep carried (cursor) stack
-        ItemStack carried = getCarried();
-        if (!carried.isEmpty() && carried.getItem() instanceof CoinItem coin) {
-            cur = cur.add(coin.denom(), carried.getCount()).updated();
-            setCarried(ItemStack.EMPTY);
-            changed = true;
+        CurrencyData before = WalletBalance.get(walletStack);
+        CurrencyData cur = absorb(before, getCarried());
+        // items is the main inventory and hotbar; the open wallet is never a coin, so it is skipped
+        for (ItemStack s : playerInv.items) {
+            if (s.is(TradeTags.Items.WALLET_ITEMS)) cur = absorb(cur, s);
+        }
+        for (ItemStack s : playerInv.offhand) {
+            if (s.is(TradeTags.Items.WALLET_ITEMS)) cur = absorb(cur, s);
         }
 
-        // 2) sweep main inventory (includes hotbar)
-        for (int i = 0; i < playerInv.items.size(); i++) {
-            ItemStack s = playerInv.items.get(i);
-            if (s.isEmpty()) continue;
-            if (s.is(TradeTags.Items.WALLET_ITEMS)) {
-                if(s.getItem() instanceof CoinItem coin) {
-                    cur = cur.add(coin.denom(), s.getCount()).updated();
-                    playerInv.items.set(i, ItemStack.EMPTY);
-                } else {
-                    quickMoveStack(playerInv.player, i);
-                }
-                changed = true;
-            }
-        }
-
-        // 3) sweep offhand
-        for (int i = 0; i < playerInv.offhand.size(); i++) {
-            ItemStack s = playerInv.offhand.get(i);
-            if (s.isEmpty()) continue;
-            if (s.is(TradeTags.Items.WALLET_ITEMS)) {
-                if(s.getItem() instanceof CoinItem coin) {
-                    cur = cur.add(coin.denom(), s.getCount()).updated();
-                    playerInv.offhand.set(i, ItemStack.EMPTY);
-                } else {
-                    quickMoveStack(playerInv.player, i);
-                }
-                changed = true;
-            }
-        }
-
-        if (changed) {
+        if (!cur.equals(before)) {
             WalletBalance.set(walletStack, cur);
             sp.setItemInHand(hand, walletStack);   // re-set same ref to mark the slot dirty
             playerInv.setChanged();
             broadcastChanges();
         }
     }
-    /** Sweep the 3×3 wallet grid; convert any coin stacks into CurrencyData, consuming the item. */
-    private void autoDepositFromSlots() {
-        // Server-side only
-        if (!(this.getCarried() != null && this.slots != null)) { /* nothing */ }
-        CurrencyData cur = WalletBalance.get(walletStack);
-        boolean changed = false;
 
+    /** Sweep the 3×3 wallet grid, turning coins and coin stacks into balance. */
+    private void autoDepositFromSlots() {
+        CurrencyData before = WalletBalance.get(walletStack);
+        CurrencyData cur = before;
         for (int i = 0; i < WalletInventory.SIZE; i++) {
             ItemStack s = walletInv.getItem(i);
             if (s.isEmpty()) continue;
-            if (s.getItem() instanceof CoinItem coin) {
-                int count = s.getCount();
-                if (count <= 0) continue;
-
-                // add to totals and clear the slot
-                cur = cur.add(coin.denom(), count).updated();
-                walletInv.setItem(i, ItemStack.EMPTY);
-                changed = true;
-            }
-            if (s.getItem() instanceof CoinStackItem coinStack) {
-                var data = CurrencyData.getFrom(s);
-                cur = cur.add(data);
-                walletInv.setItem(i, ItemStack.EMPTY);
-                changed = true;
-            }
+            cur = absorb(cur, s);
+            if (s.isEmpty()) walletInv.setItem(i, ItemStack.EMPTY);
         }
 
-        if (changed) {
+        if (!cur.equals(before)) {
             WalletBalance.set(walletStack, cur);
-            if (!( playerInv.player instanceof ServerPlayer sp))
-            {
-                playerInv.player.setItemInHand(hand, walletStack);   // re-set same ref to mark the slot dirty
-            }
+            walletInv.setChanged();
             playerInv.setChanged();
             broadcastChanges();
         }
+    }
+
+    /**
+     * Moves what fits of a coin or coin stack into {@code cur}, shrinking {@code s} by what went in.
+     * A coin stack goes in whole or not at all. Anything else is left alone.
+     * @return the balance after
+     */
+    private static CurrencyData absorb(CurrencyData cur, ItemStack s) {
+        if (s.getItem() instanceof CoinItem coin) {
+            var result = cur.add(coin.denom(), s.getCount());
+            s.shrink(result.delta());
+            return result.updated();
+        }
+        if (s.getItem() instanceof CoinStackItem) {
+            CurrencyData data = CurrencyData.getFrom(s);
+            while (!s.isEmpty() && cur.canAdd(data)) {
+                cur = cur.add(data);
+                s.shrink(1);
+            }
+        }
+        return cur;
     }
 
     @Override
