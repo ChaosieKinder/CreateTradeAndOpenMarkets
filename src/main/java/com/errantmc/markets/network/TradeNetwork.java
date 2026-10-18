@@ -1,6 +1,8 @@
 package com.errantmc.markets.network;
 
 import com.errantmc.markets.network.message.IdentityCardPlayerInfoSyncMessage;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
@@ -24,11 +26,19 @@ public final class TradeNetwork {
         );
     }
 
-    public static void sendToAll(IdentityCardPlayerInfoSyncMessage message) {
-        PacketDistributor.sendToAllPlayers(message);
+    public static void sendToAll(MinecraftServer server, CustomPacketPayload message) {
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            sendTo(player, message);
+        }
     }
 
-    public static void sendTo(ServerPlayer player, IdentityCardPlayerInfoSyncMessage message) {
-        PacketDistributor.sendToPlayer(player, message);
+    /**
+     * Skips players whose connection never negotiated our channel (fake players, gametest mock
+     * players); sending to one of them throws.
+     */
+    public static void sendTo(ServerPlayer player, CustomPacketPayload message) {
+        if (player.connection != null && player.connection.hasChannel(message)) {
+            PacketDistributor.sendToPlayer(player, message);
+        }
     }
 }

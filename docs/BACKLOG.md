@@ -51,6 +51,11 @@ Ordered by severity. **Coin loss or duplication comes first.**
    `ItemEntityPickupEvent.Pre` instead of a tick scan.
 10. **`CoinBlock.LAST_SNEAK_USE` is a static map that never shrinks.** Small, but it grows by one
    entry per player per server lifetime.
+12. ~~**The identity card sync throws for players without our channel.**~~ Fixed 17 Oct.
+    `PacketDistributor` throws when a connection never negotiated the payload, which is true of
+    fake players and gametest mock players. It ran on every login and every 1200 ticks.
+    `TradeNetwork.sendTo` now checks `hasChannel` first. Found by the first gametest that used a
+    player.
 11. **`CoinBlock` logs at INFO on every interaction** (`useItemOn`, `useWithoutItem`), and
     `WalletMenu.clickMenuButton` logs every button press.
 

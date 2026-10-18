@@ -52,7 +52,7 @@ public class IdentityCardDataSyncHandler {
         IdentityCardPlayerInfoSyncMessage message = new IdentityCardPlayerInfoSyncMessage(
                 players.stream().map(IdentityCardPlayerSnapshot::from).toList()
         );
-        TradeNetwork.sendToAll(message);
+        TradeNetwork.sendToAll(server, message);
     }
 
     private static void sendToPlayer(ServerPlayer player) {
