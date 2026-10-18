@@ -186,6 +186,17 @@ public final class TradingGameTests {
 
     // ---------- stock over time ----------
 
+    /** farmer.json's second buy entry stocks {@code {min_inclusive: 2, max_inclusive: 6}}; it was unlimited before 18 Oct. */
+    @GameTest(template = ARENA)
+    public static void aStockRangeRollsWithinItsBounds(GameTestHelper helper) {
+        Villager farmer = VillagerInteractionGameTests.farmer(helper);
+        VillagerInteractionMenu menu = open(helper, survivalPlayer(helper), farmer);
+        if (menu == null) return;
+        int stock = entry(menu, BUY, 1).stock();
+        if (stock < 2 || stock > 6) helper.fail("stock " + stock + " is outside 2..6");
+        helper.succeed();
+    }
+
     /** Stock is saved with the villager, so a restart does not refill a shop someone bought out. */
     @GameTest(template = ARENA)
     public static void stockSurvivesSavingAndLoadingTheVillager(GameTestHelper helper) {

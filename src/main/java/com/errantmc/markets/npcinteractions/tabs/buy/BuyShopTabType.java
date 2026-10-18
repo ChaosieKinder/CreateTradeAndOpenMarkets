@@ -103,6 +103,15 @@ public class BuyShopTabType implements InteractionTabType {
             if (stockObject.has("options")) {
                 return resolveWeightedStockOptions(tabId, stockObject.getAsJsonArray("options"), random);
             }
+            // The bundled shops' shorthand for a uniform range. IntProvider.CODEC wants a "type",
+            // so without this every range was refused and the entry's stock was unlimited
+            if (!stockObject.has("type") && stockObject.has("min_inclusive") && stockObject.has("max_inclusive")) {
+                int min = stockObject.get("min_inclusive").getAsInt();
+                int max = stockObject.get("max_inclusive").getAsInt();
+                if (min <= max) return random.nextIntBetweenInclusive(min, max);
+                LOGGER.warn("Ignoring stock range with min above max in tabs '{}': {}", tabId, stockObject);
+                return ShopEntry.UNLIMITED_STOCK;
+            }
         }
         Optional<IntProvider> provider = IntProvider.CODEC.parse(JsonOps.INSTANCE, stockElement)
                 .resultOrPartial(message -> LOGGER.warn("Failed to parse stock provider: {}", message));
