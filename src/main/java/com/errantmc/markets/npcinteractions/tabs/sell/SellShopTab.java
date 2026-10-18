@@ -3,8 +3,6 @@ package com.errantmc.markets.npcinteractions.tabs.sell;
 import com.errantmc.markets.npcinteractions.components.SimpleShopTab;
 import com.errantmc.markets.npcinteractions.trading.ShopEntry;
 import com.errantmc.markets.npcinteractions.tabs.buy.BuyShopTab;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -94,28 +92,7 @@ public class SellShopTab extends SimpleShopTab {
     }
 
     @Override
-    public void renderPanel(GuiGraphics guiGraphics, int xPos, int yPos, int mouseX, int mouseY) {
-        int x = xPos + PANEL_X_OFFSET + 18;
-        int y = yPos + PANEL_Y_OFFSET + 44;
-        int index = 0;
-        /* Render up to 12 entries */
-        for (ShopEntry entry : entries()) {
-            if (index >= 11) {
-                break;
-            }
-            var font = Minecraft.getInstance().font;
-            guiGraphics.renderItem(entry.item(), x, y);
-            guiGraphics.renderItemDecorations(font, entry.item(), x, y);
-            Component priceText = Component.literal("Price: " + entry.price());
-            Component stockText = entry.hasLimitedStock()
-                    ? Component.literal("Stock: " + entry.stock())
-                    : Component.literal("Stock: ∞");
-            int textX = x + 20;
-            guiGraphics.drawString(font, entry.item().getHoverName(), textX, y + 4, 0x404040, false);
-            guiGraphics.drawString(font, priceText, textX, y + 16, 0x202020, false);
-            guiGraphics.drawString(font, stockText, textX + 70, y + 16, 0x202020, false);
-            y += 28;
-            index++;
-        }
+    protected String priceKey() {
+        return "screen.erranttrade.npcinteractions.pays";
     }
 }

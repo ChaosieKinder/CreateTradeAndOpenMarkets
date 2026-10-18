@@ -3,6 +3,7 @@ package com.errantmc.markets.screen.villager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.errantmc.markets.ErrantTrade;
 import com.errantmc.markets.component.Purses;
+import com.errantmc.markets.npcinteractions.components.SimpleShopTab;
 import com.errantmc.markets.domain.MoneyFormat;
 import com.errantmc.markets.item.wallet.WalletFinder;
 import com.errantmc.markets.npcinteractions.components.InteractionTab;
@@ -99,6 +100,15 @@ public class VillagerInteractionScreen extends AbstractContainerScreen<VillagerI
             if (tabIndex >= 0) {
                 this.menu.setSelectedTabIndex(tabIndex);
                 return true;
+            }
+            // A click on an entry asks the server to trade it; the server answers with new tabs
+            if (this.menu.getSelectedTab() instanceof SimpleShopTab shop && this.minecraft != null && this.minecraft.gameMode != null) {
+                int entry = shop.entryAt(this.leftPos, this.topPos, mouseX, mouseY);
+                if (entry >= 0) {
+                    this.minecraft.gameMode.handleInventoryButtonClick(this.menu.containerId,
+                            VillagerInteractionMenu.tradeButton(this.menu.getSelectedTabIndex(), entry));
+                    return true;
+                }
             }
         }
         return super.mouseClicked(mouseX, mouseY, button);

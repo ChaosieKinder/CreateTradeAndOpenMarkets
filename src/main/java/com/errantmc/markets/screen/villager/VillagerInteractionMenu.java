@@ -2,7 +2,14 @@ package com.errantmc.markets.screen.villager;
 
 import com.errantmc.markets.npcinteractions.components.InteractionTab;
 import com.errantmc.markets.npcinteractions.registry.InteractionTabManager;
+import com.errantmc.markets.network.TradeNetwork;
+import com.errantmc.markets.network.message.InteractionTabsSyncMessage;
+import com.errantmc.markets.npcinteractions.tabs.buy.BuyShopTab;
+import com.errantmc.markets.npcinteractions.tabs.sell.SellShopTab;
+import com.errantmc.markets.npcinteractions.trading.ShopTrades;
 import com.errantmc.markets.screen.TradeMenus;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.util.Mth;
@@ -111,6 +118,40 @@ public class VillagerInteractionMenu extends AbstractContainerMenu {
     public Villager getClientVillager() {
         if (this.villager != null) return this.villager;
         return getLevel().getEntity(this.villagerEntityId) instanceof Villager v ? v : null;
+    }
+
+    private static final int ENTRIES_PER_TAB = 4096;
+
+    /** The menu button the client sends to trade entry {@code entry} of tab {@code tab}. */
+    public static int tradeButton(int tab, int entry) {
+        return tab * ENTRIES_PER_TAB + entry;
+    }
+
+    /**
+     * A click on an entry, on the server: buy it from a buy tab, sell it on a sell tab. Vanilla has
+     * already checked the container id and {@link #stillValid}.
+     */
+    @Override
+    public boolean clickMenuButton(Player player, int id) {
+        if (!(player instanceof ServerPlayer serverPlayer) || this.villager == null || id < 0) return false;
+        int tabIndex = id / ENTRIES_PER_TAB;
+        int entryIndex = id % ENTRIES_PER_TAB;
+        if (tabIndex >= this.tabs.size()) return false;
+
+        ShopTrades.Result result = switch (this.tabs.get(tabIndex)) {
+            case BuyShopTab buy -> ShopTrades.buy(serverPlayer, this.villager, buy, entryIndex);
+            case SellShopTab sell -> ShopTrades.sell(serverPlayer, this.villager, sell, entryIndex);
+            default -> ShopTrades.Result.NO_SUCH_ENTRY;
+        };
+        if (result != ShopTrades.Result.DONE) {
+            serverPlayer.displayClientMessage(Component.translatable(result.messageKey()), true);
+            return true;
+        }
+        // Stock and vanilla offer uses changed: the client is sent the server's tabs again
+        this.tabs = InteractionTabManager.INSTANCE.resolveTabs(this.villager, this.villager.getOffers(), getLevel());
+        TradeNetwork.sendTo(serverPlayer, new InteractionTabsSyncMessage(this.containerId, this.tabs));
+        broadcastChanges();
+        return true;
     }
 
     /** No slots of its own: shift-clicking in the player's inventory does nothing. */

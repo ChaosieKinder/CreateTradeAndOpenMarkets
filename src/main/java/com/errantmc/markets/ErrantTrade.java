@@ -9,6 +9,7 @@ import com.errantmc.markets.item.idcard.IdentityCardDataSyncHandler;
 import com.errantmc.markets.item.wallet.WalletAutoDeposit;
 import com.errantmc.markets.network.TradeNetwork;
 import com.errantmc.markets.npcinteractions.VillagerInteractionEvents;
+import com.errantmc.markets.npcinteractions.trading.TradeAttachments;
 import com.errantmc.markets.registry.*;
 import com.errantmc.markets.screen.TradeMenus;
 import com.errantmc.markets.villager.TradeVillagers;
@@ -51,6 +52,7 @@ public class ErrantTrade {
         TradeVillagers.register(modEventBus);
         TradeSounds.register(modEventBus);
         TradeMenus.register(modEventBus);
+        TradeAttachments.register(modEventBus);
         // Register the item to a creative tab
         //modEventBus.addListener(this::addCreative);
         //modEventBus.addListener(this::clientSetup);

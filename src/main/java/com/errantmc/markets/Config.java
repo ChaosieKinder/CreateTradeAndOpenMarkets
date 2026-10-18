@@ -36,6 +36,26 @@ public class Config {
 
     static {
         BUILDER.pop();
+        BUILDER.push("trading");
+    }
+
+    public static final ModConfigSpec.IntValue EMERALD_VALUE = BUILDER
+            .comment(
+                    "What one emerald in a vanilla trade is worth, in copper bits, when a villager without a",
+                    "shop definition has its vanilla offers converted. 100 copper bits is one silver crown ($1.00)."
+            )
+            .defineInRange("emeraldValue", 100, 1, 100_000);
+
+    public static final ModConfigSpec.IntValue BITS_PER_VILLAGER_XP = BUILDER
+            .comment(
+                    "Copper bits of trade per point of villager (and player) experience. Experience scales",
+                    "with what a trade is worth, not with how many trades are made. 50 makes a one-emerald",
+                    "vanilla trade worth 2 points, as most novice trades are."
+            )
+            .defineInRange("bitsPerVillagerXp", 50, 1, 1_000_000);
+
+    static {
+        BUILDER.pop();
     }
 
     static final ModConfigSpec SPEC = BUILDER.build();

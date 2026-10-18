@@ -1,6 +1,7 @@
 package com.errantmc.markets.network;
 
 import com.errantmc.markets.network.message.IdentityCardPlayerInfoSyncMessage;
+import com.errantmc.markets.network.message.InteractionTabsSyncMessage;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -22,6 +23,11 @@ public final class TradeNetwork {
                 IdentityCardPlayerInfoSyncMessage.TYPE,
                 IdentityCardPlayerInfoSyncMessage.STREAM_CODEC,
                 IdentityCardPlayerInfoSyncMessage::handle
+        );
+        registrar.playToClient(
+                InteractionTabsSyncMessage.TYPE,
+                InteractionTabsSyncMessage.STREAM_CODEC,
+                InteractionTabsSyncMessage::handle
         );
     }
 
