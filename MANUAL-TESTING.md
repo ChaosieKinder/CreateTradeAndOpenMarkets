@@ -77,12 +77,17 @@ Findings go in [Findings](#findings), raw. [Passed](#passed) is what has been si
 
 ### 6. Villagers
 
-- [ ] **The trading screen** is vanilla's by default, and trading works.
-- [ ] With `replaceTradingScreen = true` (Mods → Errant Trade and Markets → Config): the new shop
-      background appears with *Buy* and *Sell* tabs, and **clicks act on the slot you click**
-      (they did not before). The slots sit where vanilla puts them, so the layout will not match
-      the art yet; that is expected until the trader overhaul.
-- [ ] **A banker** appears when an unemployed villager finds a safe.
+On `feature/npc-interactions` (the trader overhaul, in progress):
+
+- [ ] **Right-clicking a villager** opens the mod's interaction screen, titled with the villager's
+      name, showing tabs and the wallet balance (or *Wallet not found*). Trading is not
+      implemented yet, so nothing can be bought or sold.
+- [ ] **The farmer** shows the tabs from `data/erranttrade/npcinteractions/farmer.json`; a
+      profession without a definition shows buy and sell tabs derived from its vanilla offers.
+- [ ] **The same tabs** come back on reopening the same day (the stock does not reroll).
+- [ ] **On a dedicated server** (`runServer` and a second client): the screen opens, rather than
+      throwing as it did before 18 Oct.
+- [ ] **A banker** appears when an unemployed villager finds a safe, and opens the banker tabs.
 
 ## Findings
 

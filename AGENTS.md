@@ -10,8 +10,14 @@ roadmap.
 Minecraft-free domain module) and 58 gametests, run with and without Curios. Every bug found by
 both audits is fixed** ([BACKLOG](docs/BACKLOG.md)). Agents started on the code on 17 Oct, which
 is also when the mod was renamed from Trade and Open Markets (`tradeandopenmarkets`) and its
-registry IDs were tidied. **No world from before that loads.** What is left is cleanup, datagen and
-features. Keep this paragraph honest; it is the first thing anyone reads.
+registry IDs were tidied. **No world from before that loads.**
+
+**This branch (`feature/npc-interactions`) also carries the trader overhaul in progress**, merged on
+18 Oct from a second checkout: right-clicking a villager opens the mod's own interaction menu with
+data-driven buy and sell tabs. **It cannot trade yet, and it replaces vanilla trading for every
+villager**, so on this branch villagers do not trade at all. What is unfinished is listed in
+[BACKLOG §npcinteractions](docs/BACKLOG.md#the-npcinteractions-merge-18-oct). Keep this paragraph
+honest; it is the first thing anyone reads.
 
 ---
 
@@ -48,11 +54,13 @@ CreateTradeAndOpenMarkets/
 ├─ src/main/java/com/errantmc/markets/   the mod (mod id `erranttrade`)
 │  ├─ ErrantTrade                     common entrypoint: every DeferredRegister + game-bus listeners
 │  ├─ ErrantTradeClient               client entrypoint (@Mod dist=CLIENT): renderers, screens, tooltips
-│  ├─ Config / ClientConfig           COMMON config (still has MDK example entries) / CLIENT config
+│  ├─ Config                          COMMON config; still has MDK example entries
 │  ├─ component/                      data components: Purses (the purse codec + stack access), identity cards
 │  ├─ item/                           coins (CoinItem, CoinDeposits, CoinStyle), coin stack, wallet/, idcard/
 │  ├─ block/                          coin pile (CoinBlock), safe; entity/ holds BEs, renderer, left-click handler
-│  ├─ screen/                         menus + screens: wallet/, safe/, shop/ (draws over vanilla's MerchantMenu)
+│  ├─ npcinteractions/                the trader overhaul (in progress): interaction tabs, their registry
+│  │                                  and data loader (data/erranttrade/npcinteractions/*.json)
+│  ├─ screen/                         menus + screens: wallet/, safe/, villager/ (the interaction menu)
 │  ├─ network/                        payload registration; one message (identity card data)
 │  ├─ compat/CuriosCompat             the only class that may name Curios
 │  ├─ registry/                       creative tab, sounds
@@ -118,12 +126,16 @@ Facts that matter when writing code here:
 - **Client-only code lives under `ErrantTradeClient` or classes only it references**: renderers,
   screens, tooltip clients, `IdentityCardClientCache`. A common class that imports
   `net.minecraft.client` crashes a dedicated server.
-- **The shop screen is only paint over vanilla's `MerchantMenu`.** The server runs vanilla's menu,
-  and every click a screen sends is applied to the server's menu by slot index, so the screen must
-  be an `AbstractContainerScreen<MerchantMenu>` over that very menu, never a client-side copy
-  (BACKLOG #18). Slot positions are therefore vanilla's; a layout of our own needs a server-side
-  menu of our own (the trader overhaul). Until then the screen is off by default
-  (`ClientConfig.REPLACE_TRADING_SCREEN`).
+- **A screen and the server must run the same menu.** Every click a screen sends is applied to
+  the server's open menu by slot index, so a screen over a client-side copy of a menu clicks the
+  wrong slots (BACKLOG #18). The villager interaction is built the right way round: the server
+  cancels the vanilla interaction and opens `VillagerInteractionMenu` itself
+  (`VillagerInteractionEvents`), and the client's copy is built from the open packet. Keep it so.
+- **Menus and the objects they build are common code.** They run on the dedicated server, which
+  refuses to load `Minecraft` or anything else under `net.minecraft.client`. Look entities up with
+  `Level.getEntity`, not the client level (this crashed every villager interaction on a server
+  until 18 Oct). The interaction tabs still mix drawing code into objects the server builds; see
+  the backlog.
 - **A mod packet to a player whose connection lacks our channel throws.** Fake players from other
   mods are like that. Send through `TradeNetwork.sendTo`, which checks `hasChannel`.
 - **A block that requires the correct tool for drops must be in a `mineable/*` tag**, or no tool is

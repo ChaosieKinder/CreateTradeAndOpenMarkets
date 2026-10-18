@@ -153,3 +153,45 @@ economy API for other mods to call becomes a goal (that would be its own `-api` 
 - [ ] The safe's title as a translation key.
 - [ ] Strip the remaining tutorial comments ("works whether SAFE_BLOCK is a BlockEntry or a
       RegistryObject", "THIS YOU HAVE TO DEFINE!", "your existing Codec").
+
+## The npcinteractions merge, 18 Oct
+
+The trader overhaul in progress was found in a second checkout
+(`C:/Users/chaos/IdeaProjects/CreateTradeAndOpenMarkets`): the branch
+`codex/implement-customizable-shop-tab-system` plus an uncommitted refactor on top of it. Both were
+snapshotted without touching that checkout, ported to the 17 Oct names, and merged onto
+`feature/npc-interactions` (merge commit `95d0539`).
+
+Fixed while merging:
+- **Every villager interaction threw on a dedicated server.** `VillagerInteractionMenu`'s server
+  constructor looked the villager up through `Minecraft.getInstance()`. It uses
+  `Level.getEntity` now. `VillagerInteractionGameTests` covers it and failed with the server's
+  own error first.
+- The screen asked for `screen.erranttrade.npcinteractions.wallet_*` translations, while the lang
+  file defined `screen.erranttrade.shop.wallet_*`. The lang keys follow the code.
+- `WalletFinder` reached Curios directly; it goes through `CuriosCompat`.
+- An IDE rename had turned "render" into "renderPanel" inside comments in both renderers.
+
+Still open, as the work stands:
+- [ ] **No trading yet.** The menu shows tabs and the wallet balance, but nothing performs a
+      trade, and `VillagerInteractionEvents` cancels the vanilla interaction for every villager.
+      Either gate the replacement until trading works, or finish trading first. **Decide.**
+- [ ] **The client never reads the tabs the server sends.** The server writes them into the open
+      packet (`InteractionTabManager.writeToStream`); the client constructor reads only the entity
+      id and profession, and `refresh()` resolves its tabs again from local data. Two sources can
+      disagree, and the server's stock rolls are the ones that must count. Read them with
+      `readFromStream`.
+- [ ] **The menu never closes on distance.** `stillValid` is `player.isAlive()`; vanilla's
+      merchant menu closes when the villager is gone or the player walks away.
+- [ ] **Tabs mix drawing into data.** `InteractionTab` and its subclasses carry `GuiGraphics`
+      render methods and call `Minecraft.getInstance().font`, but the server builds them too. That
+      is safe only while the server never calls those methods. Split each tab into its data (common)
+      and a renderer (client).
+- [ ] **`docs/ShopTabs.md` describes an older shape**: `ShopTabType`, `ShopTabRegistry`,
+      `ShopDefinitionLoader`, `data/<ns>/shops/`. None of those exist after the rename to
+      `InteractionTab*` and `data/<ns>/npcinteractions/`.
+- [ ] Prices, stock and buybacks should become domain logic (`errant-trade-domain`) before
+      trading is built on them, so they are tested without a world.
+- [ ] The second checkout still holds its uncommitted changes, and a branch
+      `wip/npcinteractions-snapshot` created for the merge. Retire that checkout so the two cannot
+      diverge again.
