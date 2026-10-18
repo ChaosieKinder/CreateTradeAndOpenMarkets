@@ -50,7 +50,7 @@ def main():
         + bytes([TAG_END])
     )
     root = bytes([TAG_COMPOUND]) + name("") + body
-    out = Path(__file__).resolve().parent.parent / "src/main/resources/data/erranttrade/structure" / f"{template}.nbt"
+    out = Path(__file__).resolve().parent.parent / "src/gametest/resources/data/erranttrade/structure" / f"{template}.nbt"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_bytes(gzip.compress(root, mtime=0))
     print(f"wrote {out.relative_to(Path.cwd()) if out.is_relative_to(Path.cwd()) else out}")
