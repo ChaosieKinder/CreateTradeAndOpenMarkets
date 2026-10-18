@@ -39,7 +39,7 @@ public class InteractionDefinitionLoader extends SimpleJsonResourceReloadListene
 
     @Override
     protected void apply(Map<ResourceLocation, JsonElement> object, ResourceManager resourceManager, ProfilerFiller profiler) {
-        LOG.info("InteractionDefinitionLoader - Loading Interaction Definitions - apply");
+        LOG.debug("InteractionDefinitionLoader - Loading Interaction Definitions - apply");
         Map<ResourceLocation, InteractionDefinition> parsed = new HashMap<>();
         object.forEach((fileId, jsonElement) -> {
             try {
@@ -47,11 +47,11 @@ public class InteractionDefinitionLoader extends SimpleJsonResourceReloadListene
                 JsonObject jsonObject = GsonHelper.convertToJsonObject(jsonElement, "npcinteractions");
                 InteractionDefinition definition = parseDefinition(fileId, jsonObject);
                 parsed.put(definition.profession(), definition);
-                LOG.info(String.format("InteractionDefinitionLoader - Loaded Interaction Definition %s", definition.profession()));
+                LOG.debug(String.format("InteractionDefinitionLoader - Loaded Interaction Definition %s", definition.profession()));
             } catch (RuntimeException exception) {
 
-                LOG.info("InteractionDefinitionLoader - Loading Interaction Definitions - apply - exception caught");
-                LOG.info(exception.getMessage());
+                LOG.debug("InteractionDefinitionLoader - Loading Interaction Definitions - apply - exception caught");
+                LOG.debug(exception.getMessage());
                 ErrantTrade.LOGGER.error("Failed to parse npcinteractions definition {}", fileId, exception);
             }
         });
@@ -60,7 +60,7 @@ public class InteractionDefinitionLoader extends SimpleJsonResourceReloadListene
     }
 
     private InteractionDefinition parseDefinition(ResourceLocation fileId, JsonObject jsonObject) {
-        LOG.info("InteractionDefinitionLoader - Loading Interaction Definitions - parseDefinition");
+        LOG.debug("InteractionDefinitionLoader - Loading Interaction Definitions - parseDefinition");
         ResourceLocation profession = resolveProfession(fileId, jsonObject);
         List<InteractionTabConfig> tabs = new ArrayList<>();
         JsonArray tabArray = jsonObject.has("tabs") ? GsonHelper.getAsJsonArray(jsonObject, "tabs") : new JsonArray();
@@ -76,24 +76,24 @@ public class InteractionDefinitionLoader extends SimpleJsonResourceReloadListene
     private ResourceLocation resolveProfession(ResourceLocation fileId, JsonObject jsonObject) {
         if (jsonObject.has("profession")) {
             var professionStr = GsonHelper.getAsString(jsonObject, "profession");
-            LOG.info("InteractionDefinitionLoader - Loading Interaction Definition - profession {}", professionStr);
+            LOG.debug("InteractionDefinitionLoader - Loading Interaction Definition - profession {}", professionStr);
             return ResourceLocation.parse(professionStr);
         }
-        LOG.info("InteractionDefinitionLoader - Loading Interaction Definitions - resolveProfession - defaulting to fileId");
+        LOG.debug("InteractionDefinitionLoader - Loading Interaction Definitions - resolveProfession - defaulting to fileId");
         return fileId;
     }
 
     private InteractionTabConfig parseTab(JsonObject tabObject) {
         ResourceLocation type = ResourceLocation.parse(GsonHelper.getAsString(tabObject, "type"));
         Component title = parseTitle(type, tabObject.get("title"));
-        LOG.info("InteractionDefinitionLoader - Loading Interaction Definition - title {}", title);
+        LOG.debug("InteractionDefinitionLoader - Loading Interaction Definition - title {}", title);
         JsonObject data = tabObject.has("data") ? GsonHelper.getAsJsonObject(tabObject, "data") : new JsonObject();
         return new InteractionTabConfig(type, title, data);
     }
 
     private Component parseTitle(ResourceLocation type, @Nullable JsonElement element) {
         if (element == null) {
-            LOG.info("InteractionDefinitionLoader - Loading Interaction Definition - parseTitle - default title");
+            LOG.debug("InteractionDefinitionLoader - Loading Interaction Definition - parseTitle - default title");
             return defaultTitle(type);
         }
         return ComponentSerialization.CODEC.parse(JsonOps.INSTANCE, element)
@@ -104,24 +104,24 @@ public class InteractionDefinitionLoader extends SimpleJsonResourceReloadListene
     private Component defaultTitle(ResourceLocation type) {
         String path = type.getPath();
         if (path.isEmpty()) {
-            LOG.info("InteractionDefinitionLoader - Loading Interaction Definition - defaultTitle path is empty");
+            LOG.debug("InteractionDefinitionLoader - Loading Interaction Definition - defaultTitle path is empty");
             return Component.empty();
         }
         String pretty = Character.toUpperCase(path.charAt(0)) + path.substring(1).replace('_', ' ');
-        LOG.info("InteractionDefinitionLoader - Loading Interaction Definition - defaultTitle pretty {}", pretty);
+        LOG.debug("InteractionDefinitionLoader - Loading Interaction Definition - defaultTitle pretty {}", pretty);
         return Component.literal(pretty);
     }
 
     public Optional<InteractionDefinition> getDefinition(ResourceLocation profession) {
-        LOG.info("InteractionDefinitionLoader - Loading Interaction Definitions - getDefinition for profession {}", profession);
+        LOG.debug("InteractionDefinitionLoader - Loading Interaction Definitions - getDefinition for profession {}", profession);
         return Optional.ofNullable(this.definitions.get(profession));
     }
 
     public Collection<InteractionDefinition> getAllDefinitions() {
         var size = this.definitions.size();
-        LOG.info("InteractionDefinitionLoader - Loading Interaction Definitions - getAllDefinitions size {}", size);
+        LOG.debug("InteractionDefinitionLoader - Loading Interaction Definitions - getAllDefinitions size {}", size);
         for (var entry : this.definitions.entrySet()) {
-            LOG.info("InteractionDefinitionLoader - Definition for profession {}: {}", entry.getKey(), entry.getValue());
+            LOG.debug("InteractionDefinitionLoader - Definition for profession {}: {}", entry.getKey(), entry.getValue());
         }
         return Collections.unmodifiableCollection(this.definitions.values());
     }

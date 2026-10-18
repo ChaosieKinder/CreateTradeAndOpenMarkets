@@ -66,17 +66,17 @@ public class InteractionTabGenerationContext {
         this.random = RandomSource.create(seed);
 
         var vClass = merchant.getClass();
-        LOG.info("InteractionTabGenerationContext - merchant class: {}", vClass.getName());
+        LOG.debug("InteractionTabGenerationContext - merchant class: {}", vClass.getName());
         if (merchant instanceof Villager villager) {
-            LOG.info("InteractionTabGenerationContext - merchant is a Villager");
+            LOG.debug("InteractionTabGenerationContext - merchant is a Villager");
             VillagerProfession profession = villager.getVillagerData().getProfession();
-            LOG.info("InteractionTabGenerationContext - villager profession: {}", profession);
+            LOG.debug("InteractionTabGenerationContext - villager profession: {}", profession);
             this.professionId = BuiltInRegistries.VILLAGER_PROFESSION.getKey(profession);
             UUID uuid = villager.getUUID();
             this.cacheKey = new CacheKey(professionId, uuid);
 
         } else {
-            LOG.info("InteractionTabGenerationContext - merchant is not a Villager");
+            LOG.debug("InteractionTabGenerationContext - merchant is not a Villager");
             this.professionId = null;
             this.cacheKey = null;
         }

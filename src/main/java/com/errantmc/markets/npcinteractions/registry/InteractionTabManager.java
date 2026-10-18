@@ -67,8 +67,8 @@ public final class InteractionTabManager {
 
     public synchronized List<InteractionTab> resolveTabs(@Nullable Merchant merchant, MerchantOffers offers, Level level) {
         InteractionTabGenerationContext context = new InteractionTabGenerationContext(merchant, offers, level);
-        LOG.info("resolveTabs context: {}", context.toString());
-        LOG.info("resolveTabs context.merchant: {}", context.getMerchant());
+        LOG.debug("resolveTabs context: {}", context.toString());
+        LOG.debug("resolveTabs context.merchant: {}", context.getMerchant());
 
 
         if (context.getDayIndex() != this.cachedDayIndex) {
@@ -86,22 +86,22 @@ public final class InteractionTabManager {
         }
 
         InteractionDefinitionLoader.getInstance().getAllDefinitions().forEach((tab) -> {
-            LOG.info("resolveTabs available definition: {}", tab.profession());
+            LOG.debug("resolveTabs available definition: {}", tab.profession());
         });
 
         boolean usedDefinition = false;
         if (context.getProfessionId().isPresent()) {
-            LOG.info("resolveTabs using profession id {}", context.getProfessionId().get());
+            LOG.debug("resolveTabs using profession id {}", context.getProfessionId().get());
             InteractionDefinitionLoader.getInstance().getDefinition(context.getProfessionId().get())
                 .ifPresent(definition -> definition.tabs().forEach(tabDef -> {
                     InteractionTabType type = InteractionTabRegistry.get(tabDef.getType());
-                    LOG.info("resolveTabs using type {}", type);
+                    LOG.debug("resolveTabs using type {}", type);
                     if (type == null) {
                         ErrantTrade.LOGGER.warn("Unknown npcinteractions tabs type {} referenced in definition for {}",
                                 tabDef.getType(), context.getProfessionId().get());
                         return;
                     }
-                    LOG.info("Creating tab of type {} for profession {}",
+                    LOG.debug("Creating tab of type {} for profession {}",
                             tabDef.getType(), context.getProfessionId().get());
                     result.add(type.create(tabDef, context));
                 }));
@@ -117,7 +117,7 @@ public final class InteractionTabManager {
             return immutable;
         }
 
-        LOG.info("No tabs found from definition, falling back to offers for merchant {}", merchant);
+        LOG.debug("No tabs found from definition, falling back to offers for merchant {}", merchant);
         // fallback to default buy/sell using merchant offers
         List<InteractionTab> fallback = fallbackFromOffers(offers);
         applyAutoBuybacks(fallback);
@@ -133,7 +133,7 @@ public final class InteractionTabManager {
         List<ShopEntry> buyEntries = new ArrayList<>();
         List<ShopEntry> sellEntries = new ArrayList<>();
         for (MerchantOffer offer : offers) {
-            LOG.info("Creating shop entry for merchant offer {}", offer);
+            LOG.debug("Creating shop entry for merchant offer {}", offer);
             if (offer.getResult().is(Items.EMERALD)) {
                 // Villager buys items from the player -> sell tabs entry
                 MerchantOfferSellAdapter.addSellEntry(offer, sellEntries);

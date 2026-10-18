@@ -43,25 +43,17 @@ public class VillagerInteractionScreen extends AbstractContainerScreen<VillagerI
     @Nullable
     private final Villager villager;
 
-    private int leftPos;
-    private int topPos;
 
     public VillagerInteractionScreen(VillagerInteractionMenu menu, Inventory playerInventory, Component otitle) {
         super(menu, playerInventory, otitle);
+        this.imageWidth = SCREEN_WIDTH;
+        this.imageHeight = SCREEN_HEIGHT;
         villager = menu.getClientVillager();
-    }
-
-    @Override
-    protected void containerTick() {
-        super.containerTick();
-        //this.menu.refresh();
     }
 
     @Override
     protected void init() {
         super.init();
-        this.leftPos = (this.width - SCREEN_WIDTH) / 2;
-        this.topPos = (this.height - SCREEN_HEIGHT) / 2;
     }
 
     @Override
@@ -169,26 +161,6 @@ public class VillagerInteractionScreen extends AbstractContainerScreen<VillagerI
         int x = this.leftPos + 12;
         int y = this.topPos + 20;
         guiGraphics.drawString(this.font, traderName, x, y, 0x404040, false);
-    }
-
-    private void renderOfferSummary(GuiGraphics guiGraphics) {
-        MerchantOffers offers = this.menu.getOffers();
-        int offerCount = offers.size();
-        int outOfStock = 0;
-        for (MerchantOffer offer : offers) {
-            if (offer.isOutOfStock()) {
-                outOfStock++;
-            }
-        }
-
-        int x = this.leftPos + 12;
-        int y = this.topPos + 34;
-        Component summary = Component.translatable(
-                "screen.%s.npcinteractions.offers".formatted(ErrantTrade.MOD_ID),
-                offerCount,
-                outOfStock
-        );
-        guiGraphics.drawString(this.font, summary, x, y, 0x404040, false);
     }
 
     @Nullable

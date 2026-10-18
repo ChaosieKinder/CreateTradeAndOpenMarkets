@@ -1,118 +1,92 @@
 package com.errantmc.markets.screen.villager;
 
-import com.mojang.logging.LogUtils;
-import com.errantmc.markets.npcinteractions.registry.InteractionTabManager;
 import com.errantmc.markets.npcinteractions.components.InteractionTab;
+import com.errantmc.markets.npcinteractions.registry.InteractionTabManager;
 import com.errantmc.markets.screen.TradeMenus;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.*;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.trading.Merchant;
-import net.minecraft.world.item.trading.MerchantOffers;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
 
 import java.util.List;
-import java.util.Objects;
-
 
 /**
- * Lightweight client-side menu wrapper that exposes the merchant information
- * required by {@link VillagerInteractionScreen} without relying on the vanilla merchant UI
- * implementation.
+ * The menu behind the villager interaction screen. The server opens it in place of vanilla's
+ * merchant menu ({@code VillagerInteractionEvents}), and the server's tabs are the only tabs: the
+ * client reads them from the open packet and is sent replacements when stock changes. It never
+ * works them out for itself, because the server's stock rolls are the ones that count.
  */
 public class VillagerInteractionMenu extends AbstractContainerMenu {
-    // Slot order: the player inventory (27), then the hotbar (9); no slots of its own yet
-    private static final int VANILLA_SLOT_COUNT = 36;
-    private static final int VANILLA_FIRST_SLOT_INDEX = 0;
-    private static final int TE_INVENTORY_FIRST_SLOT_INDEX = VANILLA_FIRST_SLOT_INDEX + VANILLA_SLOT_COUNT;
-    private static final int TE_INVENTORY_SLOT_COUNT = 0;
-    private static final Logger LOGGER = LogUtils.getLogger();
+    /** Vanilla's merchant menu closes beyond this distance, squared. */
+    private static final double MAX_DISTANCE_SQR = 8 * 8;
 
     private final int villagerEntityId;
     private final VillagerProfession profession;
-    @Nullable
     private final Inventory playerInventory;
+    /** Server side only: the villager being traded with. */
+    @Nullable
+    private final Villager villager;
 
-    private MerchantOffers offers = new MerchantOffers();
-    private List<InteractionTab> tabs = List.of();
+    private List<InteractionTab> tabs;
     private int selectedTabIndex;
 
-    // Server side Constructor
-    public VillagerInteractionMenu(int containerId, Inventory playerInventory, Villager villager) {
+    /** Server side, opened by {@code VillagerInteractionEvents}. */
+    public VillagerInteractionMenu(int containerId, Inventory playerInventory, Villager villager, List<InteractionTab> tabs) {
         super(TradeMenus.VILLAGER_INTERACTION_MENU.get(), containerId);
         this.playerInventory = playerInventory;
+        this.villager = villager;
         this.villagerEntityId = villager.getId();
         this.profession = villager.getVillagerData().getProfession();
-        this.offers = villager.getOffers();
+        this.tabs = List.copyOf(tabs);
         addPlayerSlots();
-        refresh();
     }
 
-    // --- CLIENT-SIDE CONSTRUCTOR (from FriendlyByteBuf) ---
-    public VillagerInteractionMenu(int containerId, Inventory playerInventory, FriendlyByteBuf buf) {
-        // Client-side MerchantMenu ctor (it’ll create a ClientSideMerchant internally)
+    /** Client side, from the open packet the server wrote. */
+    public VillagerInteractionMenu(int containerId, Inventory playerInventory, RegistryFriendlyByteBuf buf) {
         super(TradeMenus.VILLAGER_INTERACTION_MENU.get(), containerId);
         this.playerInventory = playerInventory;
+        this.villager = null;
         this.villagerEntityId = buf.readVarInt();
-
-        ResourceLocation key = buf.readResourceLocation();
-        VillagerProfession prof = BuiltInRegistries.VILLAGER_PROFESSION.get(key);
-        this.profession = (prof != null) ? prof : VillagerProfession.NONE;
-
-        // ✅ Deserialize offers on client
+        VillagerProfession prof = BuiltInRegistries.VILLAGER_PROFESSION.get(buf.readResourceLocation());
+        this.profession = prof != null ? prof : VillagerProfession.NONE;
+        this.tabs = InteractionTabManager.INSTANCE.readFromStream(buf);
         addPlayerSlots();
-        refresh();
     }
 
-    public void addPlayerSlots() {
-        // Player inventory + hotbar
+    private void addPlayerSlots() {
         int invY = 93;
         int invX = 11;
         for (int r = 0; r < 3; ++r)
             for (int c = 0; c < 9; ++c)
-                addSlot(new Slot(this.playerInventory, c + r * 9 + 9,
-                        invX + c * 18, invY + r * 18));
+                addSlot(new Slot(this.playerInventory, c + r * 9 + 9, invX + c * 18, invY + r * 18));
         for (int c = 0; c < 9; ++c)
-            addSlot(new Slot(this.playerInventory, c,
-                    invX + c * 20 - 7, invY + 58));
+            addSlot(new Slot(this.playerInventory, c, invX + c * 20 - 7, invY + 58));
     }
 
-    public void refresh() {
-        var level = this.getLevel();
-        var villager = this.getClientVillager();
-        if (level != null) {
-            this.tabs = InteractionTabManager.INSTANCE.resolveTabs(villager, this.offers, level);
-        } else {
-            this.tabs = List.of();
-        }
-        setSelectedTabIndex(this.selectedTabIndex);
-    }
-
-    @Nullable
     public Level getLevel() {
-        if( this.playerInventory == null) {
-            return null;
-        }
         return this.playerInventory.player.level();
     }
 
-    public MerchantOffers getOffers() {
-        return this.offers;
+    public VillagerProfession getProfession() {
+        return this.profession;
     }
 
     public List<InteractionTab> getTabs() {
         return this.tabs;
+    }
+
+    /** Client side: the server's replacement after a trade changed stock. */
+    public void setTabs(List<InteractionTab> tabs) {
+        this.tabs = List.copyOf(tabs);
+        setSelectedTabIndex(this.selectedTabIndex);
     }
 
     public int getSelectedTabIndex() {
@@ -120,20 +94,12 @@ public class VillagerInteractionMenu extends AbstractContainerMenu {
     }
 
     public void setSelectedTabIndex(int selectedTabIndex) {
-        if (this.tabs.isEmpty()) {
-            this.selectedTabIndex = 0;
-            return;
-        }
-        this.selectedTabIndex = Mth.clamp(selectedTabIndex, 0, this.tabs.size() - 1);
+        this.selectedTabIndex = this.tabs.isEmpty() ? 0 : Mth.clamp(selectedTabIndex, 0, this.tabs.size() - 1);
     }
 
     @Nullable
     public InteractionTab getSelectedTab() {
-        if (this.tabs.isEmpty()) {
-            return null;
-        }
-        int index = Mth.clamp(this.selectedTabIndex, 0, this.tabs.size() - 1);
-        return this.tabs.get(index);
+        return this.tabs.isEmpty() ? null : this.tabs.get(Mth.clamp(this.selectedTabIndex, 0, this.tabs.size() - 1));
     }
 
     /**
@@ -143,50 +109,30 @@ public class VillagerInteractionMenu extends AbstractContainerMenu {
      */
     @Nullable
     public Villager getClientVillager() {
-        Level level = getLevel();
-        if (level != null && level.getEntity(this.villagerEntityId) instanceof Villager villager) {
-            return villager;
-        }
-        return null;
+        if (this.villager != null) return this.villager;
+        return getLevel().getEntity(this.villagerEntityId) instanceof Villager v ? v : null;
     }
 
-
+    /** No slots of its own: shift-clicking in the player's inventory does nothing. */
     @Override
-    public ItemStack quickMoveStack(Player playerIn, int pIndex) {
-        Slot sourceSlot = slots.get(pIndex);
-        if (sourceSlot == null || !sourceSlot.hasItem()) return ItemStack.EMPTY;  //EMPTY_ITEM
-        ItemStack sourceStack = sourceSlot.getItem();
-        ItemStack copyOfSourceStack = sourceStack.copy();
-
-        // Check if the slot clicked is one of the vanilla container slots
-        if (pIndex < VANILLA_FIRST_SLOT_INDEX + VANILLA_SLOT_COUNT) {
-            // This is a vanilla container slot so merge the stack into the tile inventory
-            if (!moveItemStackTo(sourceStack, TE_INVENTORY_FIRST_SLOT_INDEX, TE_INVENTORY_FIRST_SLOT_INDEX
-                    + TE_INVENTORY_SLOT_COUNT, false)) {
-                return ItemStack.EMPTY;  // EMPTY_ITEM
-            }
-        } else if (pIndex < TE_INVENTORY_FIRST_SLOT_INDEX + TE_INVENTORY_SLOT_COUNT) {
-            // This is a TE slot so merge the stack into the players inventory
-            if (!moveItemStackTo(sourceStack, VANILLA_FIRST_SLOT_INDEX, VANILLA_FIRST_SLOT_INDEX + VANILLA_SLOT_COUNT, false)) {
-                return ItemStack.EMPTY;
-            }
-        } else {
-            System.out.println("Invalid slotIndex:" + pIndex);
-            return ItemStack.EMPTY;
-        }
-        // If stack size == 0 (the entire stack was moved) set slot contents to null
-        if (sourceStack.getCount() == 0) {
-            sourceSlot.set(ItemStack.EMPTY);
-        } else {
-            sourceSlot.setChanged();
-        }
-        sourceSlot.onTake(playerIn, sourceStack);
-        return copyOfSourceStack;
+    public ItemStack quickMoveStack(Player player, int index) {
+        return ItemStack.EMPTY;
     }
 
+    /** As vanilla's merchant menu: open while the villager lives, trades with this player and is near. */
     @Override
     public boolean stillValid(Player player) {
-        return player.isAlive();
+        if (this.villager == null) return true; // the client follows the server
+        return this.villager.isAlive()
+                && this.villager.getTradingPlayer() == player
+                && player.distanceToSqr(this.villager) <= MAX_DISTANCE_SQR;
     }
 
+    @Override
+    public void removed(Player player) {
+        super.removed(player);
+        if (this.villager != null && this.villager.getTradingPlayer() == player) {
+            this.villager.setTradingPlayer(null);
+        }
+    }
 }

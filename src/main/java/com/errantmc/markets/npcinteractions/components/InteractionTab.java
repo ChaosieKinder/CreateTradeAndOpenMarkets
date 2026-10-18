@@ -49,7 +49,7 @@ public abstract class InteractionTab {
     }
 
     public void writeToStream(RegistryFriendlyByteBuf buffer) {
-        buffer.writeResourceLocation(this.type);
+        // The type is written once, by InteractionTabManager.writeToStream, which reads it back first
     }
 
 
