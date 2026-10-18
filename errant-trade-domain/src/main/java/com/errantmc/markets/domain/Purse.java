@@ -73,6 +73,22 @@ public final class Purse {
         return new Purse(next);
     }
 
+    /** Whether every coin of {@code other} is here: {@link #subtract} would succeed. */
+    public boolean contains(Purse other) {
+        for (CoinDenomination d : CoinDenomination.coins()) {
+            if (other.count(d) > count(d)) return false;
+        }
+        return true;
+    }
+
+    /** These coins without {@code other}'s. Throws rather than go negative: check {@link #contains} first. */
+    public Purse subtract(Purse other) {
+        if (!contains(other)) throw new IllegalArgumentException(this + " does not hold " + other);
+        int[] next = counts.clone();
+        for (CoinDenomination d : CoinDenomination.coins()) next[d.ordinal()] -= other.count(d);
+        return new Purse(next);
+    }
+
     /** Total worth in copper bits. Cannot overflow: at most 8 × 2³¹ × 100,000. */
     public long totalValue() {
         long total = 0;

@@ -54,6 +54,15 @@ class PurseTest {
     }
 
     @Test
+    void subtractTakesOnlyCoinsThatAreThere() {
+        Purse p = Purse.of(GOLD_MARK, 3).with(COPPER_BIT, 5);
+
+        assertEquals(Purse.of(GOLD_MARK, 1).with(COPPER_BIT, 5), p.subtract(Purse.of(GOLD_MARK, 2)));
+        assertFalse(p.contains(Purse.of(SILVER_BIT, 1)));
+        assertThrows(IllegalArgumentException.class, () -> p.subtract(Purse.of(SILVER_BIT, 1)));
+    }
+
+    @Test
     void highestIsTheMostValuableDenominationPresent() {
         assertEquals(NONE, Purse.EMPTY.highest());
         assertEquals(GOLD_REGAL, Purse.of(COPPER_BIT, 900).with(GOLD_REGAL, 1).highest());
