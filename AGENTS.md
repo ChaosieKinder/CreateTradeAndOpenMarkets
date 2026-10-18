@@ -5,8 +5,10 @@ economy with multi-denomination coins, a wallet, coin piles you can place in the
 identity cards, and a reskinned villager trading screen. [README](README.md) has the player-facing
 feature list and the roadmap.
 
-**Status, 17 Oct 2026: early alpha, written by hand. 5 unit tests and 46 gametests, run with and
-without Curios. Every known bug is fixed; the next step is refactoring.** Agents started working on
+**Status, 17 Oct 2026: early alpha, written by hand. 5 unit tests and 48 gametests, run with and
+without Curios. The second audit found five open bugs (#15–#19), including a wallet dupe and a
+location leak; they come before the refactoring it proposes**
+([BACKLOG](docs/BACKLOG.md#audit-17-oct-second-pass)). Agents started working on
 the code on 17 Oct, which is also when the mod was renamed from Trade and Open Markets
 (`tradeandopenmarkets`). The bugs, what was fixed and the refactoring plan are in
 [docs/BACKLOG.md](docs/BACKLOG.md). Keep this paragraph honest; it is the first thing anyone reads.

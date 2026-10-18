@@ -13,11 +13,15 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.errantmc.markets.gametest.GameTests.*;
 
@@ -207,6 +211,35 @@ public final class WalletGameTests {
         WalletMenu reopened = new WalletMenu(1, player.getInventory(), InteractionHand.MAIN_HAND);
         assertTrue(helper, "the ID card to be there on reopening",
                 reopened.getSlot(1).getItem().is(TradeItems.ID_CARD.get()));
+        helper.succeed();
+    }
+
+    /**
+     * BUG (BACKLOG #16), pinned as it behaves today: the open wallet sits in one of the menu's own
+     * hotbar slots. Take something out of the grid, throw the wallet from that slot, and the grid
+     * is never written back, so the thrown wallet still holds what was taken: a duplicate.
+     */
+    @GameTest(template = ARENA)
+    public static void throwingTheOpenWalletDoesNotDuplicateItsGrid(GameTestHelper helper) {
+        ServerPlayer player = survivalPlayer(helper);
+        ItemStack wallet = new ItemStack(TradeItems.WALLET_LEATHER_ITEM.get());
+        List<ItemStack> grid = new ArrayList<>(WalletInventory.read(wallet));
+        grid.set(1, new ItemStack(TradeItems.ID_CARD.get()));
+        WalletInventory.write(wallet, grid);
+        player.setItemInHand(InteractionHand.MAIN_HAND, wallet); // hotbar 0
+        WalletMenu menu = new WalletMenu(0, player.getInventory(), InteractionHand.MAIN_HAND);
+        int walletSlot = WalletInventory.SIZE + 27; // grid, then main inventory, then hotbar 0
+
+        menu.clicked(1, 0, ClickType.QUICK_MOVE, player);        // card: grid -> inventory
+        menu.clicked(walletSlot, 0, ClickType.THROW, player);   // throw the open wallet
+        menu.removed(player);
+
+        int cards = 0;
+        for (ItemStack s : player.getInventory().items) if (s.is(TradeItems.ID_CARD.get())) cards++;
+        for (ItemEntity e : player.level().getEntitiesOfClass(ItemEntity.class, player.getBoundingBox().inflate(4))) {
+            for (ItemStack s : WalletInventory.read(e.getItem())) if (s.is(TradeItems.ID_CARD.get())) cards++;
+        }
+        assertCount(helper, "ID cards in existence", 2, cards);
         helper.succeed();
     }
 

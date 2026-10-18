@@ -99,6 +99,20 @@ public final class SafeGameTests {
         helper.succeed();
     }
 
+    /**
+     * BUG (BACKLOG #15), pinned as it behaves today: the safe requires the correct tool for drops,
+     * but no tool is correct for it (it is in no {@code mineable/*} tag), so a broken safe is lost.
+     */
+    @GameTest(template = ARENA)
+    public static void aPickaxeIsTheRightToolForASafe(GameTestHelper helper) {
+        ServerPlayer player = survivalPlayer(helper);
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.DIAMOND_PICKAXE));
+
+        assertTrue(helper, "no tool to count as correct for the safe",
+                !player.hasCorrectToolForDrops(TradeBlocks.SAFE_BLOCK.get().defaultBlockState()));
+        helper.succeed();
+    }
+
     private static SafeBlockEntity placeSafe(GameTestHelper helper) {
         helper.setBlock(SAFE, TradeBlocks.SAFE_BLOCK.get());
         if (!(helper.getBlockEntity(SAFE) instanceof SafeBlockEntity safe)) {
