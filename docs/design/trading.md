@@ -79,11 +79,10 @@ day restocks. Nothing is cached in memory.
 ## 7. The screen
 
 Both kinds of tab show their entries the same way (author's decision, 18 Oct): one entry per cell
-of a 3×9 grid drawn from `tab_sell.png` into `shop_base`'s brown panel, 27 to a page, paged with
+of a 3×9 grid drawn from `tab_shop.png` into `shop_base`'s brown panel, 27 to a page, paged with
 the arrows under the grid or the scroll wheel. Hovering a cell shows the item's own tooltip, then
 the price (or what it pays), anything else the trade needs, the stock, and whether the player can
-make the trade now. An entry out of stock is greyed out. `tab_buy.png`, a 3×4 grid either side of
-an arrow, is no longer used.
+make the trade now. An entry out of stock is greyed out.
 
 The grid's geometry (`SimpleShopTab`) is shared by drawing, clicking and tooltips, and a gametest
 pins it to the art.

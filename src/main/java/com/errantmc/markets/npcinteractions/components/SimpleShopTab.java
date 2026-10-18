@@ -68,7 +68,7 @@ public abstract class SimpleShopTab extends InteractionTab {
     // tooltips share this geometry, so what is drawn and what is clicked cannot drift apart.
 
     private static final ResourceLocation GRID_TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(ErrantTrade.MOD_ID, "textures/gui/npcinteractions/tab_sell.png");
+            ResourceLocation.fromNamespaceAndPath(ErrantTrade.MOD_ID, "textures/gui/npcinteractions/tab_shop.png");
     /** The panel art, drawn into shop_base's brown area. */
     public static final int PANEL_X = 17, PANEL_Y = 31, PANEL_TEXTURE_WIDTH = 242, PANEL_TEXTURE_HEIGHT = 80;
     /** The first cell's item position, in screen space relative to the screen's corner. */

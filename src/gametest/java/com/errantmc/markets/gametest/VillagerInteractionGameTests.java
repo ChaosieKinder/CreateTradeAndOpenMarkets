@@ -125,7 +125,7 @@ public final class VillagerInteractionGameTests {
     }
 
     /**
-     * The shop grid's cells sit on the panel art (tab_sell.png drawn at 17,31: cells from 61,40,
+     * The shop grid's cells sit on the panel art (tab_shop.png drawn at 17,31: cells from 61,40,
      * 18 apart) and page 27 entries at a time. Clicking a cell must pick the entry drawn there.
      */
     @GameTest(template = ARENA)
