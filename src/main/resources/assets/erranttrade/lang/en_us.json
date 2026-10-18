@@ -15,6 +15,7 @@
   "item.erranttrade.coin_emerald_sun.tooltip": "equal to 8 gold regals, or 20,000 copper bits.",
   "item.erranttrade.coin_emerald_throne": "Emerald Throne",
   "item.erranttrade.coin_emerald_throne.tooltip": "equal to 5 emerald suns, or 100,000 copper bits.",
+  "item.erranttrade.coin_stack": "Coin Stack",
   "item.erranttrade.wallet_leather": "Leather Wallet",
   "item.erranttrade.wallet.tooltip_prefix": "Stored Value: ",
   "item.erranttrade.wallet.deposit_all.tooltip": "Deposit All Items",
