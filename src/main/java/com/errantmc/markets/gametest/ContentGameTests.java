@@ -25,7 +25,12 @@ import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 import net.neoforged.neoforge.registries.DeferredHolder;
 
+import net.neoforged.fml.ModList;
+
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.stream.Stream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -161,6 +166,51 @@ public final class ContentGameTests {
         }
         if (!missing.isEmpty()) helper.fail("not in the creative tab: " + missing);
         helper.succeed();
+    }
+
+    /**
+     * Every texture our models name, and every model our blockstates name, exists. A missing one
+     * renders as the checkerboard and logs nothing: the coin pile's particle texture was missing.
+     */
+    @GameTest(template = ARENA)
+    public static void everyModelAndTextureThatIsNamedExists(GameTestHelper helper) {
+        Path assets = ModList.get().getModFileById(ErrantTrade.MOD_ID).getFile().findResource("assets", ErrantTrade.MOD_ID);
+        List<String> missing = new ArrayList<>();
+        try (Stream<Path> files = Files.walk(assets)) {
+            for (Path file : files.filter(f -> f.toString().endsWith(".json")).toList()) {
+                String folder = assets.relativize(file).getName(0).toString();
+                JsonObject json;
+                try (var reader = Files.newBufferedReader(file)) {
+                    json = JsonParser.parseReader(reader).getAsJsonObject();
+                }
+                if (folder.equals("models") && json.has("textures")) {
+                    for (var ref : json.getAsJsonObject("textures").entrySet()) {
+                        String value = ref.getValue().getAsString();
+                        if (value.startsWith("#")) continue; // a reference to another texture slot
+                        requireOurs(assets, value, "textures", ".png", file, missing);
+                    }
+                }
+                if (folder.equals("blockstates") && json.has("variants")) {
+                    for (var variant : json.getAsJsonObject("variants").entrySet()) {
+                        String model = variant.getValue().getAsJsonObject().get("model").getAsString();
+                        requireOurs(assets, model, "models", ".json", file, missing);
+                    }
+                }
+            }
+        } catch (java.io.IOException e) {
+            helper.fail("could not walk the mod's assets: " + e);
+            return;
+        }
+        if (!missing.isEmpty()) helper.fail("named but missing: " + missing);
+        helper.succeed();
+    }
+
+    /** Only our own namespace can be checked; vanilla's assets are not on the server. */
+    private static void requireOurs(Path assets, String id, String folder, String extension, Path from, List<String> missing) {
+        String prefix = ErrantTrade.MOD_ID + ":";
+        if (!id.startsWith(prefix)) return;
+        Path expected = assets.resolve(folder).resolve(id.substring(prefix.length()) + extension);
+        if (!Files.exists(expected)) missing.add(id + " (named by " + assets.relativize(from) + ")");
     }
 
     private static List<Item> ourItems() {
