@@ -1,5 +1,6 @@
 package com.errantmc.markets.npcinteractions.tabs.sell;
 
+import net.minecraft.ChatFormatting;
 import com.errantmc.markets.npcinteractions.components.SimpleShopTab;
 import com.errantmc.markets.npcinteractions.trading.ShopEntry;
 import com.errantmc.markets.npcinteractions.tabs.buy.BuyShopTab;
@@ -89,6 +90,21 @@ public class SellShopTab extends SimpleShopTab {
             }
         }
         return false;
+    }
+
+    @Override
+    protected Component status(ShopEntry entry, TradeView view) {
+        if (!entry.inStock()) return null;
+        int have = view.count(entry.item());
+        if (have < entry.item().getCount()) {
+            return Component.translatable("screen.erranttrade.npcinteractions.you_have", have, entry.item().getCount())
+                    .withStyle(ChatFormatting.RED);
+        }
+        if (!entry.extraCost().isEmpty() && view.count(entry.extraCost()) < entry.extraCost().getCount()) {
+            return Component.translatable("screen.erranttrade.npcinteractions.missing", entry.extraCost().getHoverName())
+                    .withStyle(ChatFormatting.RED);
+        }
+        return Component.translatable("screen.erranttrade.npcinteractions.click_to_sell", have).withStyle(ChatFormatting.DARK_GRAY);
     }
 
     @Override

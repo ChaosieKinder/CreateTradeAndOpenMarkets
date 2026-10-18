@@ -1,5 +1,6 @@
 package com.errantmc.markets.npcinteractions.tabs.buy;
 
+import net.minecraft.ChatFormatting;
 import com.errantmc.markets.npcinteractions.components.SimpleShopTab;
 import com.errantmc.markets.npcinteractions.trading.ShopEntry;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -35,6 +36,19 @@ public class BuyShopTab extends SimpleShopTab {
     @Override
     public void writeToStream(RegistryFriendlyByteBuf buffer) {
         super.writeToStream(buffer);
+    }
+
+    @Override
+    protected Component status(ShopEntry entry, TradeView view) {
+        if (!entry.inStock()) return null;
+        if (view.money() < entry.price()) {
+            return Component.translatable("screen.erranttrade.npcinteractions.cannot_afford").withStyle(ChatFormatting.RED);
+        }
+        if (!entry.extraCost().isEmpty() && view.count(entry.extraCost()) < entry.extraCost().getCount()) {
+            return Component.translatable("screen.erranttrade.npcinteractions.missing", entry.extraCost().getHoverName())
+                    .withStyle(ChatFormatting.RED);
+        }
+        return Component.translatable("screen.erranttrade.npcinteractions.click_to_buy").withStyle(ChatFormatting.DARK_GRAY);
     }
 
     @Override

@@ -68,14 +68,15 @@ public class VillagerInteractionMenu extends AbstractContainerMenu {
         addPlayerSlots();
     }
 
+    /** Where shop_base draws them: the inventory grid at (61, 115), the hotbar's wider cells below it. */
     private void addPlayerSlots() {
-        int invY = 93;
-        int invX = 11;
+        int invX = 61;
+        int invY = 115;
         for (int r = 0; r < 3; ++r)
             for (int c = 0; c < 9; ++c)
                 addSlot(new Slot(this.playerInventory, c + r * 9 + 9, invX + c * 18, invY + r * 18));
         for (int c = 0; c < 9; ++c)
-            addSlot(new Slot(this.playerInventory, c, invX + c * 20 - 7, invY + 58));
+            addSlot(new Slot(this.playerInventory, c, invX - 7 + c * 20, invY + 58));
     }
 
     public Level getLevel() {

@@ -15,7 +15,7 @@ registry IDs were tidied. **No world from before that loads.**
 **This branch (`feature/npc-interactions`) also carries the trader overhaul**: right-clicking a
 villager opens the mod's own shop instead of vanilla's trading screen, and buying and selling work
 there, in coins. [docs/design/trading.md](docs/design/trading.md) records how it works and what was
-decided; what is still missing (discounts, scrolling, buying several at once) is in its §7. Keep
+decided; what is still missing (discounts, buying several at once) is in its §8. Keep
 this paragraph honest; it is the first thing anyone reads.
 
 ---

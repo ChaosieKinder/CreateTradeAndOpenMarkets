@@ -1,5 +1,8 @@
 package com.errantmc.markets.npcinteractions.components;
 
+import com.errantmc.markets.ErrantTrade;
+import net.minecraft.ChatFormatting;
+import net.minecraft.world.item.ItemStack;
 import com.errantmc.markets.domain.MoneyFormat;
 import com.errantmc.markets.npcinteractions.trading.ShopEntry;
 import net.minecraft.client.gui.Font;
@@ -60,62 +63,93 @@ public abstract class SimpleShopTab extends InteractionTab {
         return this.entries;
     }
 
-    // Row geometry, shared by drawing and hit-testing so the two cannot drift apart
-    private static final int ROW_HEIGHT = 28;
-    private static final int ROW_WIDTH = 180;
-    private static final int MAX_ROWS = 11;
+    // ---------- the grid ----------
+    // A 3x9 grid of cells, one entry per cell, drawn over the panel art. Drawing, hit-testing and
+    // tooltips share this geometry, so what is drawn and what is clicked cannot drift apart.
 
-    private static int rowX(int xPos) {
-        return xPos + PANEL_X_OFFSET + 18;
+    private static final ResourceLocation GRID_TEXTURE =
+            ResourceLocation.fromNamespaceAndPath(ErrantTrade.MOD_ID, "textures/gui/npcinteractions/tab_sell.png");
+    /** The panel art, drawn into shop_base's brown area. */
+    public static final int PANEL_X = 17, PANEL_Y = 31, PANEL_TEXTURE_WIDTH = 242, PANEL_TEXTURE_HEIGHT = 80;
+    /** The first cell's item position, in screen space relative to the screen's corner. */
+    private static final int GRID_X = PANEL_X + 44, GRID_Y = PANEL_Y + 9, CELL = 18;
+    public static final int COLUMNS = 9, ROWS = 3, PER_PAGE = COLUMNS * ROWS;
+
+    public int pageCount() {
+        return Math.max(1, (this.entries.size() + PER_PAGE - 1) / PER_PAGE);
     }
 
-    private static int rowY(int yPos, int row) {
-        return yPos + PANEL_Y_OFFSET + 44 + row * ROW_HEIGHT;
+    /** The index of the entry under the mouse on {@code page}, or -1. */
+    public int entryAt(int left, int top, double mouseX, double mouseY, int page) {
+        int col = (int) Math.floor((mouseX - (left + GRID_X - 1)) / CELL);
+        int row = (int) Math.floor((mouseY - (top + GRID_Y - 1)) / CELL);
+        if (col < 0 || col >= COLUMNS || row < 0 || row >= ROWS) return -1;
+        int index = page * PER_PAGE + row * COLUMNS + col;
+        return index < this.entries.size() ? index : -1;
     }
 
-    /** The entry under the mouse, or -1. */
-    public int entryAt(int xPos, int yPos, double mouseX, double mouseY) {
-        int rows = Math.min(this.entries.size(), MAX_ROWS);
-        int x = rowX(xPos);
-        for (int row = 0; row < rows; row++) {
-            int y = rowY(yPos, row);
-            if (mouseX >= x && mouseX < x + ROW_WIDTH && mouseY >= y && mouseY < y + ROW_HEIGHT) return row;
+    /** Draws the panel art and {@code page}'s entries. */
+    public void renderGrid(GuiGraphics guiGraphics, Font font, int left, int top, int mouseX, int mouseY, int page) {
+        guiGraphics.blit(GRID_TEXTURE, left + PANEL_X, top + PANEL_Y, 0, 0,
+                PANEL_TEXTURE_WIDTH, PANEL_TEXTURE_HEIGHT, PANEL_TEXTURE_WIDTH, PANEL_TEXTURE_HEIGHT);
+        int hovered = entryAt(left, top, mouseX, mouseY, page);
+        int first = page * PER_PAGE;
+        for (int i = first; i < Math.min(this.entries.size(), first + PER_PAGE); i++) {
+            ShopEntry entry = this.entries.get(i);
+            int x = left + GRID_X + ((i - first) % COLUMNS) * CELL;
+            int y = top + GRID_Y + ((i - first) / COLUMNS) * CELL;
+            guiGraphics.renderItem(entry.item(), x, y);
+            guiGraphics.renderItemDecorations(font, entry.item(), x, y);
+            if (!entry.inStock()) {
+                guiGraphics.fill(x, y, x + 16, y + 16, 200, 0xA0303030); // greyed out, over the item
+            }
+            if (i == hovered) {
+                guiGraphics.fill(x, y, x + 16, y + 16, 200, 0x80FFFFFF); // as a hovered slot
+            }
         }
-        return -1;
     }
+
+    /**
+     * The entry's own item tooltip, then what the trade costs or pays, its stock, anything else it
+     * needs, and whether the player can do it right now.
+     */
+    public List<Component> tooltip(ShopEntry entry, List<Component> itemLines, TradeView view) {
+        List<Component> lines = new ArrayList<>(itemLines);
+        lines.add(Component.empty());
+        lines.add(Component.translatable(priceKey(), MoneyFormat.format(entry.price())).withStyle(ChatFormatting.GOLD));
+        if (!entry.extraCost().isEmpty()) {
+            lines.add(Component.translatable("screen.erranttrade.npcinteractions.also_needs",
+                    entry.extraCost().getCount(), entry.extraCost().getHoverName()).withStyle(ChatFormatting.GRAY));
+        }
+        if (!entry.inStock()) {
+            lines.add(Component.translatable("screen.erranttrade.npcinteractions.out_of_stock").withStyle(ChatFormatting.RED));
+        } else if (entry.hasLimitedStock()) {
+            lines.add(Component.translatable("screen.erranttrade.npcinteractions.stock", entry.stock()).withStyle(ChatFormatting.GRAY));
+        }
+        Component status = status(entry, view);
+        if (status != null) lines.add(status);
+        return lines;
+    }
+
+    /** Can the player make this trade now? The server decides; this only says what it will say. */
+    protected abstract Component status(ShopEntry entry, TradeView view);
 
     /** The translation key of the price line: what the player pays, or what they are paid. */
     protected abstract String priceKey();
 
+    /**
+     * What a tooltip may know about the player: the money they carry, and how many of an item.
+     * Supplied by the client screen.
+     */
+    public interface TradeView {
+        long money();
+
+        int count(ItemStack item);
+    }
+
+    /** Custom tab types draw themselves; shop tabs are drawn by the screen through renderGrid. */
     @Override
     public void renderPanel(GuiGraphics guiGraphics, int xPos, int yPos, int mouseX, int mouseY) {
-        Font font = net.minecraft.client.Minecraft.getInstance().font;
-        int x = rowX(xPos);
-        int rows = Math.min(this.entries.size(), MAX_ROWS);
-        for (int row = 0; row < rows; row++) {
-            ShopEntry entry = this.entries.get(row);
-            int y = rowY(yPos, row);
-            if (entryAt(xPos, yPos, mouseX, mouseY) == row) {
-                guiGraphics.fill(x - 2, y - 2, x + ROW_WIDTH, y + ROW_HEIGHT - 4, 0x22FFFFFF);
-            }
-            guiGraphics.renderItem(entry.item(), x, y);
-            guiGraphics.renderItemDecorations(font, entry.item(), x, y);
-            int textX = x + 20;
-            int colour = entry.inStock() ? 0x202020 : 0x903030;
-            guiGraphics.drawString(font, entry.item().getHoverName(), textX, y + 4, 0x404040, false);
-            Component price = Component.translatable(priceKey(), MoneyFormat.format(entry.price()));
-            guiGraphics.drawString(font, price, textX, y + 16, colour, false);
-            Component stock = entry.hasLimitedStock()
-                    ? Component.translatable("screen.erranttrade.npcinteractions.stock", entry.stock())
-                    : Component.translatable("screen.erranttrade.npcinteractions.stock_unlimited");
-            guiGraphics.drawString(font, stock, textX + 80, y + 16, colour, false);
-            if (!entry.extraCost().isEmpty()) {
-                // A vanilla trade's second cost, such as the librarian's book
-                int extraX = textX + 80 + font.width(stock) + 6;
-                guiGraphics.drawString(font, "+", extraX, y + 16, colour, false);
-                guiGraphics.renderItem(entry.extraCost(), extraX + 8, y + 10);
-                guiGraphics.renderItemDecorations(font, entry.extraCost(), extraX + 8, y + 10);
-            }
-        }
+        renderGrid(guiGraphics, net.minecraft.client.Minecraft.getInstance().font, xPos, yPos, mouseX, mouseY, 0);
     }
 }

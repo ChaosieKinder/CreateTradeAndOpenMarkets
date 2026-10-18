@@ -76,13 +76,23 @@ the definition and a random seeded by the day and the villager, so they come out
 day, and what has been bought since is the villager's `ShopStock`, saved with the villager. A new
 day restocks. Nothing is cached in memory.
 
-## 7. Not yet
+## 7. The screen
+
+Both kinds of tab show their entries the same way (author's decision, 18 Oct): one entry per cell
+of a 3×9 grid drawn from `tab_sell.png` into `shop_base`'s brown panel, 27 to a page, paged with
+the arrows under the grid or the scroll wheel. Hovering a cell shows the item's own tooltip, then
+the price (or what it pays), anything else the trade needs, the stock, and whether the player can
+make the trade now. An entry out of stock is greyed out. `tab_buy.png`, a 3×4 grid either side of
+an arrow, is no longer used.
+
+The grid's geometry (`SimpleShopTab`) is shared by drawing, clicking and tooltips, and a gametest
+pins it to the art.
+
+## 8. Not yet
 
 - **Reputation and Hero of the Village discounts do not apply.** Vanilla sets them in
   `Villager.updateSpecialPrices` when trading starts, a private method this menu does not call,
   so converted prices are always the undiscounted ones.
-- **A shop shows at most 11 rows**, and the rows run over the player's inventory: there is no
-  scrolling and no layout fitted to the art yet. Larger shops need both.
 - **One click is one trade.** There is no buying several at once.
 - **Tabs mix drawing into data**: `InteractionTab` and its subclasses carry client drawing code in
   objects the server also builds. Split each into its data and a client renderer.

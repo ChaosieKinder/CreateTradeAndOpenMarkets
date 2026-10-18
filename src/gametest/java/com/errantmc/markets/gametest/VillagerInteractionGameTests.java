@@ -3,6 +3,9 @@ package com.errantmc.markets.gametest;
 import com.errantmc.markets.ErrantTrade;
 import com.errantmc.markets.npcinteractions.components.SimpleShopTab;
 import com.errantmc.markets.npcinteractions.registry.InteractionTabManager;
+import com.errantmc.markets.npcinteractions.tabs.buy.BuyShopTab;
+import com.errantmc.markets.npcinteractions.tabs.buy.BuyShopTabType;
+import com.errantmc.markets.npcinteractions.trading.ShopEntry;
 import com.errantmc.markets.screen.villager.VillagerInteractionMenu;
 import io.netty.buffer.Unpooled;
 import net.minecraft.core.component.DataComponents;
@@ -20,6 +23,9 @@ import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.errantmc.markets.gametest.GameTests.*;
 
@@ -115,6 +121,28 @@ public final class VillagerInteractionGameTests {
         player.interactOn(villager, InteractionHand.MAIN_HAND);
 
         assertTrue(helper, "no trading menu to open", !(player.containerMenu instanceof VillagerInteractionMenu));
+        helper.succeed();
+    }
+
+    /**
+     * The shop grid's cells sit on the panel art (tab_sell.png drawn at 17,31: cells from 61,40,
+     * 18 apart) and page 27 entries at a time. Clicking a cell must pick the entry drawn there.
+     */
+    @GameTest(template = ARENA)
+    public static void theGridPicksTheEntryUnderTheMouse(GameTestHelper helper) {
+        List<ShopEntry> entries = new ArrayList<>();
+        for (int i = 0; i < 30; i++) entries.add(new ShopEntry(new ItemStack(Items.BREAD, i + 1), 100, 5));
+        BuyShopTab tab = new BuyShopTab(BuyShopTabType.ID, Component.literal("Buy"), entries);
+
+        assertCount(helper, "pages for 30 entries", 2, tab.pageCount());
+        assertCount(helper, "first cell, page 1", 0, tab.entryAt(0, 0, 61 + 8, 40 + 8, 0));
+        assertCount(helper, "last cell of row 1", 8, tab.entryAt(0, 0, 61 + 8 * 18 + 8, 40 + 8, 0));
+        assertCount(helper, "first cell of row 3", 18, tab.entryAt(0, 0, 61 + 8, 40 + 2 * 18 + 8, 0));
+        assertCount(helper, "first cell, page 2", 27, tab.entryAt(0, 0, 61 + 8, 40 + 8, 1));
+        assertCount(helper, "an empty cell on page 2", -1, tab.entryAt(0, 0, 61 + 5 * 18 + 8, 40 + 8, 1));
+        assertCount(helper, "left of the grid", -1, tab.entryAt(0, 0, 50, 48, 0));
+        assertCount(helper, "below the grid", -1, tab.entryAt(0, 0, 69, 40 + 3 * 18 + 4, 0));
+        assertCount(helper, "offset by the screen's corner", 0, tab.entryAt(100, 50, 100 + 61 + 8, 50 + 40 + 8, 0));
         helper.succeed();
     }
 

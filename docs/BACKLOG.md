@@ -184,9 +184,9 @@ Done on 18 Oct, after the merge (`docs/design/trading.md` is the record):
       vanilla.
 - [x] Stock is saved on the villager and survives restarts; the static in-memory cache is gone.
 
-Still open (details in [trading §7](design/trading.md#7-not-yet)):
+Still open (details in [trading §8](design/trading.md#8-not-yet)):
 - [ ] Reputation and Hero of the Village discounts do not apply to converted offers.
-- [ ] At most 11 rows show, and they run over the inventory: scrolling and a fitted layout.
+- [x] At most 11 rows showed, over the inventory: the shop is a paged 3×9 grid now.
 - [ ] Buying several at once.
 - [ ] **Tabs mix drawing into data.** Split each tab into its data (common) and a renderer
       (client).

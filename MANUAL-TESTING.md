@@ -81,7 +81,12 @@ On `feature/npc-interactions` (the trader overhaul, in progress):
 
 - [ ] **Right-clicking a villager** opens the mod's interaction screen, titled with the villager's
       name, showing tabs and the wallet balance (or *Wallet not found*). The player's inventory
-      slots line up with the background.
+      and hotbar items sit in the background's slots (they were 50 px off before 18 Oct).
+- [ ] **The grid.** Buy and sell tabs both show a 3×9 grid of items in the brown panel, each item
+      in its cell. Hovering one shows its tooltip, then price (or what it pays), stock, anything
+      else it needs, and whether you can afford it / how many you have. Out-of-stock items are
+      greyed. A shop of more than 27 (try a librarian's book trades, or a big JSON shop) shows
+      *Page 1 of 2* with arrows, and the scroll wheel pages too.
 - [ ] **Buying.** Click a row: the item arrives, loose coins go first, then the wallet, and the
       change lands in the wallet. Stock drops by one. Without the money, or out of stock, the
       action bar says why and nothing changes.
