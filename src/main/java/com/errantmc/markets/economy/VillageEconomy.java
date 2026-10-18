@@ -41,6 +41,10 @@ public final class VillageEconomy {
 
         VillagerBalance.set(villager, s.till());
         treasury.ifPresent(t -> t.set(s.treasury()));
+        if (villager.getServer() != null) {
+            MoneyLedger.created(villager.getServer(), s.created());
+            MoneyLedger.destroyed(villager.getServer(), s.destroyed());
+        }
         villager.setData(TradeAttachments.RESTOCK_OWED, 0L); // what the till could not cover is forgiven
         villager.setData(TradeAttachments.SETTLED_DAY, today);
     }

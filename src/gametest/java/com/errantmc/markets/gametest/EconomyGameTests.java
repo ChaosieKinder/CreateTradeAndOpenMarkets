@@ -5,7 +5,10 @@ import com.errantmc.markets.ErrantTrade;
 import com.errantmc.markets.component.Purses;
 import com.errantmc.markets.domain.CoinDenomination;
 import com.errantmc.markets.domain.Purse;
+import com.errantmc.markets.economy.MoneyLedger;
+import com.errantmc.markets.economy.MoneySupply;
 import com.errantmc.markets.economy.Treasuries;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.errantmc.markets.economy.VillageEconomy;
 import com.errantmc.markets.item.PlayerMoney;
 import com.errantmc.markets.item.TradeItems;
@@ -17,6 +20,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.npc.Villager;
@@ -319,6 +323,68 @@ public final class EconomyGameTests {
 
         assertCount(helper, "gold marks bought", 1, TradingGameTests.count(player, TradeItems.COIN_GOLD_MARK.get()));
         assertCount(helper, "restocking owed", 0, banker.getData(TradeAttachments.RESTOCK_OWED));
+        helper.succeed();
+    }
+
+    // ---------- measuring the money supply (economy step 4) ----------
+
+    @GameTest(template = ARENA)
+    public static void aTradeLeavesTheMoneySupplyUnchanged(GameTestHelper helper) {
+        Villager farmer = VillagerInteractionGameTests.farmer(helper);
+        VillagerBalance.get(farmer); // its starting balance is new money; that is the next test's
+        ServerPlayer player = survivalPlayer(helper);
+        player.getInventory().setItem(3, new ItemStack(TradeItems.COIN_SILVER_CROWN.get(), 1));
+        VillagerInteractionMenu menu = TradingGameTests.open(helper, player, farmer);
+        if (menu == null) return;
+        MinecraftServer server = helper.getLevel().getServer();
+        long before = MoneySupply.measure(server).total();
+
+        menu.clickMenuButton(player, VillagerInteractionMenu.tradeButton(BUY, BREAD));
+
+        assertCount(helper, "the money supply", before, MoneySupply.measure(server).total());
+        helper.succeed();
+    }
+
+    @GameTest(template = ARENA)
+    public static void aStartingBalanceIsNewMoneyAndTheLedgerSaysSo(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        Villager farmer = VillagerInteractionGameTests.farmer(helper);
+        long supply = MoneySupply.measure(server).total(), created = MoneyLedger.get(server).created();
+
+        long starting = VillagerBalance.get(farmer);
+
+        assertCount(helper, "the money supply's growth", starting, MoneySupply.measure(server).total() - supply);
+        assertCount(helper, "recorded as created", starting, MoneyLedger.get(server).created() - created);
+        helper.succeed();
+    }
+
+    /** The settlement's change to the money supply is exactly what the ledger records it created and destroyed. */
+    @GameTest(template = ARENA)
+    public static void theLedgerExplainsASettlement(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        Villager farmer = VillagerInteractionGameTests.farmer(helper);
+        GlobalPos village = joinVillage(helper, farmer);
+        VillagerBalance.set(farmer, 1000);
+        Treasuries.get(server).set(village, 5000);
+        farmer.setData(TradeAttachments.RESTOCK_OWED, 50L);
+        farmer.setData(TradeAttachments.SETTLED_DAY, today(helper) - 2);
+        MoneyLedger ledger = MoneyLedger.get(server);
+        long supply = MoneySupply.measure(server).total(), created = ledger.created(), destroyed = ledger.destroyed();
+
+        VillageEconomy.settle(farmer);
+
+        long madeNow = ledger.created() - created, lostNow = ledger.destroyed() - destroyed;
+        if (madeNow <= 0 || lostNow <= 0) helper.fail("expected income and restocking, got " + madeNow + " and " + lostNow);
+        assertCount(helper, "the money supply's change", madeNow - lostNow, MoneySupply.measure(server).total() - supply);
+        helper.succeed();
+    }
+
+    @GameTest(template = ARENA)
+    public static void theMoneyCommandRuns(GameTestHelper helper) throws CommandSyntaxException {
+        MinecraftServer server = helper.getLevel().getServer();
+        int dollars = server.getCommands().getDispatcher().execute("erranttrade money",
+                server.createCommandSourceStack().withSuppressedOutput());
+        assertCount(helper, "the command's result, in dollars", Math.min(Integer.MAX_VALUE, MoneySupply.measure(server).total() / 100), dollars);
         helper.succeed();
     }
 

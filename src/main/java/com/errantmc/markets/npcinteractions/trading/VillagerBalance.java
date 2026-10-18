@@ -2,6 +2,7 @@ package com.errantmc.markets.npcinteractions.trading;
 
 import com.errantmc.markets.Config;
 import com.errantmc.markets.economy.Account;
+import com.errantmc.markets.economy.MoneyLedger;
 import net.minecraft.world.entity.npc.Villager;
 
 /**
@@ -21,6 +22,7 @@ public final class VillagerBalance {
         if (balance == UNSET) {
             balance = starting(villager);
             villager.setData(TradeAttachments.BALANCE, balance);
+            if (villager.getServer() != null) MoneyLedger.created(villager.getServer(), balance); // new money
         }
         return balance;
     }

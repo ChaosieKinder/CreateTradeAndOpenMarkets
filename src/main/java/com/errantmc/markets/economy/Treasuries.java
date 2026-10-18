@@ -38,12 +38,16 @@ public final class Treasuries extends SavedData {
     private static final Codec<List<Entry>> ENTRIES = Entry.CODEC.listOf();
 
     private final Map<GlobalPos, Long> balances = new HashMap<>();
+    /** Not saved: set by {@link #get}, so a new treasury's starting balance is recorded as created. */
+    private MinecraftServer server;
 
     private Treasuries() {}
 
     public static Treasuries get(MinecraftServer server) {
-        return server.overworld().getDataStorage().computeIfAbsent(
+        Treasuries treasuries = server.overworld().getDataStorage().computeIfAbsent(
                 new SavedData.Factory<>(Treasuries::new, Treasuries::load, null), NAME);
+        treasuries.server = server;
+        return treasuries;
     }
 
     public long balance(GlobalPos village) {
@@ -52,6 +56,7 @@ public final class Treasuries extends SavedData {
             balance = Config.TREASURY_STARTING_BALANCE.get();
             this.balances.put(village, balance);
             setDirty();
+            if (this.server != null) MoneyLedger.created(this.server, balance); // new money
         }
         return balance;
     }

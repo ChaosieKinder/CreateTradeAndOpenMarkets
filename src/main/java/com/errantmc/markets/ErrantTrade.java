@@ -1,6 +1,7 @@
 package com.errantmc.markets;
 
 import com.errantmc.markets.block.TradeBlocks;
+import com.errantmc.markets.economy.MoneyCommand;
 import com.errantmc.markets.block.entity.TradeBlockEntities;
 import com.errantmc.markets.block.entity.eventhandlers.CoinBlockLeftClickHandler;
 import com.errantmc.markets.component.TradeComponents;
@@ -61,6 +62,7 @@ public class ErrantTrade {
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.register(new WalletAutoDeposit());
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.register(new IdentityCardDataSyncHandler());
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.register(new VillagerInteractionEvents());
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.register(new MoneyCommand());
         // Register our mod's ModConfigSpec so that FML can create and load the config file for us
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
     }

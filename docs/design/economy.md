@@ -1,6 +1,6 @@
 # The economy: NPC wallets and where money comes from
 
-**Status: decided 18 Oct; steps 1–3 (balances, treasuries, the daily settlement) built 18 Oct, 4–6 not yet.** §1–§5 describe how shops work today, the problem NPC
+**Status: decided 18 Oct; steps 1–4 (balances, treasuries, the daily settlement, measuring) built 18 Oct, 5–6 not yet.** §1–§5 describe how shops work today, the problem NPC
 wallets solve, and the options; §6 records what the author chose, and §7 the model that follows
 from it. Build order in §8.
 
@@ -184,5 +184,10 @@ In rough order of how much each depends on the ones before:
    these numbers an idle novice settles where upkeep meets its wage, at 3000 bits; the treasury
    gains each villager's income, less wages, plus upkeep, until its ceiling. Untested in play.
 4. **The money-supply command**, so every later change can be measured and the defaults tuned.
+   **Built 18 Oct**: `/erranttrade money` (operators) reports online players' coins and wallets,
+   loaded villagers' tills and every treasury (`economy.MoneySupply`), and what has been created
+   and destroyed since the world began and today (`economy.MoneyLedger`, world SavedData). Its
+   result is the total in whole dollars, for command blocks. Not counted: chests, coin piles,
+   offline players, unloaded villagers, a second wallet; so the total is a floor.
 5. **Dynamic prices**, as a domain function of stock and balance.
 6. **Then** shop variety by level, bank accounts and notes, and the banker's view of the treasury.
