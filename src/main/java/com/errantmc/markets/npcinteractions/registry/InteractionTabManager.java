@@ -1,6 +1,7 @@
 package com.errantmc.markets.npcinteractions.registry;
 
 import com.mojang.logging.LogUtils;
+import com.errantmc.markets.Config;
 import com.errantmc.markets.ErrantTrade;
 import com.errantmc.markets.npcinteractions.components.InteractionTab;
 import com.errantmc.markets.npcinteractions.tabs.buy.BuyShopTab;
@@ -10,6 +11,7 @@ import com.errantmc.markets.npcinteractions.tabs.sell.SellShopTabType;
 import com.errantmc.markets.npcinteractions.trading.ShopEntry;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.trading.Merchant;
 import net.minecraft.world.item.trading.MerchantOffer;
@@ -129,24 +131,49 @@ public final class InteractionTabManager {
         this.cachedDayIndex = Long.MIN_VALUE;
     }
 
+    /**
+     * A villager with no shop definition sells and buys what its vanilla offers say, at
+     * {@code trading.emeraldValue} copper bits per emerald (100 by default; author's decision,
+     * 18 Oct). Each entry stays linked to its offer: stock is the offer's remaining uses, a trade
+     * uses it up, and the villager restocks at its workstation as in vanilla. Prices are the
+     * offer's current ones, after demand and discounts. A cost that is not emeralds, such as the
+     * librarian's book, becomes an item the player must also hand over.
+     */
     private List<InteractionTab> fallbackFromOffers(MerchantOffers offers) {
+        int emerald = Config.EMERALD_VALUE.get();
         List<ShopEntry> buyEntries = new ArrayList<>();
         List<ShopEntry> sellEntries = new ArrayList<>();
-        for (MerchantOffer offer : offers) {
-            LOG.debug("Creating shop entry for merchant offer {}", offer);
+        for (int i = 0; i < offers.size(); i++) {
+            MerchantOffer offer = offers.get(i);
+            int remaining = Math.max(0, offer.getMaxUses() - offer.getUses());
+            List<ItemStack> goods = new ArrayList<>(2);
+            int emeralds = 0;
+            for (ItemStack cost : List.of(offer.getCostA(), offer.getCostB())) {
+                if (cost.isEmpty()) continue;
+                if (cost.is(Items.EMERALD)) emeralds += cost.getCount();
+                else goods.add(cost);
+            }
             if (offer.getResult().is(Items.EMERALD)) {
-                // Villager buys items from the player -> sell tabs entry
-                MerchantOfferSellAdapter.addSellEntry(offer, sellEntries);
+                // The villager buys goods for emeralds: the player sells
+                if (goods.isEmpty()) continue;
+                ItemStack extra = goods.size() > 1 ? goods.get(1) : ItemStack.EMPTY;
+                sellEntries.add(new ShopEntry(goods.get(0), offer.getResult().getCount() * emerald, remaining, extra, i));
             } else {
-                MerchantOfferBuyAdapter.addBuyEntry(offer, buyEntries);
+                // The villager sells: the player pays the emeralds as coins, plus any goods
+                if (goods.size() > 1) {
+                    LOG.debug("Skipping offer {} with two non-emerald costs", offer);
+                    continue;
+                }
+                ItemStack extra = goods.isEmpty() ? ItemStack.EMPTY : goods.get(0);
+                buyEntries.add(new ShopEntry(offer.getResult(), emeralds * emerald, remaining, extra, i));
             }
         }
         List<InteractionTab> tabs = new ArrayList<>();
         if (!buyEntries.isEmpty()) {
-            tabs.add(new BuyShopTab(BuyShopTabType.ID, ComponentHelper.buyTitle(), buyEntries));
+            tabs.add(new BuyShopTab(BuyShopTabType.ID, Component.translatable("shop.erranttrade.buy"), buyEntries));
         }
         if (!sellEntries.isEmpty()) {
-            tabs.add(new SellShopTab(SellShopTabType.ID, ComponentHelper.sellTitle(), sellEntries, false, 0.5D));
+            tabs.add(new SellShopTab(SellShopTabType.ID, Component.translatable("shop.erranttrade.sell"), sellEntries, false, 0.5D));
         }
         return tabs;
     }
@@ -178,37 +205,6 @@ public final class InteractionTabManager {
     }
 
 
-
-
-    private static class ComponentHelper {
-        private static final Component BUY_TITLE = Component.literal("Buy");
-        private static final Component SELL_TITLE = Component.literal("Sell");
-
-        static Component buyTitle() {
-            return BUY_TITLE;
-        }
-
-        static Component sellTitle() {
-            return SELL_TITLE;
-        }
-    }
-
-    private static class MerchantOfferBuyAdapter {
-        private static void addBuyEntry(MerchantOffer offer, List<ShopEntry> entries) {
-            int price = offer.getCostA().getCount();
-            if (!offer.getCostB().isEmpty()) {
-                price += offer.getCostB().getCount();
-            }
-            entries.add(new ShopEntry(offer.getResult().copy(), price, offer.getMaxUses()));
-        }
-    }
-
-    private static class MerchantOfferSellAdapter {
-        private static void addSellEntry(MerchantOffer offer, List<ShopEntry> entries) {
-            int reward = offer.getResult().getCount();
-            entries.add(new ShopEntry(offer.getCostA().copy(), reward, offer.getMaxUses()));
-        }
-    }
 
 
 }

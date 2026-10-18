@@ -36,6 +36,8 @@
   "tooltip.erranttrade.coin_stack.value": "Value: %s",
   "tooltip.erranttrade.id_card.owner": "Holder: %s",
   "tooltip.erranttrade.id_card.created": "Issued: %s",
+  "shop.erranttrade.buy": "Buy",
+  "shop.erranttrade.sell": "Sell",
   "screen.erranttrade.npcinteractions.price": "Price: %s",
   "screen.erranttrade.npcinteractions.pays": "Pays: %s",
   "screen.erranttrade.npcinteractions.stock": "Stock: %s",
