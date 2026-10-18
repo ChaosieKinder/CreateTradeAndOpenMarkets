@@ -8,6 +8,7 @@ import com.errantmc.markets.data.CoinDenomination;
 import com.errantmc.markets.item.CoinItem;
 import com.errantmc.markets.item.CoinStackItem;
 import com.errantmc.markets.item.wallet.WalletInventory;
+import com.errantmc.markets.item.wallet.WalletItem;
 import com.errantmc.markets.screen.TradeMenus;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -66,49 +67,68 @@ public class WalletMenu extends AbstractContainerMenu {
 
         WalletInventory.ensure(walletStack);
 
-        // Build a working SimpleContainer and prefill from the stack component
+        // A working copy of the grid, written through to the wallet on every change, so the wallet
+        // never holds a stale grid however the screen ends (BACKLOG #16)
         this.walletInv = new SimpleContainer(WalletInventory.SIZE) {
-            @Override public void setChanged() { super.setChanged(); } // hook if you want live syncing
+            @Override public void setChanged() {
+                super.setChanged();
+                if (!playerInv.player.level().isClientSide) writeGrid();
+            }
             @Override public boolean stillValid(Player p) { return true; }
         };
         List<ItemStack> items = WalletInventory.read(walletStack);
         for (int i = 0; i < WalletInventory.SIZE; i++) walletInv.setItem(i, items.get(i));
 
-        // Slots: 3x3 wallet grid (0..8)
-        int x0 = 38, x1 = 65, x2 = 92,
-            y0 = 50, y1 = 44, y2 = 40, idx = 0;
-        for (int r = 0; r < 3; r++) {
-            addSlot(new Slot(walletInv, idx++, x0, y0 + r * 33) {
-                @Override public boolean mayPlace(ItemStack stack) {
-                    // prevent putting the **same** wallet into itself
-                    return stack.getItem() != walletStack.getItem();
-                }
-            });
-        }
-        for (int r = 0; r < 3; r++) {
-            addSlot(new Slot(walletInv, idx++, x1, y1 + r * 34) {
-                @Override public boolean mayPlace(ItemStack stack) {
-                    // prevent putting the **same** wallet into itself
-                    return stack.getItem() != walletStack.getItem();
-                }
-            });
-        }
-        for (int r = 0; r < 3; r++) {
-            addSlot(new Slot(walletInv, idx++, x2, y2 + r * 32) {
-                @Override public boolean mayPlace(ItemStack stack) {
-                    // prevent putting the **same** wallet into itself
-                    return stack.getItem() != walletStack.getItem();
-                }
-            });
+        // Slots: 3x3 wallet grid (0..8), in three slightly fanned columns
+        int[] columnX = {38, 65, 92}, columnY = {50, 44, 40}, rowStep = {33, 34, 32};
+        int idx = 0;
+        for (int col = 0; col < 3; col++) {
+            for (int r = 0; r < 3; r++) {
+                addSlot(new Slot(walletInv, idx++, columnX[col], columnY[col] + r * rowStep[col]) {
+                    @Override public boolean mayPlace(ItemStack stack) {
+                        return !(stack.getItem() instanceof WalletItem);
+                    }
+                });
+            }
         }
 
-        // Player inventory + hotbar
+        // Player inventory + hotbar. The open wallet's own slot is locked: moving the wallet
+        // while its screen is open is how its grid was duplicated
+        int lockedSlot = hand == InteractionHand.MAIN_HAND ? playerInv.selected : -1;
         int invY = 163;
         for (int r = 0; r < 3; ++r)
             for (int c = 0; c < 9; ++c)
                 addSlot(new Slot(playerInv, c + r * 9 + 9, 47 + c * 18, invY + r * 18));
-        for (int c = 0; c < 9; ++c)
-            addSlot(new Slot(playerInv, c, 47 + c * 18, invY + 58));
+        for (int c = 0; c < 9; ++c) {
+            addSlot(c == lockedSlot ? new LockedSlot(playerInv, c, 47 + c * 18, invY + 58)
+                                    : new Slot(playerInv, c, 47 + c * 18, invY + 58));
+        }
+    }
+
+    /** Holds the open wallet: it cannot be picked up, thrown, swapped or replaced. */
+    private static final class LockedSlot extends Slot {
+        LockedSlot(Inventory inv, int index, int x, int y) { super(inv, index, x, y); }
+        @Override public boolean mayPickup(Player player) { return false; }
+        @Override public boolean mayPlace(ItemStack stack) { return false; }
+    }
+
+    /** Number keys and the offhand key swap straight from the inventory, past any slot's checks. */
+    @Override
+    public void clicked(int slotId, int button, ClickType clickType, Player player) {
+        if (clickType == ClickType.SWAP) {
+            boolean walletIsTheSwapTarget = hand == InteractionHand.MAIN_HAND
+                    ? button == playerInv.selected
+                    : button == Inventory.SLOT_OFFHAND;
+            if (walletIsTheSwapTarget) return;
+        }
+        super.clicked(slotId, button, clickType, player);
+    }
+
+    private void writeGrid() {
+        if (walletStack.isEmpty()) return;
+        List<ItemStack> out = new ArrayList<>(WalletInventory.SIZE);
+        for (int i = 0; i < WalletInventory.SIZE; i++) out.add(walletInv.getItem(i).copy());
+        WalletInventory.write(walletStack, out);
     }
 
 
@@ -121,12 +141,7 @@ public class WalletMenu extends AbstractContainerMenu {
     @Override
     public void removed(Player player) {
         super.removed(player);
-        if (!player.level().isClientSide && !walletStack.isEmpty() && player.getItemInHand(hand) == walletStack) {
-            // Serialize SimpleContainer → List → component
-            List<ItemStack> out = new ArrayList<>(WalletInventory.SIZE);
-            for (int i = 0; i < WalletInventory.SIZE; i++) out.add(walletInv.getItem(i).copy());
-            WalletInventory.write(walletStack, out);
-        }
+        if (!player.level().isClientSide) writeGrid();
     }
 
     @Override

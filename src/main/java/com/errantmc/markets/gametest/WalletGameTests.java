@@ -215,9 +215,9 @@ public final class WalletGameTests {
     }
 
     /**
-     * BUG (BACKLOG #16), pinned as it behaves today: the open wallet sits in one of the menu's own
-     * hotbar slots. Take something out of the grid, throw the wallet from that slot, and the grid
-     * is never written back, so the thrown wallet still holds what was taken: a duplicate.
+     * BACKLOG #16: the open wallet sits in one of the menu's own hotbar slots. Taking something
+     * out of the grid and then throwing the wallet used to leave the thrown wallet holding it too.
+     * The slot is now locked, and the grid is written through as it changes.
      */
     @GameTest(template = ARENA)
     public static void throwingTheOpenWalletDoesNotDuplicateItsGrid(GameTestHelper helper) {
@@ -239,7 +239,37 @@ public final class WalletGameTests {
         for (ItemEntity e : player.level().getEntitiesOfClass(ItemEntity.class, player.getBoundingBox().inflate(4))) {
             for (ItemStack s : WalletInventory.read(e.getItem())) if (s.is(TradeItems.ID_CARD.get())) cards++;
         }
-        assertCount(helper, "ID cards in existence", 2, cards);
+        assertCount(helper, "ID cards in existence", 1, cards);
+        assertTrue(helper, "the wallet to stay in hand", player.getMainHandItem() == wallet);
+        helper.succeed();
+    }
+
+    /** A number key swaps straight from the inventory; it must not move the open wallet either. */
+    @GameTest(template = ARENA)
+    public static void aNumberKeyCannotSwapTheOpenWalletAway(GameTestHelper helper) {
+        ServerPlayer player = survivalPlayer(helper);
+        ItemStack wallet = new ItemStack(TradeItems.WALLET_LEATHER_ITEM.get());
+        player.setItemInHand(InteractionHand.MAIN_HAND, wallet); // hotbar 0
+        WalletMenu menu = new WalletMenu(0, player.getInventory(), InteractionHand.MAIN_HAND);
+
+        menu.clicked(WalletInventory.SIZE, 0, ClickType.SWAP, player); // empty inventory slot <-> hotbar 0
+
+        assertTrue(helper, "the wallet to stay in hand", player.getMainHandItem() == wallet);
+        helper.succeed();
+    }
+
+    /** The grid reaches the wallet as it changes, not only when the screen closes. */
+    @GameTest(template = ARENA)
+    public static void theGridIsSavedAsItChanges(GameTestHelper helper) {
+        ServerPlayer player = survivalPlayer(helper);
+        ItemStack wallet = new ItemStack(TradeItems.WALLET_LEATHER_ITEM.get());
+        player.setItemInHand(InteractionHand.MAIN_HAND, wallet);
+        WalletMenu menu = new WalletMenu(0, player.getInventory(), InteractionHand.MAIN_HAND);
+
+        menu.getSlot(3).set(new ItemStack(TradeItems.ID_CARD.get()));
+
+        assertTrue(helper, "the wallet to hold the card before the screen closes",
+                WalletInventory.read(wallet).get(3).is(TradeItems.ID_CARD.get()));
         helper.succeed();
     }
 

@@ -55,6 +55,10 @@ public final class GameTests {
         NetworkRegistry.configureMockConnection(connection);
         server.getPlayerList().placeNewPlayer(connection, player, cookie);
         player.setGameMode(mode);
+        // Inside this test's own arena: every player otherwise joins at the world spawn, where
+        // what one test drops is counted by the next
+        Vec3 at = helper.absoluteVec(new Vec3(1.5, 1, 1.5));
+        player.moveTo(at.x, at.y, at.z, 0, 0);
         return player;
     }
 
