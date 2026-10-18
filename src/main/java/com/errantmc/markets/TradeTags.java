@@ -20,7 +20,8 @@ public class TradeTags {
         public static final TagKey<Item> ID_CARD_ITEMS = createTag("id_card_items");
         public static final TagKey<Item> DEBIT_CARD_ITEMS = createTag("debit_items");
         /**
-         * These items can go inside a wallet
+         * What fits in a wallet's grid: things that belong in a real wallet. Packs may add to it.
+         * Deposit-all sweeps only {@link #CURRENCY_ITEMS}.
          */
         public static final TagKey<Item> WALLET_ITEMS = createTag("wallet_items");
         /**

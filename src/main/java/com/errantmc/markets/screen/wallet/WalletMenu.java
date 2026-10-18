@@ -85,8 +85,9 @@ public class WalletMenu extends AbstractContainerMenu {
         for (int col = 0; col < 3; col++) {
             for (int r = 0; r < 3; r++) {
                 addSlot(new Slot(walletInv, idx++, columnX[col], columnY[col] + r * rowStep[col]) {
+                    /** Only what belongs in a real wallet: the wallet_items tag (BACKLOG #19) */
                     @Override public boolean mayPlace(ItemStack stack) {
-                        return !(stack.getItem() instanceof WalletItem);
+                        return stack.is(TradeTags.Items.WALLET_ITEMS) && !(stack.getItem() instanceof WalletItem);
                     }
                 });
             }
@@ -221,10 +222,10 @@ public class WalletMenu extends AbstractContainerMenu {
         CurrencyData cur = absorb(before, getCarried());
         // items is the main inventory and hotbar; the open wallet is never a coin, so it is skipped
         for (ItemStack s : playerInv.items) {
-            if (s.is(TradeTags.Items.WALLET_ITEMS)) cur = absorb(cur, s);
+            if (s.is(TradeTags.Items.CURRENCY_ITEMS)) cur = absorb(cur, s);
         }
         for (ItemStack s : playerInv.offhand) {
-            if (s.is(TradeTags.Items.WALLET_ITEMS)) cur = absorb(cur, s);
+            if (s.is(TradeTags.Items.CURRENCY_ITEMS)) cur = absorb(cur, s);
         }
 
         if (!cur.equals(before)) {

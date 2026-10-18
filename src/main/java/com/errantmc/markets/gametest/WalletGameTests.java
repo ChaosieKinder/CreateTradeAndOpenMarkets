@@ -273,6 +273,37 @@ public final class WalletGameTests {
         helper.succeed();
     }
 
+    /** BACKLOG #19: only what belongs in a real wallet fits; containers above all do not. */
+    @GameTest(template = ARENA)
+    public static void theGridTakesOnlyWalletThings(GameTestHelper helper) {
+        ServerPlayer player = survivalPlayer(helper);
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(TradeItems.WALLET_LEATHER_ITEM.get()));
+        WalletMenu menu = new WalletMenu(0, player.getInventory(), InteractionHand.MAIN_HAND);
+        var grid = menu.getSlot(0);
+
+        assertTrue(helper, "a coin to fit", grid.mayPlace(new ItemStack(TradeItems.COIN_GOLD_MARK.get())));
+        assertTrue(helper, "a coin stack to fit", grid.mayPlace(new ItemStack(TradeItems.COIN_STACK_ITEM.get())));
+        assertTrue(helper, "an ID card to fit", grid.mayPlace(new ItemStack(TradeItems.ID_CARD.get())));
+        assertTrue(helper, "a shulker box not to fit", !grid.mayPlace(new ItemStack(Items.SHULKER_BOX)));
+        assertTrue(helper, "a bundle not to fit", !grid.mayPlace(new ItemStack(Items.BUNDLE)));
+        assertTrue(helper, "dirt not to fit", !grid.mayPlace(new ItemStack(Items.DIRT)));
+        helper.succeed();
+    }
+
+    /** Deposit-all takes money only; ID cards in the inventory stay where they are. */
+    @GameTest(template = ARENA)
+    public static void depositAllLeavesIdCardsInTheInventory(GameTestHelper helper) {
+        ServerPlayer player = survivalPlayer(helper);
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(TradeItems.WALLET_LEATHER_ITEM.get()));
+        player.getInventory().setItem(7, new ItemStack(TradeItems.ID_CARD.get()));
+        WalletMenu menu = new WalletMenu(0, player.getInventory(), InteractionHand.MAIN_HAND);
+
+        menu.clickMenuButton(player, WalletMenu.BTN_DEPOSIT_ALL);
+
+        assertTrue(helper, "the ID card to stay in slot 7", player.getInventory().getItem(7).is(TradeItems.ID_CARD.get()));
+        helper.succeed();
+    }
+
     @GameTest(template = ARENA)
     public static void aWalletCannotGoInsideAWallet(GameTestHelper helper) {
         ServerPlayer player = survivalPlayer(helper);
