@@ -1,7 +1,7 @@
 {
   "render_type": "translucent",
   "textures": {
-    "particle": "erranttrade:block/coin_pile"
+    "particle": "erranttrade:item/coin_gold_mark"
   },
   "elements": [
   ],
