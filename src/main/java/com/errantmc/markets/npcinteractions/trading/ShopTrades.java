@@ -5,6 +5,7 @@ import com.errantmc.markets.domain.Payment;
 import com.errantmc.markets.domain.TradeXp;
 import com.errantmc.markets.economy.Account;
 import com.errantmc.markets.economy.Tills;
+import com.errantmc.markets.economy.VillageEconomy;
 import com.errantmc.markets.item.PlayerMoney;
 import com.errantmc.markets.npcinteractions.tabs.buy.BuyShopTab;
 import com.errantmc.markets.npcinteractions.tabs.sell.SellShopTab;
@@ -67,6 +68,7 @@ public final class ShopTrades {
         take(player, extra, entry.extraCost().getCount());
         PlayerMoney.giveItem(player, entry.item().copy());
         ledger.post();
+        VillageEconomy.oweRestock(villager, entry.price() - PlayerMoney.worth(entry.item()));
         entry.decreaseStock(1);
         if (offer != null) offer.increaseUses();
         progress(player, villager, entry.price(), entry.item());

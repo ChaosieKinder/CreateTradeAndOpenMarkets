@@ -86,6 +86,47 @@ public class Config {
             )
             .defineInRange("tradeFeePercent", 5, 0, 100);
 
+    public static final ModConfigSpec.LongValue TREASURY_INCOME_PER_VILLAGER = BUILDER
+            .comment(
+                    "New money: what a village's treasury earns each day for each of its villagers, in copper bits.",
+                    "This is where money enters the economy; everything else moves it around."
+            )
+            .defineInRange("treasuryIncomePerVillager", 100L, 0L, Long.MAX_VALUE / 1024);
+
+    public static final ModConfigSpec.LongValue TREASURY_CEILING = BUILDER
+            .comment("A treasury stops earning once it holds this much, in copper bits. 100000 is $1,000.00.")
+            .defineInRange("treasuryCeiling", 100000L, 0L, Long.MAX_VALUE / 2);
+
+    public static final ModConfigSpec.LongValue WAGE = BUILDER
+            .comment("A novice villager's daily wage, paid from its village's treasury while the treasury has it.")
+            .defineInRange("wage", 100L, 0L, Long.MAX_VALUE / 1024);
+
+    public static final ModConfigSpec.LongValue WAGE_PER_LEVEL = BUILDER
+            .comment("Added to the daily wage for each level above novice.")
+            .defineInRange("wagePerLevel", 50L, 0L, Long.MAX_VALUE / 1024);
+
+    public static final ModConfigSpec.IntValue UPKEEP_PERCENT = BUILDER
+            .comment("The share of a villager's balance above the upkeep floor it pays into the treasury each day.")
+            .defineInRange("upkeepPercent", 10, 0, 100);
+
+    public static final ModConfigSpec.LongValue UPKEEP_FLOOR = BUILDER
+            .comment("A villager keeps this much, in copper bits, free of upkeep.")
+            .defineInRange("upkeepFloor", 2000L, 0L, Long.MAX_VALUE / 2);
+
+    public static final ModConfigSpec.IntValue RESTOCK_COST_PERCENT = BUILDER
+            .comment(
+                    "What restocking a good costs a villager, as a share of the price it sold it for. Paid at",
+                    "its next day's settlement, and destroyed: money leaving the economy."
+            )
+            .defineInRange("restockCostPercent", 50, 0, 100);
+
+    public static final ModConfigSpec.IntValue MAX_SETTLEMENT_DAYS = BUILDER
+            .comment(
+                    "Days are settled when a villager is next traded with. At most this many are settled at",
+                    "once, so a village left alone for a year does not pay a year of wages."
+            )
+            .defineInRange("maxSettlementDays", 3, 1, 365);
+
     static {
         BUILDER.pop();
     }

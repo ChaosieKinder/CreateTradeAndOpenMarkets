@@ -3,6 +3,7 @@ package com.errantmc.markets.npcinteractions;
 import com.errantmc.markets.npcinteractions.registry.InteractionDefinitionLoader;
 import com.errantmc.markets.npcinteractions.registry.InteractionTabManager;
 import com.errantmc.markets.economy.Tills;
+import com.errantmc.markets.economy.VillageEconomy;
 import com.errantmc.markets.screen.villager.VillagerInteractionMenu;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerPlayer;
@@ -52,6 +53,8 @@ public final class VillagerInteractionEvents {
         // As vanilla's startTrading: this player's reputation and Hero of the Village lower the
         // offers' prices until the menu closes, when setTradingPlayer(null) resets them
         villager.updateSpecialPrices(player);
+        VillageEconomy.settle(villager); // the days since it last traded: wages, upkeep, restocking
+
         var tabs = InteractionTabManager.INSTANCE.resolveTabs(villager, villager.getOffers(), player.level());
         // Claimed as vanilla does, so the villager stands still and no one else can trade with it
         villager.setTradingPlayer(player);

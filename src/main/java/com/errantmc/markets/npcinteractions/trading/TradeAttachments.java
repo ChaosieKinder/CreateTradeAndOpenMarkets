@@ -1,6 +1,7 @@
 package com.errantmc.markets.npcinteractions.trading;
 
 import com.errantmc.markets.ErrantTrade;
+import com.errantmc.markets.economy.VillageEconomy;
 import com.mojang.serialization.Codec;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.attachment.AttachmentType;
@@ -30,6 +31,14 @@ public final class TradeAttachments {
      */
     public static final Supplier<AttachmentType<Long>> BALANCE = ATTACHMENT_TYPES.register("balance",
             () -> AttachmentType.builder(() -> VillagerBalance.UNSET).serialize(Codec.LONG).build());
+
+    /** The last day the villager's wages and upkeep were settled (see VillageEconomy), or VillageEconomy.UNSET. */
+    public static final Supplier<AttachmentType<Long>> SETTLED_DAY = ATTACHMENT_TYPES.register("settled_day",
+            () -> AttachmentType.builder(() -> VillageEconomy.UNSET).serialize(Codec.LONG).build());
+
+    /** What restocking the goods the villager has sold costs, paid at its next settlement. */
+    public static final Supplier<AttachmentType<Long>> RESTOCK_OWED = ATTACHMENT_TYPES.register("restock_owed",
+            () -> AttachmentType.builder(() -> 0L).serialize(Codec.LONG).build());
 
     public static void register(IEventBus modBus) {
         ATTACHMENT_TYPES.register(modBus);

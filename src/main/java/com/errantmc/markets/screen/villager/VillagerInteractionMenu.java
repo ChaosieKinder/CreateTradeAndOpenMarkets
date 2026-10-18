@@ -8,6 +8,7 @@ import com.errantmc.markets.npcinteractions.tabs.buy.BuyShopTab;
 import com.errantmc.markets.npcinteractions.tabs.sell.SellShopTab;
 import com.errantmc.markets.npcinteractions.trading.ShopTrades;
 import com.errantmc.markets.economy.Tills;
+import com.errantmc.markets.economy.VillageEconomy;
 import com.errantmc.markets.screen.TradeMenus;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -157,6 +158,7 @@ public class VillagerInteractionMenu extends AbstractContainerMenu {
         int entryIndex = id % ENTRIES_PER_TAB;
         if (tabIndex >= this.tabs.size()) return false;
 
+        VillageEconomy.settle(this.villager); // a day may have turned while the shop was open
         ShopTrades.Result result = switch (this.tabs.get(tabIndex)) {
             case BuyShopTab buy -> ShopTrades.buy(serverPlayer, this.villager, buy, entryIndex);
             case SellShopTab sell -> ShopTrades.sell(serverPlayer, this.villager, sell, entryIndex);

@@ -6,6 +6,7 @@ import com.errantmc.markets.component.Purses;
 import com.errantmc.markets.domain.CoinDenomination;
 import com.errantmc.markets.domain.Purse;
 import com.errantmc.markets.economy.Treasuries;
+import com.errantmc.markets.economy.VillageEconomy;
 import com.errantmc.markets.item.PlayerMoney;
 import com.errantmc.markets.item.TradeItems;
 import com.errantmc.markets.npcinteractions.trading.TradeAttachments;
@@ -229,6 +230,100 @@ public final class EconomyGameTests {
 
         assertCount(helper, "money in total", totalBefore, total(player, banker));
         helper.succeed();
+    }
+
+    // ---------- the daily settlement (economy step 3) ----------
+
+    @GameTest(template = ARENA)
+    public static void aVillagersFirstSettlementOnlyStartsTheClock(GameTestHelper helper) {
+        Villager farmer = VillagerInteractionGameTests.farmer(helper);
+        joinVillage(helper, farmer);
+        long till = VillagerBalance.get(farmer);
+
+        VillageEconomy.settle(farmer);
+
+        assertCount(helper, "the settled day", today(helper), farmer.getData(TradeAttachments.SETTLED_DAY));
+        assertCount(helper, "the till", till, VillagerBalance.get(farmer));
+        helper.succeed();
+    }
+
+    /** Opening the shop the next day pays the wage from the treasury, which earned its day's income. */
+    @GameTest(template = ARENA)
+    public static void theNextDaysShopPaysTheWage(GameTestHelper helper) {
+        Villager farmer = VillagerInteractionGameTests.farmer(helper);
+        GlobalPos village = joinVillage(helper, farmer);
+        VillagerBalance.set(farmer, 1000);
+        Treasuries.get(helper.getLevel().getServer()).set(village, 5000);
+        farmer.setData(TradeAttachments.SETTLED_DAY, today(helper) - 1);
+
+        VillagerInteractionMenu menu = TradingGameTests.open(helper, survivalPlayer(helper), farmer);
+        if (menu == null) return;
+
+        long wage = Config.WAGE.get(), income = Config.TREASURY_INCOME_PER_VILLAGER.get();
+        assertCount(helper, "the till, with a day's wage", 1000 + wage, VillagerBalance.get(farmer));
+        assertCount(helper, "the treasury, with its income, less the wage", 5000 + income - wage, treasury(helper, village));
+        assertCount(helper, "what the shop shows", 1000 + wage, menu.getVillagerBalance());
+        assertCount(helper, "the settled day", today(helper), farmer.getData(TradeAttachments.SETTLED_DAY));
+        helper.succeed();
+    }
+
+    /** A month away settles only the configured most days. */
+    @GameTest(template = ARENA)
+    public static void settlementIsCapped(GameTestHelper helper) {
+        Villager farmer = VillagerInteractionGameTests.farmer(helper);
+        GlobalPos village = joinVillage(helper, farmer);
+        VillagerBalance.set(farmer, 0);
+        Treasuries.get(helper.getLevel().getServer()).set(village, 50_000);
+        farmer.setData(TradeAttachments.SETTLED_DAY, today(helper) - 30);
+
+        VillageEconomy.settle(farmer);
+
+        long days = Config.MAX_SETTLEMENT_DAYS.get();
+        if (days * Config.WAGE.get() <= Config.UPKEEP_FLOOR.get()) { // below the floor, no upkeep muddies the sum
+            assertCount(helper, "wages for the capped days", days * Config.WAGE.get(), VillagerBalance.get(farmer));
+        }
+        helper.succeed();
+    }
+
+    /** What a villager sells costs it to restock, paid at the next day's settlement. */
+    @GameTest(template = ARENA)
+    public static void sellingToAPlayerIsPaidForAtTheNextSettlement(GameTestHelper helper) {
+        Villager farmer = VillagerInteractionGameTests.farmer(helper); // in no village: no wage
+        ServerPlayer player = survivalPlayer(helper);
+        player.getInventory().setItem(3, new ItemStack(TradeItems.COIN_SILVER_CROWN.get(), 1));
+        VillagerInteractionMenu menu = TradingGameTests.open(helper, player, farmer);
+        if (menu == null) return;
+
+        menu.clickMenuButton(player, VillagerInteractionMenu.tradeButton(BUY, BREAD));
+
+        long cost = 100 * Config.RESTOCK_COST_PERCENT.get() / 100;
+        assertCount(helper, "restocking owed", cost, farmer.getData(TradeAttachments.RESTOCK_OWED));
+        long till = VillagerBalance.get(farmer);
+        farmer.setData(TradeAttachments.SETTLED_DAY, today(helper) - 1);
+        VillageEconomy.settle(farmer);
+        assertCount(helper, "the till, less the restocking", till - cost, VillagerBalance.get(farmer));
+        assertCount(helper, "restocking owed after paying", 0, farmer.getData(TradeAttachments.RESTOCK_OWED));
+        helper.succeed();
+    }
+
+    /** The banker's coins are money already: selling them owes no restocking. */
+    @GameTest(template = ARENA)
+    public static void exchangingCoinsOwesNoRestocking(GameTestHelper helper) {
+        Villager banker = banker(helper);
+        ServerPlayer player = survivalPlayer(helper);
+        player.getInventory().setItem(3, new ItemStack(TradeItems.COIN_SILVER_CROWN.get(), 5));
+        VillagerInteractionMenu menu = TradingGameTests.open(helper, player, banker);
+        if (menu == null) return;
+
+        menu.clickMenuButton(player, VillagerInteractionMenu.tradeButton(BUY, GOLD_MARK));
+
+        assertCount(helper, "gold marks bought", 1, TradingGameTests.count(player, TradeItems.COIN_GOLD_MARK.get()));
+        assertCount(helper, "restocking owed", 0, banker.getData(TradeAttachments.RESTOCK_OWED));
+        helper.succeed();
+    }
+
+    static long today(GameTestHelper helper) {
+        return helper.getLevel().getDayTime() / 24000L;
     }
 
     private static final int GOLD_MARK = 1, COPPER_BIT = 0;

@@ -1,6 +1,7 @@
 package com.errantmc.markets.economy;
 
 import com.errantmc.markets.Config;
+import com.errantmc.markets.domain.DailySettlement;
 import com.errantmc.markets.npcinteractions.trading.VillagerBalance;
 import com.errantmc.markets.villager.TradeVillagers;
 import net.minecraft.core.GlobalPos;
@@ -49,8 +50,7 @@ public final class Tills {
      */
     public static long fee(Villager villager, long price) {
         if (village(villager).isEmpty() || tradesFromTreasury(villager)) return 0;
-        int percent = Config.TRADE_FEE_PERCENT.get();
-        return price / 100 * percent + price % 100 * percent / 100; // exact, and cannot overflow
+        return DailySettlement.percent(price, Config.TRADE_FEE_PERCENT.get());
     }
 
     private static boolean isBanker(Villager villager) {

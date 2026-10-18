@@ -99,6 +99,9 @@ On `feature/npc-interactions` (the trader overhaul, in progress):
       *Treasury: $100.00* at first. Trading with the village's farmer raises it by 5% of each
       price. Buying a gold mark from the banker for $5.00 leaves the treasury where it was. Restart
       the world: the treasury keeps its balance.
+- [ ] **A day later** (`/time add 24000`), reopening the farmer's shop shows its till up by its
+      wage (less restocking for what it sold you yesterday), and the banker's treasury moves too.
+      `/time add 240000` pays only three days.
 - [ ] **A vanilla villager** (say a toolsmith) shows its own offers priced at $1.00 per emerald. A
       librarian's book trade asks for the book as well. Using an offer up shows stock 0; the
       villager restocks at its workstation.

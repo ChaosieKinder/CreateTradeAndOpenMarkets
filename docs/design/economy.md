@@ -1,6 +1,6 @@
 # The economy: NPC wallets and where money comes from
 
-**Status: decided 18 Oct; steps 1 (NPC balances) and 2 (treasuries) built 18 Oct, 3–6 not yet.** §1–§5 describe how shops work today, the problem NPC
+**Status: decided 18 Oct; steps 1–3 (balances, treasuries, the daily settlement) built 18 Oct, 4–6 not yet.** §1–§5 describe how shops work today, the problem NPC
 wallets solve, and the options; §6 records what the author chose, and §7 the model that follows
 from it. Build order in §8.
 
@@ -169,7 +169,20 @@ In rough order of how much each depends on the ones before:
      Without it, selling a 500-bit gold mark for 500 bits would have added 500 to the till.
    - `EconomyGameTests` sums player, till and treasury around each trade.
 3. **The daily settlement.** Treasury income, wages, upkeep and restocking, lazily, with their
-   config.
+   config. **Built 18 Oct**: the arithmetic is `domain.DailySettlement` (unit-tested), applied by
+   `economy.VillageEconomy` when the shop opens or a trade is clicked. Defaults, all config:
+
+   | | default |
+   |---|---|
+   | treasury income per villager per day | 100 bits, until the treasury holds 100000 ($1,000) |
+   | wage | 100 bits a day, +50 per level above novice, only from what the treasury has |
+   | upkeep | 10% a day of the balance above 2000 bits, into the treasury |
+   | restocking | 50% of the price of what the villager sold (less any money in the goods), at the next settlement, destroyed; what the till cannot cover is forgiven |
+   | days settled at once | at most 3 |
+
+   A villager's first settlement only starts its clock, and time set backwards restarts it. With
+   these numbers an idle novice settles where upkeep meets its wage, at 3000 bits; the treasury
+   gains each villager's income, less wages, plus upkeep, until its ceiling. Untested in play.
 4. **The money-supply command**, so every later change can be measured and the defaults tuned.
 5. **Dynamic prices**, as a domain function of stock and balance.
 6. **Then** shop variety by level, bank accounts and notes, and the banker's view of the treasury.
