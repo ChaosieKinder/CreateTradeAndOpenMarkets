@@ -33,35 +33,5 @@ public class InventoryHelper {
             TradeAndOpenMarketsMod.MOD_ID,
             "textures/gui/components/button_hover.png"
     );
-    private static final int TAB_WIDTH = 38;
-    private static final int TAB_HEIGHT = 17;
-    private static final ResourceLocation TAB_TEXTURE = ResourceLocation.fromNamespaceAndPath(
-            TradeAndOpenMarketsMod.MOD_ID,
-            "textures/gui/components/tab_deselected.png"
-    );
-    private static final ResourceLocation TAB_SELECTED_TEXTURE = ResourceLocation.fromNamespaceAndPath(
-            TradeAndOpenMarketsMod.MOD_ID,
-            "textures/gui/components/tab_selected.png"
-    );
-    private static final ResourceLocation TAB_HOVER_TEXTURE = ResourceLocation.fromNamespaceAndPath(
-            TradeAndOpenMarketsMod.MOD_ID,
-            "textures/gui/components/tab_hover.png"
-    );
 
-    public static void drawTab(GuiGraphics guiGraphics, Font font, Component text,
-                               int x, int y, int mouseX, int mouseY, boolean selected) {
-        ResourceLocation texture;
-        if (mouseX >= x && mouseX <= x + TAB_WIDTH && mouseY >= y && mouseY <= y + TAB_HEIGHT) {
-            texture = TAB_HOVER_TEXTURE;
-        }
-        else if (selected) {
-            texture = TAB_SELECTED_TEXTURE;
-        } else {
-            texture = TAB_TEXTURE;
-        }
-
-        RenderSystem.setShaderTexture(0, texture);
-        guiGraphics.blit(texture, x, y, 0, 0, TAB_WIDTH, TAB_HEIGHT, TAB_WIDTH, TAB_HEIGHT);
-        guiGraphics.drawString(font, text, x + 8, y + 5, 0xFFFFFF, false);
-    }
 }

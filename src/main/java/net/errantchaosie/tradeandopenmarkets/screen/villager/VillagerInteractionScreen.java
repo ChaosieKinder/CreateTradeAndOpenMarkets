@@ -1,13 +1,10 @@
-package net.errantchaosie.tradeandopenmarkets.screen.shop;
+package net.errantchaosie.tradeandopenmarkets.screen.villager;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.errantchaosie.tradeandopenmarkets.TradeAndOpenMarketsMod;
 import net.errantchaosie.tradeandopenmarkets.component.WalletBalance;
 import net.errantchaosie.tradeandopenmarkets.item.wallet.WalletFinder;
-import net.errantchaosie.tradeandopenmarkets.shop.tab.ShopEntry;
-import net.errantchaosie.tradeandopenmarkets.shop.tab.ShopTab;
-import net.errantchaosie.tradeandopenmarkets.shop.tab.SimpleShopTab;
-import net.errantchaosie.tradeandopenmarkets.util.InventoryHelper;
+import net.errantchaosie.tradeandopenmarkets.npcinteractions.components.InteractionTab;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -15,6 +12,7 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.Nameable;
+import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -26,47 +24,56 @@ import org.jetbrains.annotations.Nullable;
 import java.text.NumberFormat;
 
 /**
- * Replacement shop screen that renders a bespoke background while exposing the
- * active merchant offers and trader information supplied by {@link ShopMenu}.
+ * Replacement npcinteractions screen that renders a bespoke background while exposing the
+ * active merchant offers and trader information supplied by {@link VillagerInteractionMenu}.
  */
-public class ShopScreen extends AbstractContainerScreen<ShopMenu> {
+public class VillagerInteractionScreen extends AbstractContainerScreen<VillagerInteractionMenu> {
+
     private static final ResourceLocation SHOP_TEXTURE = ResourceLocation.fromNamespaceAndPath(
             TradeAndOpenMarketsMod.MOD_ID,
-            "textures/gui/shop/shop_base.png"
+            "textures/gui/npcinteractions/shop_base.png"
     );
 
-    private static final int TEXTURE_WIDTH = 276;
-    private static final int TEXTURE_HEIGHT = 209;
+    public static final int SCREEN_WIDTH = 276;
+    public static final int SCREEN_HEIGHT = 209;
     private static final int TAB_START_X = 12;
     private static final int TAB_START_Y = 1;
     private static final int TAB_SPACING = 39;
-
+    @Nullable
+    private final Villager villager;
     private static final NumberFormat CURRENCY_FORMAT = NumberFormat.getCurrencyInstance();
 
     private int leftPos;
     private int topPos;
 
-    public ShopScreen(ShopMenu menu, Inventory playerInventory, Component title) {
-        super(menu, playerInventory, title);
+    public VillagerInteractionScreen(VillagerInteractionMenu menu, Inventory playerInventory, Component otitle) {
+        super(menu, playerInventory, otitle);
+        villager = menu.getClientVillager();
     }
 
     @Override
     protected void containerTick() {
         super.containerTick();
-        this.menu.refresh();
+        //this.menu.refresh();
     }
 
     @Override
     protected void init() {
         super.init();
-        this.leftPos = (this.width - TEXTURE_WIDTH) / 2;
-        this.topPos = (this.height - TEXTURE_HEIGHT) / 2;
+        this.leftPos = (this.width - SCREEN_WIDTH) / 2;
+        this.topPos = (this.height - SCREEN_HEIGHT) / 2;
     }
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         renderTabs(guiGraphics, mouseX, mouseY);
+        // Render Active Tab
+        var tab = this.menu.getSelectedTab();
+        if(tab != null) {
+            tab.renderPanel(guiGraphics, this.leftPos, this.topPos, mouseX, mouseY);
+        }
+        // Render Tooltip
         this.renderTooltip(guiGraphics, mouseX, mouseY);  // 3) draws slot tooltips on top
     }
 
@@ -79,21 +86,18 @@ public class ShopScreen extends AbstractContainerScreen<ShopMenu> {
         // draw main background
         RenderSystem.setShaderTexture(0, SHOP_TEXTURE);
         guiGraphics.blit(SHOP_TEXTURE, this.leftPos, this.topPos,
-                0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT, TEXTURE_WIDTH, TEXTURE_HEIGHT);
+                0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH, SCREEN_HEIGHT);
 
-        // draw shop title - this is the profession of the shop
-        guiGraphics.drawString(this.font, this.menu.getTitle(),
+        Component title = villager != null ? villager.getDisplayName() : this.getTitle();
+        // draw npcinteractions title - this is the profession of the npcinteractions
+        guiGraphics.drawString(this.font, title,
                 this.leftPos + 18, this.topPos + 19, 0x404040, false);
 
         renderWalletBalance(guiGraphics);
-        renderActiveTab(guiGraphics);
     }
 
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        //super.renderLabels(guiGraphics, mouseX, mouseY);
-        //renderTraderDetails(guiGraphics);
-        //renderOfferSummary(guiGraphics);
     }
 
     @Override
@@ -125,40 +129,10 @@ public class ShopScreen extends AbstractContainerScreen<ShopMenu> {
         int y = this.topPos + TAB_START_Y;
         int selected = this.menu.getSelectedTabIndex();
         for (int i = 0; i < this.menu.getTabs().size(); i++) {
-            ShopTab tab = this.menu.getTabs().get(i);
+            InteractionTab tab = this.menu.getTabs().get(i);
             boolean isSelected = i == selected;
-            InventoryHelper.drawTab(guiGraphics, this.font, tab.title(), x, y, mouseX, mouseY, isSelected);
+            tab.renderTab(guiGraphics, this.font, tab.title(), x, y, mouseX, mouseY, isSelected);
             x += TAB_SPACING;
-        }
-    }
-
-    private void renderActiveTab(GuiGraphics guiGraphics) {
-        ShopTab tab = this.menu.getSelectedTab();
-        if (tab instanceof SimpleShopTab simple) {
-            renderSimpleTab(guiGraphics, simple);
-        }
-    }
-
-    private void renderSimpleTab(GuiGraphics guiGraphics, SimpleShopTab tab) {
-        int x = this.leftPos + 18;
-        int y = this.topPos + 44;
-        int index = 0;
-        for (ShopEntry entry : tab.entries()) {
-            if (index >= 6) {
-                break;
-            }
-            guiGraphics.renderItem(entry.item(), x, y);
-            guiGraphics.renderItemDecorations(this.font, entry.item(), x, y);
-            Component priceText = Component.literal("Price: " + entry.price());
-            Component stockText = entry.hasLimitedStock()
-                    ? Component.literal("Stock: " + entry.stock())
-                    : Component.literal("Stock: ∞");
-            int textX = x + 20;
-            guiGraphics.drawString(this.font, entry.item().getHoverName(), textX, y + 4, 0x404040, false);
-            guiGraphics.drawString(this.font, priceText, textX, y + 16, 0x202020, false);
-            guiGraphics.drawString(this.font, stockText, textX + 70, y + 16, 0x202020, false);
-            y += 28;
-            index++;
         }
     }
 
@@ -168,15 +142,15 @@ public class ShopScreen extends AbstractContainerScreen<ShopMenu> {
 
         Component text;
         if (wallet.isEmpty()) {
-            text = Component.translatable("screen.%s.shop.wallet_missing".formatted(TradeAndOpenMarketsMod.MOD_ID));
+            text = Component.translatable("screen.%s.npcinteractions.wallet_missing".formatted(TradeAndOpenMarketsMod.MOD_ID));
         } else {
             double balance = WalletBalance.get(wallet).totalValue();
             String formatted = CURRENCY_FORMAT.format(balance);
-            text = Component.translatable("screen.%s.shop.wallet_balance".formatted(TradeAndOpenMarketsMod.MOD_ID), formatted);
+            text = Component.translatable("screen.%s.npcinteractions.wallet_balance".formatted(TradeAndOpenMarketsMod.MOD_ID), formatted);
         }
 
         int textWidth = this.font.width(text);
-        int x = this.leftPos + TEXTURE_WIDTH - 18 - textWidth;
+        int x = this.leftPos + SCREEN_WIDTH - 18 - textWidth;
         int y = this.topPos + 19;
         guiGraphics.drawString(this.font, text, x, y, 0x404040, false);
     }
@@ -184,7 +158,7 @@ public class ShopScreen extends AbstractContainerScreen<ShopMenu> {
 
 
     private void renderTraderDetails(GuiGraphics guiGraphics) {
-        @Nullable Merchant trader = this.menu.getTrader();
+        @Nullable Merchant trader = this.menu.getClientVillager();
         if (trader == null) {
             return;
         }
@@ -211,7 +185,7 @@ public class ShopScreen extends AbstractContainerScreen<ShopMenu> {
         int x = this.leftPos + 12;
         int y = this.topPos + 34;
         Component summary = Component.translatable(
-                "screen.%s.shop.offers".formatted(TradeAndOpenMarketsMod.MOD_ID),
+                "screen.%s.npcinteractions.offers".formatted(TradeAndOpenMarketsMod.MOD_ID),
                 offerCount,
                 outOfStock
         );

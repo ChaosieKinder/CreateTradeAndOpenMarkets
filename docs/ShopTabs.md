@@ -4,7 +4,7 @@ Trade & Open Markets exposes its merchant UI through a lightweight tab framework
 
 ## Runtime registration
 
-Every tab implementation provides a [`ShopTabType`](../src/main/java/net/errantchaosie/tradeandopenmarkets/shop/tab/ShopTabType.java) instance. A type advertises a unique `ResourceLocation` identifier and builds concrete [`ShopTab`](../src/main/java/net/errantchaosie/tradeandopenmarkets/shop/tab/ShopTab.java) objects when a shop definition asks for it.
+Every tab implementation provides a [`ShopTabType`](../src/main/java/net/errantchaosie/tradeandopenmarkets/npcinteractions/tabs/ShopTabType.java) instance. A type advertises a unique `ResourceLocation` identifier and builds concrete [`ShopTab`](../src/main/java/net/errantchaosie/tradeandopenmarkets/npcinteractions/tabs/ShopTab.java) objects when a shop definition asks for it.
 
 Custom types must be registered during common setup so the loader can find them later:
 
@@ -24,14 +24,14 @@ The registry lives entirely on the runtime side—registration is just a static 
 
 `ShopTabType#create` receives two helpers:
 
-* [`ShopTabDefinition`](../src/main/java/net/errantchaosie/tradeandopenmarkets/shop/tab/config/ShopTabDefinition.java) – the parsed JSON node for this tab. It exposes the tab type ID, the localized title component, and an arbitrary `JsonObject` payload you can interpret however you like.【F:src/main/java/net/errantchaosie/tradeandopenmarkets/shop/tab/config/ShopTabDefinition.java†L1-L11】
-* [`ShopTabGenerationContext`](../src/main/java/net/errantchaosie/tradeandopenmarkets/shop/tab/ShopTabGenerationContext.java) – contextual information about the current merchant, including the villager (if present), their vanilla offers, world/day info, and a seeded `RandomSource` so tabs can roll deterministic daily inventory.【F:src/main/java/net/errantchaosie/tradeandopenmarkets/shop/tab/ShopTabGenerationContext.java†L1-L18】
+* [`ShopTabDefinition`](../src/main/java/net/errantchaosie/tradeandopenmarkets/npcinteractions/tabs/config/ShopTabDefinition.java) – the parsed JSON node for this tab. It exposes the tab type ID, the localized title component, and an arbitrary `JsonObject` payload you can interpret however you like.【F:src/main/java/net/errantchaosie/tradeandopenmarkets/shop/tab/config/ShopTabDefinition.java†L1-L11】
+* [`ShopTabGenerationContext`](../src/main/java/net/errantchaosie/tradeandopenmarkets/npcinteractions/tabs/ShopTabGenerationContext.java) – contextual information about the current merchant, including the villager (if present), their vanilla offers, world/day info, and a seeded `RandomSource` so tabs can roll deterministic daily inventory.【F:src/main/java/net/errantchaosie/tradeandopenmarkets/shop/tab/ShopTabGenerationContext.java†L1-L18】
 
-A simple implementation might deserialize JSON into `ShopEntry` objects and return a custom `ShopTab` subclass, as the built-in [buy](../src/main/java/net/errantchaosie/tradeandopenmarkets/shop/tab/types/BuyShopTabType.java) and [sell](../src/main/java/net/errantchaosie/tradeandopenmarkets/shop/tab/types/SellShopTabType.java) types do.
+A simple implementation might deserialize JSON into `ShopEntry` objects and return a custom `ShopTab` subclass, as the built-in [buy](../src/main/java/net/errantchaosie/tradeandopenmarkets/npcinteractions/tabs/types/BuyShopTabType.java) and [sell](../src/main/java/net/errantchaosie/tradeandopenmarkets/npcinteractions/tabs/types/SellShopTabType.java) types do.
 
 ## Data-driven profession layouts
 
-Shop layouts are defined through data packs under `data/<namespace>/shops/<profession>.json`. The [`ShopDefinitionLoader`](../src/main/java/net/errantchaosie/tradeandopenmarkets/shop/ShopDefinitionLoader.java) watches this folder, parses each file into tab definitions, and invalidates cached UIs whenever the data pack set changes.【F:src/main/java/net/errantchaosie/tradeandopenmarkets/shop/ShopDefinitionLoader.java†L19-L78】
+Shop layouts are defined through data packs under `data/<namespace>/shops/<profession>.json`. The [`ShopDefinitionLoader`](../src/main/java/net/errantchaosie/tradeandopenmarkets/npcinteractions/ShopDefinitionLoader.java) watches this folder, parses each file into tab definitions, and invalidates cached UIs whenever the data pack set changes.【F:src/main/java/net/errantchaosie/tradeandopenmarkets/shop/ShopDefinitionLoader.java†L19-L78】
 
 Each file accepts:
 

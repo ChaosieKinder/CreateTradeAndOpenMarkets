@@ -1,11 +1,19 @@
-package net.errantchaosie.tradeandopenmarkets.screen.shop;
+package net.errantchaosie.tradeandopenmarkets.screen.villager;
 
 import com.mojang.logging.LogUtils;
-import net.errantchaosie.tradeandopenmarkets.shop.ShopTabManager;
-import net.errantchaosie.tradeandopenmarkets.shop.tab.ShopTab;
+import net.errantchaosie.tradeandopenmarkets.npcinteractions.registry.InteractionTabManager;
+import net.errantchaosie.tradeandopenmarkets.npcinteractions.components.InteractionTab;
+import net.errantchaosie.tradeandopenmarkets.screen.TAOMMenus;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.*;
@@ -13,53 +21,56 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.trading.Merchant;
 import net.minecraft.world.item.trading.MerchantOffers;
 import net.minecraft.world.level.Level;
-import net.neoforged.fml.util.ObfuscationReflectionHelper;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
-import java.lang.reflect.Field;
 import java.util.List;
+import java.util.Objects;
 
 import static net.errantchaosie.tradeandopenmarkets.util.InventoryHelper.*;
 
 /**
  * Lightweight client-side menu wrapper that exposes the merchant information
- * required by {@link ShopScreen} without relying on the vanilla merchant UI
+ * required by {@link VillagerInteractionScreen} without relying on the vanilla merchant UI
  * implementation.
  */
-public class ShopMenu extends AbstractContainerMenu {
+public class VillagerInteractionMenu extends AbstractContainerMenu {
     // THIS YOU HAVE TO DEFINE!
     private static final int TE_INVENTORY_SLOT_COUNT = 0;  // must be the number of slots you have!
     private static final Logger LOGGER = LogUtils.getLogger();
-    private static final Field MERCHANT_FIELD = findMerchantField();
 
-    private final MerchantMenu merchantMenu;
+    private final int villagerEntityId;
+    private final VillagerProfession profession;
+    @Nullable
     private final Inventory playerInventory;
-    private final Level level;
-    private final Component title;
 
     private MerchantOffers offers = new MerchantOffers();
-    @Nullable
-    private Merchant trader;
-    private List<ShopTab> tabs = List.of();
+    private List<InteractionTab> tabs = List.of();
     private int selectedTabIndex;
 
-    public ShopMenu(int containerId, Inventory inventory, FriendlyByteBuf buffer) {
-        super(MenuType.MERCHANT, containerId);
-        this.merchantMenu = null;
-        this.playerInventory = inventory;
-        this.level = playerInventory.player.level();
-        this.title = Component.literal("ERROR OPENING SHOPMENU");
+    // Server side Constructor
+    public VillagerInteractionMenu(int containerId, Inventory playerInventory, Villager villager) {
+        super(TAOMMenus.VILLAGER_INTERACTION_MENU.get(), containerId);
+        this.playerInventory = playerInventory;
+        this.villagerEntityId = villager.getId();
+        this.profession = villager.getVillagerData().getProfession();
+        this.offers = villager.getOffers();
         addPlayerSlots();
         refresh();
     }
 
-    public ShopMenu(int containerId, MerchantMenu merchantMenu, Inventory playerInventory, Component title) {
-        super(MenuType.MERCHANT, containerId);
-        this.merchantMenu = merchantMenu;
+    // --- CLIENT-SIDE CONSTRUCTOR (from FriendlyByteBuf) ---
+    public VillagerInteractionMenu(int containerId, Inventory playerInventory, FriendlyByteBuf buf) {
+        // Client-side MerchantMenu ctor (it’ll create a ClientSideMerchant internally)
+        super(TAOMMenus.VILLAGER_INTERACTION_MENU.get(), containerId);
         this.playerInventory = playerInventory;
-        this.level = playerInventory.player.level();
-        this.title = title;
+        this.villagerEntityId = buf.readVarInt();
+
+        ResourceLocation key = buf.readResourceLocation();
+        VillagerProfession prof = BuiltInRegistries.VILLAGER_PROFESSION.get(key);
+        this.profession = (prof != null) ? prof : VillagerProfession.NONE;
+
+        // ✅ Deserialize offers on client
         addPlayerSlots();
         refresh();
     }
@@ -73,40 +84,34 @@ public class ShopMenu extends AbstractContainerMenu {
                 addSlot(new Slot(this.playerInventory, c + r * 9 + 9,
                         invX + c * 18, invY + r * 18));
         for (int c = 0; c < 9; ++c)
-            addSlot(new Slot(this.playerInventory, c, invX + c * 20 - 7,
-                    invY + 58));
+            addSlot(new Slot(this.playerInventory, c,
+                    invX + c * 20 - 7, invY + 58));
     }
 
     public void refresh() {
-        if (this.merchantMenu != null) {
-            this.offers = this.merchantMenu.getOffers();
-        }
-        this.trader = extractTrader();
-        if (this.level != null) {
-            this.tabs = ShopTabManager.INSTANCE.resolveTabs(this.trader, this.offers, this.level);
+        var level = this.getLevel();
+        var villager = this.getClientVillager();
+        if (level != null) {
+            this.tabs = InteractionTabManager.INSTANCE.resolveTabs(villager, this.offers, level);
         } else {
             this.tabs = List.of();
         }
         setSelectedTabIndex(this.selectedTabIndex);
     }
 
-    public MerchantMenu getMerchantMenu() {
-        return this.merchantMenu;
-    }
-
-    public Inventory getPlayerInventory() {
-        return this.playerInventory;
-    }
-
-    public Component getTitle() {
-        return this.title;
+    @Nullable
+    public Level getLevel() {
+        if( this.playerInventory == null) {
+            return null;
+        }
+        return this.playerInventory.player.level();
     }
 
     public MerchantOffers getOffers() {
         return this.offers;
     }
 
-    public List<ShopTab> getTabs() {
+    public List<InteractionTab> getTabs() {
         return this.tabs;
     }
 
@@ -123,7 +128,7 @@ public class ShopMenu extends AbstractContainerMenu {
     }
 
     @Nullable
-    public ShopTab getSelectedTab() {
+    public InteractionTab getSelectedTab() {
         if (this.tabs.isEmpty()) {
             return null;
         }
@@ -131,34 +136,19 @@ public class ShopMenu extends AbstractContainerMenu {
         return this.tabs.get(index);
     }
 
+    /**
+     * CLIENT SIDE ONLY – uses the synced entityId to find the villager in the client world.
+     */
     @Nullable
-    public Merchant getTrader() {
-        return this.trader;
-    }
-
-    private Merchant extractTrader() {
-        if (MERCHANT_FIELD == null) {
-            return null;
+    public Villager getClientVillager() {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level instanceof ClientLevel clientLevel) {
+            Entity e = clientLevel.getEntity(this.villagerEntityId);
+            if (e instanceof Villager villager) {
+                return villager;
+            }
         }
-
-        try {
-            return (Merchant) MERCHANT_FIELD.get(this.merchantMenu);
-        } catch (IllegalAccessException e) {
-            LOGGER.warn("Unable to access MerchantMenu trader field", e);
-            return null;
-        }
-    }
-
-    @Nullable
-    private static Field findMerchantField() {
-        try {
-            Field field = ObfuscationReflectionHelper.findField(MerchantMenu.class, "trader");
-            field.setAccessible(true);
-            return field;
-        } catch (RuntimeException e) {
-            LOGGER.warn("Unable to locate MerchantMenu trader field; villager context will be unavailable", e);
-            return null;
-        }
+        return null;
     }
 
 
@@ -197,6 +187,7 @@ public class ShopMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return this.merchantMenu != null && this.merchantMenu.stillValid(player);
+        return player.isAlive();
     }
+
 }

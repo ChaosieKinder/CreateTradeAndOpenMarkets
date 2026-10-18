@@ -1,9 +1,12 @@
-package net.errantchaosie.tradeandopenmarkets.shop.tab;
+package net.errantchaosie.tradeandopenmarkets.npcinteractions.trading;
 
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * Represents a stock entry within a shop tab.
+ * Represents a stock entry within a npcinteractions tabs.
  */
 public class ShopEntry {
     public static final int UNLIMITED_STOCK = -1;
@@ -16,6 +19,18 @@ public class ShopEntry {
         this.item = item.copy();
         this.price = price;
         this.stock = stock;
+    }
+
+    public ShopEntry(RegistryFriendlyByteBuf buffer) {
+        this.item = ItemStack.STREAM_CODEC.decode(buffer);
+        this.price = buffer.readInt();
+        this.stock = buffer.readInt();
+    }
+
+    public void writeToStream(RegistryFriendlyByteBuf buffer) {
+        ItemStack.STREAM_CODEC.encode(buffer, this.item);
+        buffer.writeInt(this.price);
+        buffer.writeInt(this.stock);
     }
 
     public ItemStack item() {

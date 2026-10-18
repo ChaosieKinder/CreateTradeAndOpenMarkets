@@ -25,7 +25,7 @@ public class CoinBlockEntityRenderer implements BlockEntityRenderer<CoinBlockEnt
     private static final float COIN_SCALE_HORIZONTAL    = 0.15f;
     // vertical spacing per layer (one coin)
     private static final float COIN_SCALE_VERTICAL      = 0.20f;
-    // render “inside” the block = 0.03125
+    // renderPanel “inside” the block = 0.03125
     private static final float INNER_FLOOR_Z = (Layer_Z / 2);
     // radius for ring #1
     private static final float RING_1_RADIUS            = 0.18f;
@@ -53,7 +53,7 @@ public class CoinBlockEntityRenderer implements BlockEntityRenderer<CoinBlockEnt
 
     @Override
     public boolean shouldRenderOffScreen(CoinBlockEntity be) {
-        return false; // piles are small; no need to render off-screen
+        return false; // piles are small; no need to renderPanel off-screen
     }
 
     @Override
@@ -160,7 +160,7 @@ public class CoinBlockEntityRenderer implements BlockEntityRenderer<CoinBlockEnt
 
     private static final int[] STACK_LIMITS = new int[] { 4, 3, 2, 5 };
     // Turn any full-height stacks into a “thick” stacks
-    // This cuts the amount of jitter/column in favor of decreasing render time for large stacks.
+    // This cuts the amount of jitter/column in favor of decreasing renderPanel time for large stacks.
     private static void thickenFullStacks(@NotNull List<StackVis> stacks, int maxHeight) {
         for (int i = 0; i < stacks.size(); i++) {
             StackVis s = stacks.get(i);

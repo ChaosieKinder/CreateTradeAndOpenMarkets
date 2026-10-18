@@ -13,21 +13,11 @@ import net.errantchaosie.tradeandopenmarkets.item.wallet.WalletTooltip;
 import net.errantchaosie.tradeandopenmarkets.item.wallet.WalletTooltipClient;
 import net.errantchaosie.tradeandopenmarkets.screen.TAOMMenus;
 import net.errantchaosie.tradeandopenmarkets.screen.safe.SafeScreen;
-import net.errantchaosie.tradeandopenmarkets.screen.shop.ShopMenu;
-import net.errantchaosie.tradeandopenmarkets.screen.shop.ShopScreen;
+import net.errantchaosie.tradeandopenmarkets.screen.villager.VillagerInteractionScreen;
 import net.errantchaosie.tradeandopenmarkets.screen.wallet.WalletScreen;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.gui.screens.inventory.MerchantScreen;
-import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.client.renderer.item.ItemProperties;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.ContainerHelper;
-import net.minecraft.world.inventory.ContainerData;
-import net.minecraft.world.inventory.MenuType;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
@@ -35,11 +25,9 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.*;
-import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
 // This class will not load on dedicated servers. Accessing client side code from here is safe.
@@ -48,7 +36,6 @@ import org.slf4j.Logger;
 @EventBusSubscriber(modid = TradeAndOpenMarketsMod.MOD_ID, value = Dist.CLIENT)
 public class TradeAndOpenMarketsModClient {
     public static final Logger LOG = LogUtils.getLogger();
-
 
     public TradeAndOpenMarketsModClient(IEventBus modEventBus, ModContainer container) {
 
@@ -83,6 +70,7 @@ public class TradeAndOpenMarketsModClient {
     public static void registerScreens(RegisterMenuScreensEvent event) {
         event.register(TAOMMenus.SAFE_MENU.get(), SafeScreen::new);
         event.register(TAOMMenus.WALLET_MENU.get(), WalletScreen::new);
+        event.register(TAOMMenus.VILLAGER_INTERACTION_MENU.get(), VillagerInteractionScreen::new);
     }
 
 
@@ -99,27 +87,6 @@ public class TradeAndOpenMarketsModClient {
                     (stack, level, entity, seed) -> CoinStackItem.tier(stack));
         });
     }
-
-    @SubscribeEvent
-    public static void onScreenOpening(ScreenEvent.Opening event) {
-        Screen screen = event.getScreen();
-        if (!(screen instanceof MerchantScreen merchantScreen)) {
-            return;
-        }
-        if (screen instanceof ShopScreen) {
-            return;
-        }
-
-        LocalPlayer player = Minecraft.getInstance().player;
-        if (player == null) {
-            return;
-        }
-
-        ShopMenu shopMenu = new ShopMenu(merchantScreen.getMenu().containerId, merchantScreen.getMenu(), player.getInventory(), merchantScreen.getTitle());
-        ShopScreen shopScreen = new ShopScreen(shopMenu, player.getInventory(), merchantScreen.getTitle());
-        event.setNewScreen(shopScreen);
-    }
-
 
 
 }

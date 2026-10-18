@@ -74,7 +74,7 @@ public class IdentityCardItemRenderer extends BlockEntityWithoutLevelRenderer {
             default -> false;
         };
 
-        // Conditionally render player hands only if we're in first person
+        // Conditionally renderPanel player hands only if we're in first person
         if (isFirstPerson) {
             // Draw player hand
             poseStack.pushPose();
@@ -334,13 +334,13 @@ public class IdentityCardItemRenderer extends BlockEntityWithoutLevelRenderer {
         ps.translate(0, 0, -0.001f);
 
         // World-space size → scale the unit quad
-        // We’ll render a unit quad from (−0.5..+0.5) in X, (0..1) in Y, then scale to width/height
+        // We’ll renderPanel a unit quad from (−0.5..+0.5) in X, (0..1) in Y, then scale to width/height
         ps.scale(width, height, 1f);
 
         // Fullbright + no overlay (so it’s readable regardless of light)
         int overlay = OverlayTexture.NO_OVERLAY;
 
-        // Choose a GUI-ish render type that respects transparency & ignores lighting
+        // Choose a GUI-ish renderPanel type that respects transparency & ignores lighting
         VertexConsumer vc = buffers.getBuffer(RenderType.gui());
 
         // Colors (ARGB)

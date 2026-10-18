@@ -1,12 +1,16 @@
-package net.errantchaosie.tradeandopenmarkets.shop.tab.types;
+package net.errantchaosie.tradeandopenmarkets.npcinteractions.tabs.buy;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.mojang.serialization.JsonOps;
 import net.errantchaosie.tradeandopenmarkets.TradeAndOpenMarketsMod;
-import net.errantchaosie.tradeandopenmarkets.shop.tab.*;
-import net.errantchaosie.tradeandopenmarkets.shop.tab.config.ShopTabDefinition;
+import net.errantchaosie.tradeandopenmarkets.npcinteractions.components.InteractionTab;
+import net.errantchaosie.tradeandopenmarkets.npcinteractions.registry.InteractionTabType;
+import net.errantchaosie.tradeandopenmarkets.npcinteractions.trading.ShopEntry;
+import net.errantchaosie.tradeandopenmarkets.npcinteractions.registry.InteractionTabConfig;
+import net.errantchaosie.tradeandopenmarkets.npcinteractions.registry.InteractionTabGenerationContext;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
@@ -22,7 +26,7 @@ import java.util.List;
 import java.util.Optional;
 import org.jetbrains.annotations.Nullable;
 
-public class BuyShopTabType implements ShopTabType {
+public class BuyShopTabType implements InteractionTabType {
     public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(TradeAndOpenMarketsMod.MOD_ID, "buy");
     private static final Logger LOGGER = TradeAndOpenMarketsMod.LOGGER;
 
@@ -32,35 +36,40 @@ public class BuyShopTabType implements ShopTabType {
     }
 
     @Override
-    public ShopTab create(ShopTabDefinition definition, ShopTabGenerationContext context) {
-        List<ShopEntry> entries = readEntries(definition, context.random());
-        List<ShopEntry> filtered = applyLevelLimit(entries, context.merchant());
-        return new BuyShopTab(id(), definition.title(), filtered);
+    public InteractionTab create(InteractionTabConfig definition, InteractionTabGenerationContext context) {
+        List<ShopEntry> entries = readEntries(definition, context.getRandom());
+        List<ShopEntry> filtered = applyLevelLimit(entries, context.getMerchant());
+        return new BuyShopTab(id(), definition.getTitle(), filtered);
     }
 
-    private List<ShopEntry> readEntries(ShopTabDefinition definition, RandomSource random) {
-        JsonObject data = definition.data();
+    @Override
+    public InteractionTab readFromBuffer(RegistryFriendlyByteBuf buffer) {
+        return new BuyShopTab(id(), buffer);
+    }
+
+    private List<ShopEntry> readEntries(InteractionTabConfig definition, RandomSource random) {
+        JsonObject data = definition.getRawData();
         JsonArray items = data.has("entries") ? data.getAsJsonArray("entries") : new JsonArray();
         List<ShopEntry> results = new ArrayList<>();
         for (JsonElement element : items) {
             if (!element.isJsonObject()) {
-                LOGGER.warn("Invalid entry in buy tab '{}': expected object but got {}", definition.type(), element);
+                LOGGER.warn("Invalid entry in buy tabs '{}': expected object but got {}", definition.getType(), element);
                 continue;
             }
             JsonObject entry = element.getAsJsonObject();
             JsonElement itemElement = entry.get("item");
             if (itemElement == null) {
-                LOGGER.warn("Missing 'item' field for buy tab entry in {}", definition.type());
+                LOGGER.warn("Missing 'item' field for buy tabs entry in {}", definition.getType());
                 continue;
             }
             Optional<ItemStack> stackOpt = ItemStack.CODEC.parse(JsonOps.INSTANCE, itemElement)
-                    .resultOrPartial(message -> LOGGER.warn("Failed to parse buy tab item: {}", message));
+                    .resultOrPartial(message -> LOGGER.warn("Failed to parse buy tabs item: {}", message));
             if (stackOpt.isEmpty()) {
                 continue;
             }
             ItemStack stack = stackOpt.get();
             int price = entry.has("price") ? entry.get("price").getAsInt() : 0;
-            int stock = resolveStock(definition.type(), entry, random);
+            int stock = resolveStock(definition.getType(), entry, random);
             results.add(new ShopEntry(stack, price, stock));
         }
         return results;
@@ -107,18 +116,18 @@ public class BuyShopTabType implements ShopTabType {
         int totalWeight = 0;
         for (JsonElement optionElement : options) {
             if (!optionElement.isJsonObject()) {
-                LOGGER.warn("Ignoring non-object stock option in tab '{}': {}", tabId, optionElement);
+                LOGGER.warn("Ignoring non-object stock option in tabs '{}': {}", tabId, optionElement);
                 continue;
             }
             JsonObject option = optionElement.getAsJsonObject();
             if (!option.has("value")) {
-                LOGGER.warn("Ignoring stock option missing 'value' in tab '{}': {}", tabId, option);
+                LOGGER.warn("Ignoring stock option missing 'value' in tabs '{}': {}", tabId, option);
                 continue;
             }
             int value = option.get("value").getAsInt();
             int weight = option.has("weight") ? Math.max(0, option.get("weight").getAsInt()) : 1;
             if (weight <= 0) {
-                LOGGER.warn("Ignoring stock option with non-positive weight in tab '{}': {}", tabId, option);
+                LOGGER.warn("Ignoring stock option with non-positive weight in tabs '{}': {}", tabId, option);
                 continue;
             }
             int plusOrMinus = option.has("plus_or_minus") ? Math.max(0, option.get("plus_or_minus").getAsInt()) : 0;
@@ -126,7 +135,7 @@ public class BuyShopTabType implements ShopTabType {
             totalWeight += weight;
         }
         if (parsedOptions.isEmpty() || totalWeight <= 0) {
-            LOGGER.warn("No valid stock options found for tab '{}'", tabId);
+            LOGGER.warn("No valid stock options found for tabs '{}'", tabId);
             return ShopEntry.UNLIMITED_STOCK;
         }
         int weightSelection = random.nextInt(totalWeight);
