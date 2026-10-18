@@ -165,6 +165,11 @@ dependencies {
     runtimeOnly("mezz.jei:jei-${minecraft_version_major}-neoforge:${jei_version}")
     // compile against curios for optional curios support
     compileOnly("top.theillusivec4.curios:curios-neoforge:${curios_version}:api")
+    // Curios in every dev run and gametest, unless -PnoCurios: CI runs the gametests both ways,
+    // which is what keeps it optional (AGENTS §5)
+    if (!project.hasProperty('noCurios')) {
+        localRuntime("top.theillusivec4.curios:curios-neoforge:${curios_version}")
+    }
 
     testImplementation(platform("org.junit:junit-bom:${junit_version}"))
     testImplementation("org.junit.jupiter:junit-jupiter")

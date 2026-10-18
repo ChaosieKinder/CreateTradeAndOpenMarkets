@@ -24,5 +24,8 @@ jobs:
       - name: Build and unit test
         run: ./gradlew build
 
-      - name: Game tests
+      - name: Game tests (with Curios)
         run: ./gradlew runGameTestServer
+
+      - name: Game tests (without optional mods)
+        run: ./gradlew runGameTestServer -PnoCurios
