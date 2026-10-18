@@ -1,6 +1,7 @@
 package com.errantmc.markets.npcinteractions.trading;
 
 import com.errantmc.markets.Config;
+import com.errantmc.markets.economy.Account;
 import net.minecraft.world.entity.npc.Villager;
 
 /**
@@ -30,17 +31,15 @@ public final class VillagerBalance {
         return Config.STARTING_BALANCE.get() + levelsAboveNovice * Config.STARTING_BALANCE_PER_LEVEL.get();
     }
 
-    public static void deposit(Villager villager, long copperBits) {
-        if (copperBits < 0) throw new IllegalArgumentException("negative deposit " + copperBits);
-        villager.setData(TradeAttachments.BALANCE, get(villager) + copperBits);
+    public static void set(Villager villager, long copperBits) {
+        if (copperBits < 0) throw new IllegalArgumentException("negative balance " + copperBits);
+        villager.setData(TradeAttachments.BALANCE, copperBits);
     }
 
-    /** Takes {@code copperBits} if the villager has them; otherwise takes nothing and says so. */
-    public static boolean withdraw(Villager villager, long copperBits) {
-        if (copperBits < 0) throw new IllegalArgumentException("negative withdrawal " + copperBits);
-        long balance = get(villager);
-        if (balance < copperBits) return false;
-        villager.setData(TradeAttachments.BALANCE, balance - copperBits);
-        return true;
+    public static Account account(Villager villager) {
+        return new Account() {
+            @Override public long balance() { return get(villager); }
+            @Override public void set(long copperBits) { VillagerBalance.set(villager, copperBits); }
+        };
     }
 }

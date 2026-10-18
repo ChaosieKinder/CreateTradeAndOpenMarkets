@@ -5,14 +5,19 @@ import com.errantmc.markets.ErrantTrade;
 import com.errantmc.markets.component.Purses;
 import com.errantmc.markets.domain.CoinDenomination;
 import com.errantmc.markets.domain.Purse;
+import com.errantmc.markets.economy.Treasuries;
 import com.errantmc.markets.item.PlayerMoney;
 import com.errantmc.markets.item.TradeItems;
 import com.errantmc.markets.npcinteractions.trading.TradeAttachments;
 import com.errantmc.markets.npcinteractions.trading.VillagerBalance;
 import com.errantmc.markets.screen.villager.VillagerInteractionMenu;
+import com.errantmc.markets.villager.TradeVillagers;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.GlobalPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -123,8 +128,134 @@ public final class EconomyGameTests {
         helper.succeed();
     }
 
+    // ---------- the village treasury (economy step 2) ----------
+
+    @GameTest(template = ARENA)
+    public static void aVillagerInAVillagePaysTheFeeOnASale(GameTestHelper helper) {
+        Villager farmer = VillagerInteractionGameTests.farmer(helper);
+        GlobalPos village = joinVillage(helper, farmer);
+        ServerPlayer player = survivalPlayer(helper);
+        player.getInventory().setItem(3, new ItemStack(TradeItems.COIN_SILVER_CROWN.get(), 1));
+        VillagerInteractionMenu menu = TradingGameTests.open(helper, player, farmer);
+        if (menu == null) return;
+        long till = VillagerBalance.get(farmer), treasury = treasury(helper, village);
+        long totalBefore = total(player, farmer) + treasury;
+
+        menu.clickMenuButton(player, VillagerInteractionMenu.tradeButton(BUY, BREAD));
+
+        long fee = 100 * Config.TRADE_FEE_PERCENT.get() / 100;
+        assertCount(helper, "the till's gain, less the fee", 100 - fee, VillagerBalance.get(farmer) - till);
+        assertCount(helper, "the treasury's fee", fee, treasury(helper, village) - treasury);
+        assertCount(helper, "money in total", totalBefore, total(player, farmer) + treasury(helper, village));
+        helper.succeed();
+    }
+
+    @GameTest(template = ARENA)
+    public static void aVillagerInAVillagePaysTheFeeWhenItBuys(GameTestHelper helper) {
+        Villager farmer = VillagerInteractionGameTests.farmer(helper);
+        GlobalPos village = joinVillage(helper, farmer);
+        ServerPlayer player = survivalPlayer(helper);
+        player.getInventory().setItem(3, new ItemStack(Items.WHEAT, 20));
+        VillagerInteractionMenu menu = TradingGameTests.open(helper, player, farmer);
+        if (menu == null) return;
+        long till = VillagerBalance.get(farmer), treasury = treasury(helper, village);
+        long totalBefore = total(player, farmer) + treasury;
+
+        menu.clickMenuButton(player, VillagerInteractionMenu.tradeButton(SELL, WHEAT));
+
+        long fee = 100 * Config.TRADE_FEE_PERCENT.get() / 100;
+        assertCount(helper, "paid to the player", 100, PlayerMoney.loose(player).totalValue());
+        assertCount(helper, "the till's loss, with the fee", 100 + fee, till - VillagerBalance.get(farmer));
+        assertCount(helper, "money in total", totalBefore, total(player, farmer) + treasury(helper, village));
+        helper.succeed();
+    }
+
+    /** Selling to a villager in a village costs it the price and the fee; it refuses if it has only the price. */
+    @GameTest(template = ARENA)
+    public static void theFeeCanLeaveAVillagerShort(GameTestHelper helper) {
+        Villager farmer = VillagerInteractionGameTests.farmer(helper);
+        joinVillage(helper, farmer);
+        farmer.setData(TradeAttachments.BALANCE, 100L);
+        ServerPlayer player = survivalPlayer(helper);
+        player.getInventory().setItem(3, new ItemStack(Items.WHEAT, 20));
+        VillagerInteractionMenu menu = TradingGameTests.open(helper, player, farmer);
+        if (menu == null) return;
+
+        menu.clickMenuButton(player, VillagerInteractionMenu.tradeButton(SELL, WHEAT));
+
+        if (Config.TRADE_FEE_PERCENT.get() > 0) {
+            assertCount(helper, "wheat kept", 20, TradingGameTests.count(player, Items.WHEAT));
+            assertCount(helper, "the till", 100, VillagerBalance.get(farmer));
+        }
+        helper.succeed();
+    }
+
+    /** A village's banker trades from the treasury, and exchanging coins for coins makes no money. */
+    @GameTest(template = ARENA)
+    public static void aVillageBankerTradesFromTheTreasury(GameTestHelper helper) {
+        Villager banker = banker(helper);
+        GlobalPos village = joinVillage(helper, banker);
+        ServerPlayer player = survivalPlayer(helper);
+        player.getInventory().setItem(3, new ItemStack(TradeItems.COIN_SILVER_CROWN.get(), 5)); // exactly 500, no change
+        VillagerInteractionMenu menu = TradingGameTests.open(helper, player, banker);
+        if (menu == null) return;
+        if (!menu.tillIsTreasury()) helper.fail("the banker's till should be the treasury");
+        long treasury = treasury(helper, village);
+        long tillBefore = VillagerBalance.get(banker);
+        long playerBefore = playerMoney(player);
+
+        menu.clickMenuButton(player, VillagerInteractionMenu.tradeButton(BUY, GOLD_MARK));
+
+        assertCount(helper, "gold marks bought", 1, TradingGameTests.count(player, TradeItems.COIN_GOLD_MARK.get()));
+        assertCount(helper, "the player's money", playerBefore, playerMoney(player));
+        assertCount(helper, "the treasury (money for money)", treasury, treasury(helper, village));
+        assertCount(helper, "the banker's own till, untouched", tillBefore, VillagerBalance.get(banker));
+        assertCount(helper, "what the menu shows", treasury, menu.getVillagerBalance());
+        helper.succeed();
+    }
+
+    /** Out of a village, the banker uses its own till, and the exchange still makes no money. */
+    @GameTest(template = ARENA)
+    public static void aBankerOutsideAVillageExchangesFromItsTill(GameTestHelper helper) {
+        Villager banker = banker(helper);
+        ServerPlayer player = survivalPlayer(helper);
+        player.getInventory().setItem(3, new ItemStack(TradeItems.COIN_COPPER_BIT.get(), 1));
+        VillagerInteractionMenu menu = TradingGameTests.open(helper, player, banker);
+        if (menu == null) return;
+        if (menu.tillIsTreasury()) helper.fail("a banker in no village has no treasury");
+        long totalBefore = total(player, banker);
+
+        menu.clickMenuButton(player, VillagerInteractionMenu.tradeButton(SELL, COPPER_BIT));
+
+        assertCount(helper, "money in total", totalBefore, total(player, banker));
+        helper.succeed();
+    }
+
+    private static final int GOLD_MARK = 1, COPPER_BIT = 0;
+
+    /** Gives the villager a meeting point of its own, so each test's village is its own. */
+    static GlobalPos joinVillage(GameTestHelper helper, Villager villager) {
+        GlobalPos village = GlobalPos.of(helper.getLevel().dimension(), helper.absolutePos(new BlockPos(1, 1, 1)));
+        villager.getBrain().setMemory(MemoryModuleType.MEETING_POINT, village);
+        return village;
+    }
+
+    static long treasury(GameTestHelper helper, GlobalPos village) {
+        return Treasuries.get(helper.getLevel().getServer()).balance(village);
+    }
+
+    static Villager banker(GameTestHelper helper) {
+        Villager villager = VillagerInteractionGameTests.farmer(helper);
+        villager.setVillagerData(villager.getVillagerData().setProfession(TradeVillagers.BANKER_PROFESSION.value()));
+        return villager;
+    }
+
+    static long playerMoney(ServerPlayer player) {
+        return PlayerMoney.loose(player).totalValue() + PlayerMoney.wallet(player).totalValue();
+    }
+
     /** All the money the player and the villager hold: coins, wallet and till. */
     static long total(ServerPlayer player, Villager villager) {
-        return PlayerMoney.loose(player).totalValue() + PlayerMoney.wallet(player).totalValue() + VillagerBalance.get(villager);
+        return playerMoney(player) + VillagerBalance.get(villager);
     }
 }

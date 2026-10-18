@@ -3,6 +3,8 @@ package com.errantmc.markets.npcinteractions.trading;
 import com.errantmc.markets.Config;
 import com.errantmc.markets.domain.Payment;
 import com.errantmc.markets.domain.TradeXp;
+import com.errantmc.markets.economy.Account;
+import com.errantmc.markets.economy.Tills;
 import com.errantmc.markets.item.PlayerMoney;
 import com.errantmc.markets.npcinteractions.tabs.buy.BuyShopTab;
 import com.errantmc.markets.npcinteractions.tabs.sell.SellShopTab;
@@ -23,12 +25,13 @@ import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Predicate;
 
 /**
  * Buying from and selling to a villager's shop, on the server. Every check comes before anything
- * moves, so a refused trade changes nothing. Money moves between the player and the villager's
- * till ({@link VillagerBalance}); a trade neither creates nor destroys it.
+ * moves, so a refused trade changes nothing. Money moves between the player, the villager's till
+ * ({@link Tills}) and its village's treasury; a trade neither creates nor destroys it.
  */
 public final class ShopTrades {
     private static final Logger LOG = LogUtils.getLogger();
@@ -53,6 +56,9 @@ public final class ShopTrades {
         if (!has(player, extra, entry.extraCost().getCount())) return Result.MISSING_ITEMS;
         var planned = Payment.plan(PlayerMoney.loose(player), PlayerMoney.wallet(player), entry.price());
         if (planned.isEmpty()) return Result.CANNOT_AFFORD;
+        // The till gains the price, less any money in the goods (the banker sells coins), less the fee
+        Ledger ledger = Ledger.of(villager, entry.price() - PlayerMoney.worth(entry.item()), entry.price());
+        if (!ledger.affordable()) return Result.VILLAGER_CANNOT_AFFORD;
 
         Payment payment = planned.get();
         PlayerMoney.takeLoose(player, payment.fromLoose());
@@ -60,7 +66,7 @@ public final class ShopTrades {
         PlayerMoney.give(player, payment.change());
         take(player, extra, entry.extraCost().getCount());
         PlayerMoney.giveItem(player, entry.item().copy());
-        VillagerBalance.deposit(villager, entry.price()); // what the player paid, less change, is the price
+        ledger.post();
         entry.decreaseStock(1);
         if (offer != null) offer.increaseUses();
         progress(player, villager, entry.price(), entry.item());
@@ -77,17 +83,39 @@ public final class ShopTrades {
         if (!has(player, wanted, entry.item().getCount()) || !has(player, extra, entry.extraCost().getCount())) {
             return Result.MISSING_ITEMS;
         }
-        // The villager pays from its till; it buys only while it can afford to (economy §3)
-        if (!VillagerBalance.withdraw(villager, entry.price())) return Result.VILLAGER_CANNOT_AFFORD;
+        // The villager pays from its till, and the fee; it buys only while it can afford to (economy §3)
+        Ledger ledger = Ledger.of(villager, PlayerMoney.worth(entry.item()) - entry.price(), entry.price());
+        if (!ledger.affordable()) return Result.VILLAGER_CANNOT_AFFORD;
 
         take(player, wanted, entry.item().getCount());
         take(player, extra, entry.extraCost().getCount());
         PlayerMoney.give(player, Payment.change(entry.price()));
+        ledger.post();
         entry.decreaseStock(1);
         tab.recordBuyback(entry.item(), 1);
         if (offer != null) offer.increaseUses();
         progress(player, villager, entry.price(), entry.item());
         return Result.DONE;
+    }
+
+    /**
+     * A trade's effect on the villager's money: {@code change} to its till, then the fee from the
+     * till to the village treasury. Checked before anything moves, posted after.
+     */
+    private record Ledger(Account till, Optional<Account> treasury, long change, long fee) {
+        static Ledger of(Villager villager, long change, long price) {
+            long fee = Tills.fee(villager, price);
+            return new Ledger(Tills.till(villager), fee > 0 ? Tills.treasury(villager) : Optional.empty(), change, fee);
+        }
+
+        boolean affordable() {
+            return this.till.balance() + this.change - this.fee >= 0;
+        }
+
+        void post() {
+            this.till.set(this.till.balance() + this.change - this.fee);
+            this.treasury.ifPresent(t -> t.set(t.balance() + this.fee));
+        }
     }
 
     /** The live vanilla offer an entry was converted from, if it still exists. */

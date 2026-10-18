@@ -71,6 +71,21 @@ public class Config {
             .comment("Added to the starting balance for each level above novice (a master gets four times this more).")
             .defineInRange("startingBalancePerLevel", 1000L, 0L, Long.MAX_VALUE / 8);
 
+    public static final ModConfigSpec.LongValue TREASURY_STARTING_BALANCE = BUILDER
+            .comment(
+                    "What a village's treasury holds when it is first used, in copper bits. A village is the",
+                    "bell its villagers meet at; its banker trades from the treasury. 10000 copper bits is $100.00."
+            )
+            .defineInRange("treasuryStartingBalance", 10000L, 0L, Long.MAX_VALUE / 2);
+
+    public static final ModConfigSpec.IntValue TRADE_FEE_PERCENT = BUILDER
+            .comment(
+                    "The share of every trade's price a villager pays into its village's treasury, rounded down.",
+                    "A villager in no village pays none, nor does the banker, who trades from the treasury.",
+                    "When a villager buys from a player, it must afford the price and the fee."
+            )
+            .defineInRange("tradeFeePercent", 5, 0, 100);
+
     static {
         BUILDER.pop();
     }

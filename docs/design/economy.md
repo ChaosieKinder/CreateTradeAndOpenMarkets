@@ -1,6 +1,6 @@
 # The economy: NPC wallets and where money comes from
 
-**Status: decided 18 Oct; step 1 (NPC balances) built 18 Oct, steps 2–6 not yet.** §1–§5 describe how shops work today, the problem NPC
+**Status: decided 18 Oct; steps 1 (NPC balances) and 2 (treasuries) built 18 Oct, 3–6 not yet.** §1–§5 describe how shops work today, the problem NPC
 wallets solve, and the options; §6 records what the author chose, and §7 the model that follows
 from it. Build order in §8.
 
@@ -157,6 +157,17 @@ In rough order of how much each depends on the ones before:
    in the shop's header and in the sell tooltips; `EconomyGameTests` covers conservation, refusal
    and buying until the till runs dry.
 2. **The treasury.** Villages by meeting point, the treasury as SavedData, trade fees into it.
+   **Built 18 Oct** (`economy.Treasuries`, `economy.Tills`):
+   - A treasury is created with `treasuryStartingBalance` (10000 bits, $100) when first asked for.
+   - Every trade by a villager in a village pays `tradeFeePercent` (5) of the price, rounded down,
+     from its till to the treasury. Buying from a player, the villager must afford price and fee.
+   - **A village's banker trades from the treasury itself**, and pays no fee into it; its shop
+     header reads *Treasury* instead of *Till*. This is how "the banker manages it" is built for
+     now (implementer's choice, 18 Oct; revisit when bank accounts arrive).
+   - **Goods that are money** (coins, a coin stack's or wallet's purse; `PlayerMoney.worth`)
+     count against the price, so the banker's coin exchange moves no money into or out of a till.
+     Without it, selling a 500-bit gold mark for 500 bits would have added 500 to the till.
+   - `EconomyGameTests` sums player, till and treasury around each trade.
 3. **The daily settlement.** Treasury income, wages, upkeep and restocking, lazily, with their
    config.
 4. **The money-supply command**, so every later change can be measured and the defaults tuned.

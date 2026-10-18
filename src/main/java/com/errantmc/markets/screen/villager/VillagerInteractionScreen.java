@@ -78,8 +78,9 @@ public class VillagerInteractionScreen extends AbstractContainerScreen<VillagerI
         Component title = this.villager != null ? this.villager.getDisplayName() : this.getTitle();
         guiGraphics.drawString(this.font, title, this.leftPos + 18, this.topPos + 19, 0x404040, false);
         renderWalletBalance(guiGraphics);
-        // The villager's till, centred between its name and the player's wallet
-        Component till = Component.translatable("screen.erranttrade.npcinteractions.till", MoneyFormat.format(this.menu.getVillagerBalance()));
+        // The villager's till (a village banker's is the treasury), centred between its name and the wallet
+        String tillKey = this.menu.tillIsTreasury() ? "screen.erranttrade.npcinteractions.treasury" : "screen.erranttrade.npcinteractions.till";
+        Component till = Component.translatable(tillKey, MoneyFormat.format(this.menu.getVillagerBalance()));
         guiGraphics.drawString(this.font, till, this.leftPos + (SCREEN_WIDTH - this.font.width(till)) / 2, this.topPos + 19, 0x404040, false);
     }
 

@@ -193,6 +193,16 @@ Still open (details in [trading §8](design/trading.md#8-not-yet)):
 - [ ] **`docs/ShopTabs.md` describes an older shape**: `ShopTabType`, `ShopTabRegistry`,
       `ShopDefinitionLoader`, `data/<ns>/shops/`, all renamed since.
 - [ ] Prices, stock rolls and buybacks could move into the domain, as payment and experience did.
+- [x] **Stock ranges were ignored** (found 18 Oct by the economy work's logs). A shop's
+      `{"min_inclusive": 2, "max_inclusive": 6}` went to `IntProvider.CODEC`, which wants a
+      `"type"`, so it failed with a warning and the entry's stock was unlimited: the farmer's
+      second bread line and the banker's gold marks never sold out. Both tab types read the
+      shorthand as a uniform range now. `TradingGameTests.aStockRangeRollsWithinItsBounds`.
+- [ ] The two tab types (`BuyShopTabType`, `SellShopTabType`) duplicate their stock parsing
+      word for word; one shared reader (or the domain) would have needed the fix once.
+- [ ] The sell tab's "villager can't afford" colouring compares the till with the price only; in
+      a village the fee is due as well, so a till just short by the fee shows white and the
+      server refuses. The server is right; the screen could be told the fee.
 - [ ] The second checkout still holds its uncommitted changes and a branch
       `wip/npcinteractions-snapshot` created for the merge. Retire that checkout so the two cannot
       diverge again.

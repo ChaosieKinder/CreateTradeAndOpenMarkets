@@ -74,6 +74,16 @@ public final class PlayerMoney {
         }
     }
 
+    /**
+     * The money in {@code stack} itself, in copper bits: coins, or the purse of a coin stack or a
+     * wallet. Zero for anything else. A shop selling coins trades money for money, and its till
+     * must account for that.
+     */
+    public static long worth(ItemStack stack) {
+        long each = stack.getItem() instanceof CoinItem coin ? coin.denom().value : Purses.get(stack).totalValue();
+        return each * stack.getCount();
+    }
+
     /** Into the inventory, or dropped at the player's feet if it does not fit. */
     public static void giveItem(Player player, ItemStack stack) {
         if (!player.getInventory().add(stack) && !stack.isEmpty()) player.drop(stack, false);

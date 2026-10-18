@@ -7,7 +7,7 @@ import com.errantmc.markets.network.message.InteractionTabsSyncMessage;
 import com.errantmc.markets.npcinteractions.tabs.buy.BuyShopTab;
 import com.errantmc.markets.npcinteractions.tabs.sell.SellShopTab;
 import com.errantmc.markets.npcinteractions.trading.ShopTrades;
-import com.errantmc.markets.npcinteractions.trading.VillagerBalance;
+import com.errantmc.markets.economy.Tills;
 import com.errantmc.markets.screen.TradeMenus;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -47,6 +47,8 @@ public class VillagerInteractionMenu extends AbstractContainerMenu {
     private int selectedTabIndex;
     /** Client side: the villager's till as the server last sent it. The server reads the villager. */
     private long clientBalance;
+    /** Whether the till is the village treasury (a village's banker). Fixed while the menu is open. */
+    private final boolean tillIsTreasury;
 
     /** Server side, opened by {@code VillagerInteractionEvents}. */
     public VillagerInteractionMenu(int containerId, Inventory playerInventory, Villager villager, List<InteractionTab> tabs) {
@@ -56,6 +58,7 @@ public class VillagerInteractionMenu extends AbstractContainerMenu {
         this.villagerEntityId = villager.getId();
         this.profession = villager.getVillagerData().getProfession();
         this.tabs = List.copyOf(tabs);
+        this.tillIsTreasury = Tills.tradesFromTreasury(villager);
         addPlayerSlots();
     }
 
@@ -69,6 +72,7 @@ public class VillagerInteractionMenu extends AbstractContainerMenu {
         this.profession = prof != null ? prof : VillagerProfession.NONE;
         this.tabs = InteractionTabManager.INSTANCE.readFromStream(buf);
         this.clientBalance = buf.readVarLong();
+        this.tillIsTreasury = buf.readBoolean();
         addPlayerSlots();
     }
 
@@ -104,7 +108,11 @@ public class VillagerInteractionMenu extends AbstractContainerMenu {
 
     /** The villager's till, in copper bits. */
     public long getVillagerBalance() {
-        return this.villager != null ? VillagerBalance.get(this.villager) : this.clientBalance;
+        return this.villager != null ? Tills.till(this.villager).balance() : this.clientBalance;
+    }
+
+    public boolean tillIsTreasury() {
+        return this.tillIsTreasury;
     }
 
     public int getSelectedTabIndex() {
@@ -161,7 +169,7 @@ public class VillagerInteractionMenu extends AbstractContainerMenu {
         // Stock and vanilla offer uses changed: saved on the villager, then the client is sent the tabs again
         InteractionTabManager.INSTANCE.saveStock(this.villager, this.tabs, getLevel());
         this.tabs = InteractionTabManager.INSTANCE.resolveTabs(this.villager, this.villager.getOffers(), getLevel());
-        TradeNetwork.sendTo(serverPlayer, new InteractionTabsSyncMessage(this.containerId, this.tabs, VillagerBalance.get(this.villager)));
+        TradeNetwork.sendTo(serverPlayer, new InteractionTabsSyncMessage(this.containerId, this.tabs, getVillagerBalance()));
         broadcastChanges();
         return true;
     }
