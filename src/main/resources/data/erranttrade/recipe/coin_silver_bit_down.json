@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "erranttrade:coin_silver_crown"
+    }
+  ],
+  "result": {
+    "count": 5,
+    "id": "erranttrade:coin_silver_bit"
+  }
+}

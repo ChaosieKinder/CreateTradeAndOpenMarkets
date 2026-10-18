@@ -1,0 +1,8 @@
+{
+  "coin_drop": {
+    "subtitle": "sounds.erranttrade.coin_drop",
+    "sounds": [
+      "erranttrade:coin_drop"
+    ]
+  }
+}

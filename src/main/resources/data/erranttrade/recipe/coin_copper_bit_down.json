@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "erranttrade:coin_copper_shard"
+    }
+  ],
+  "result": {
+    "count": 5,
+    "id": "erranttrade:coin_copper_bit"
+  }
+}

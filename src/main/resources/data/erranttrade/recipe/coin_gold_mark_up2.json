@@ -1,0 +1,37 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "erranttrade:coin_silver_crown"
+    },
+    {
+      "item": "erranttrade:coin_silver_crown"
+    },
+    {
+      "item": "erranttrade:coin_silver_crown"
+    },
+    {
+      "item": "erranttrade:coin_silver_crown"
+    },
+    {
+      "item": "erranttrade:coin_silver_bit"
+    },
+    {
+      "item": "erranttrade:coin_silver_bit"
+    },
+    {
+      "item": "erranttrade:coin_silver_bit"
+    },
+    {
+      "item": "erranttrade:coin_silver_bit"
+    },
+    {
+      "item": "erranttrade:coin_silver_bit"
+    }
+  ],
+  "result": {
+    "count": 1,
+    "id": "erranttrade:coin_gold_mark"
+  }
+}
