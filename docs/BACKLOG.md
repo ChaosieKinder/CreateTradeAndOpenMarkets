@@ -203,6 +203,9 @@ Still open (details in [trading §8](design/trading.md#8-not-yet)):
 - [ ] The sell tab's "villager can't afford" colouring compares the till with the price only; in
       a village the fee is due as well, so a till just short by the fee shows white and the
       server refuses. The server is right; the screen could be told the fee.
+- [ ] A click settles the villager's day before trading, but trades at the price the shop was
+      last resolved at. When a day turns while the shop is open, that one trade uses yesterday's
+      price (and yesterday's stock); the next is right. Re-resolve after settling if it matters.
 - [ ] The second checkout still holds its uncommitted changes and a branch
       `wip/npcinteractions-snapshot` created for the merge. Retire that checkout so the two cannot
       diverge again.

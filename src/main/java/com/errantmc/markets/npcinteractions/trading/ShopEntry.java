@@ -13,7 +13,8 @@ public class ShopEntry {
     public static final int NO_OFFER = -1;
 
     private final ItemStack item;
-    private final int price;
+    /** Set again by dynamic pricing each time the shop is resolved (InteractionTabManager). */
+    private int price;
     private int stock;
     /** Items the player must also hand over, as a vanilla trade's second cost (the librarian's book). */
     private final ItemStack extraCost;
@@ -55,6 +56,10 @@ public class ShopEntry {
     /** In copper bits. */
     public int price() {
         return this.price;
+    }
+
+    public void setPrice(int price) {
+        this.price = Math.max(0, price);
     }
 
     public int stock() {

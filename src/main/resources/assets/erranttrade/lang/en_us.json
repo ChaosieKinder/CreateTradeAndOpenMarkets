@@ -80,6 +80,9 @@
   "erranttrade.configuration.upkeepFloor": "Balance free of upkeep (copper bits)",
   "erranttrade.configuration.restockCostPercent": "Restocking cost (% of the sale price)",
   "erranttrade.configuration.maxSettlementDays": "Most days settled at once",
+  "erranttrade.configuration.scarcityPercentPerSale": "Price rise per unit sold today (%)",
+  "erranttrade.configuration.scarcityMaxPercent": "Largest price rise (%)",
+  "erranttrade.configuration.shortTillFloorPercent": "Lowest price a short till pays (%)",
   "screen.erranttrade.npcinteractions.offers": "%s offers, %s sold out",
   "screen.erranttrade.npcinteractions.wallet_balance": "Wallet Balance: %s",
   "screen.erranttrade.npcinteractions.wallet_missing": "Wallet not found"

@@ -1,6 +1,6 @@
 # The economy: NPC wallets and where money comes from
 
-**Status: decided 18 Oct; steps 1–4 (balances, treasuries, the daily settlement, measuring) built 18 Oct, 5–6 not yet.** §1–§5 describe how shops work today, the problem NPC
+**Status: decided 18 Oct; steps 1–5 (balances, treasuries, the daily settlement, measuring, dynamic prices) built 18 Oct; step 6 not yet.** §1–§5 describe how shops work today, the problem NPC
 wallets solve, and the options; §6 records what the author chose, and §7 the model that follows
 from it. Build order in §8.
 
@@ -25,7 +25,8 @@ What this cannot express yet:
 - **Every villager of a profession sells the same list**, whatever its level. A master farmer and
   a novice offer the same goods; only stock differs.
 - **Prices are fixed.** Nothing moves them: not supply, not demand, not reputation (for defined
-  shops), not how much money is around.
+  shops), not how much money is around. *(Step 5 moves them with stock and the till; reputation
+  still applies to converted offers only.)*
 - **A villager buys while its stock lasts**, with money it does not have. *(Fixed by step 1: a
   villager now pays from its till, `VillagerBalance`, and the farmer's sell tab has no stock caps.)*
 
@@ -189,5 +190,13 @@ In rough order of how much each depends on the ones before:
    and destroyed since the world began and today (`economy.MoneyLedger`, world SavedData). Its
    result is the total in whole dollars, for command blocks. Not counted: chests, coin piles,
    offline players, unloaded villagers, a second wallet; so the total is a floor.
-5. **Dynamic prices**, as a domain function of stock and balance.
+5. **Dynamic prices**, as a domain function of stock and balance. **Built 18 Oct**
+   (`domain.Pricing`, applied when a shop is resolved, so after every trade):
+   - **Scarcity:** a defined shop's good costs `scarcityPercentPerSale` (5%) more for each of
+     the day's rolled stock sold, up to `scarcityMaxPercent` (+50%). Converted vanilla offers are
+     left to vanilla's own demand pricing.
+   - **A short till:** below its starting balance, a villager pays less for what it buys, in a
+     straight line down to `shortTillFloorPercent` (50%) at an empty till. This applies to
+     converted offers too.
+   - **Goods that are money keep their price**: the banker's exchange rate does not float.
 6. **Then** shop variety by level, bank accounts and notes, and the banker's view of the treasury.

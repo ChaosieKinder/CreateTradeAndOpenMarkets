@@ -3,6 +3,9 @@ package com.errantmc.markets.npcinteractions.registry;
 import com.mojang.logging.LogUtils;
 import com.errantmc.markets.Config;
 import com.errantmc.markets.ErrantTrade;
+import com.errantmc.markets.domain.Pricing;
+import com.errantmc.markets.economy.Tills;
+import com.errantmc.markets.item.PlayerMoney;
 import com.errantmc.markets.npcinteractions.components.InteractionTab;
 import com.errantmc.markets.npcinteractions.tabs.buy.BuyShopTab;
 import com.errantmc.markets.npcinteractions.tabs.buy.BuyShopTabType;
@@ -12,6 +15,7 @@ import com.errantmc.markets.npcinteractions.components.SimpleShopTab;
 import com.errantmc.markets.npcinteractions.trading.ShopEntry;
 import com.errantmc.markets.npcinteractions.trading.ShopStock;
 import com.errantmc.markets.npcinteractions.trading.TradeAttachments;
+import com.errantmc.markets.npcinteractions.trading.VillagerBalance;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -26,6 +30,7 @@ import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -100,7 +105,11 @@ public final class InteractionTabManager {
 
         if (!result.isEmpty()) {
             applyAutoBuybacks(result);
-            if (merchant instanceof Villager villager) applyStoredStock(villager, result, context.getDayIndex());
+            if (merchant instanceof Villager villager) {
+                Map<ShopEntry, Integer> rolled = rolledStock(result);
+                applyStoredStock(villager, result, context.getDayIndex());
+                applyPrices(villager, result, rolled);
+            }
             return List.copyOf(result);
         }
 
@@ -108,6 +117,8 @@ public final class InteractionTabManager {
         // fallback to default buy/sell using merchant offers
         List<InteractionTab> fallback = fallbackFromOffers(offers);
         applyAutoBuybacks(fallback);
+        // Vanilla's offers already rise with demand; only the till's rule applies to them
+        if (merchant instanceof Villager villager) applyPrices(villager, fallback, Map.of());
         return fallback.isEmpty() ? List.of() : List.copyOf(fallback);
     }
 
@@ -124,6 +135,40 @@ public final class InteractionTabManager {
             Integer remaining = stored.remaining().get(key);
             if (remaining != null) entry.setStock(remaining);
         });
+    }
+
+    /** Each limited entry's stock as rolled for today, before what has been bought since is laid over it. */
+    private static Map<ShopEntry, Integer> rolledStock(List<InteractionTab> tabs) {
+        Map<ShopEntry, Integer> rolled = new IdentityHashMap<>();
+        forEachLimitedEntry(tabs, (key, entry) -> rolled.put(entry, entry.stock()));
+        return rolled;
+    }
+
+    /**
+     * Dynamic prices (economy §5.1, {@link Pricing}). What the villager sells costs more the more
+     * of today's stock has gone; what it buys pays less while its till is below its starting
+     * balance. Goods that are money keep their price: an exchange rate does not float.
+     */
+    private static void applyPrices(Villager villager, List<InteractionTab> tabs, Map<ShopEntry, Integer> rolled) {
+        long till = Tills.till(villager).balance();
+        long comfortable = VillagerBalance.starting(villager);
+        for (InteractionTab tab : tabs) {
+            if (!(tab instanceof SimpleShopTab shop)) continue;
+            for (ShopEntry entry : shop.entries()) {
+                if (PlayerMoney.worth(entry.item()) > 0) continue;
+                long price = entry.price();
+                if (tab instanceof BuyShopTab) {
+                    Integer rolledToday = rolled.get(entry);
+                    if (rolledToday != null) {
+                        price = Pricing.scarce(price, rolledToday, entry.stock(),
+                                Config.SCARCITY_PERCENT_PER_SALE.get(), Config.SCARCITY_MAX_PERCENT.get());
+                    }
+                } else if (tab instanceof SellShopTab) {
+                    price = Pricing.shortOfMoney(price, till, comfortable, Config.SHORT_TILL_FLOOR_PERCENT.get());
+                }
+                entry.setPrice((int) Math.min(Integer.MAX_VALUE, price));
+            }
+        }
     }
 
     /** Records a defined shop's stock on the villager after a trade. Converted vanilla offers keep their own. */

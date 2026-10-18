@@ -127,6 +127,21 @@ public class Config {
             )
             .defineInRange("maxSettlementDays", 3, 1, 365);
 
+    public static final ModConfigSpec.IntValue SCARCITY_PERCENT_PER_SALE = BUILDER
+            .comment("How much more a villager charges for a good for each one of today's stock it has sold, in percent.")
+            .defineInRange("scarcityPercentPerSale", 5, 0, 1000);
+
+    public static final ModConfigSpec.IntValue SCARCITY_MAX_PERCENT = BUILDER
+            .comment("The most a good's price rises as its stock runs out, in percent.")
+            .defineInRange("scarcityMaxPercent", 50, 0, 1000);
+
+    public static final ModConfigSpec.IntValue SHORT_TILL_FLOOR_PERCENT = BUILDER
+            .comment(
+                    "A villager whose till is below its starting balance pays less for what it buys, down to",
+                    "this share of the price at an empty till. 100 turns this off."
+            )
+            .defineInRange("shortTillFloorPercent", 50, 0, 100);
+
     static {
         BUILDER.pop();
     }

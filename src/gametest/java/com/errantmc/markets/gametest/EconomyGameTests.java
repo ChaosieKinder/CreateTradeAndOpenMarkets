@@ -4,9 +4,12 @@ import com.errantmc.markets.Config;
 import com.errantmc.markets.ErrantTrade;
 import com.errantmc.markets.component.Purses;
 import com.errantmc.markets.domain.CoinDenomination;
+import com.errantmc.markets.domain.DailySettlement;
+import com.errantmc.markets.domain.Pricing;
 import com.errantmc.markets.domain.Purse;
 import com.errantmc.markets.economy.MoneyLedger;
 import com.errantmc.markets.economy.MoneySupply;
+import com.errantmc.markets.economy.Tills;
 import com.errantmc.markets.economy.Treasuries;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.errantmc.markets.economy.VillageEconomy;
@@ -102,15 +105,24 @@ public final class EconomyGameTests {
         Villager farmer = VillagerInteractionGameTests.farmer(helper);
         farmer.setData(TradeAttachments.BALANCE, 250L);
         ServerPlayer player = survivalPlayer(helper);
-        player.getInventory().setItem(3, new ItemStack(Items.WHEAT, 64));
+        for (int slot = 3; slot < 7; slot++) player.getInventory().setItem(slot, new ItemStack(Items.WHEAT, 64));
         VillagerInteractionMenu menu = TradingGameTests.open(helper, player, farmer);
         if (menu == null) return;
 
-        for (int i = 0; i < 3; i++) menu.clickMenuButton(player, VillagerInteractionMenu.tradeButton(SELL, WHEAT));
+        // A short till pays less for each bundle (dynamic prices), so the count of sales is the loop's to find
+        int sales = 0;
+        for (int i = 0; i < 10; i++) {
+            int wheat = TradingGameTests.count(player, Items.WHEAT);
+            menu.clickMenuButton(player, VillagerInteractionMenu.tradeButton(SELL, WHEAT));
+            if (TradingGameTests.count(player, Items.WHEAT) < wheat) sales++;
+        }
 
-        assertCount(helper, "wheat sold (two bundles of 20)", 64 - 40, TradingGameTests.count(player, Items.WHEAT));
-        assertCount(helper, "paid to the player", 200, PlayerMoney.loose(player).totalValue());
-        assertCount(helper, "left in the till", 50, VillagerBalance.get(farmer));
+        if (sales < 2) helper.fail("expected the villager to keep buying, but it bought " + sales);
+        assertCount(helper, "wheat sold, 20 a sale", 4 * 64 - 20 * sales, TradingGameTests.count(player, Items.WHEAT));
+        assertCount(helper, "paid to the player", 250 - VillagerBalance.get(farmer), PlayerMoney.loose(player).totalValue());
+        if (VillagerBalance.get(farmer) >= TradingGameTests.entry(menu, SELL, WHEAT).price()) {
+            helper.fail("it stopped buying while it could still pay");
+        }
         assertCount(helper, "the sell entry's stock (no cap)", -1, TradingGameTests.entry(menu, SELL, WHEAT).stock());
         helper.succeed();
     }
@@ -180,17 +192,20 @@ public final class EconomyGameTests {
     public static void theFeeCanLeaveAVillagerShort(GameTestHelper helper) {
         Villager farmer = VillagerInteractionGameTests.farmer(helper);
         joinVillage(helper, farmer);
-        farmer.setData(TradeAttachments.BALANCE, 100L);
         ServerPlayer player = survivalPlayer(helper);
         player.getInventory().setItem(3, new ItemStack(Items.WHEAT, 20));
         VillagerInteractionMenu menu = TradingGameTests.open(helper, player, farmer);
         if (menu == null) return;
+        // One bit short of price and fee, set after the menu has priced the wheat
+        int price = TradingGameTests.entry(menu, SELL, WHEAT).price();
+        long fee = Tills.fee(farmer, price);
+        VillagerBalance.set(farmer, price + fee - 1);
 
         menu.clickMenuButton(player, VillagerInteractionMenu.tradeButton(SELL, WHEAT));
 
-        if (Config.TRADE_FEE_PERCENT.get() > 0) {
+        if (fee > 0) {
             assertCount(helper, "wheat kept", 20, TradingGameTests.count(player, Items.WHEAT));
-            assertCount(helper, "the till", 100, VillagerBalance.get(farmer));
+            assertCount(helper, "the till", price + fee - 1, VillagerBalance.get(farmer));
         }
         helper.succeed();
     }
@@ -385,6 +400,56 @@ public final class EconomyGameTests {
         int dollars = server.getCommands().getDispatcher().execute("erranttrade money",
                 server.createCommandSourceStack().withSuppressedOutput());
         assertCount(helper, "the command's result, in dollars", Math.min(Integer.MAX_VALUE, MoneySupply.measure(server).total() / 100), dollars);
+        helper.succeed();
+    }
+
+    // ---------- dynamic prices (economy step 5) ----------
+
+    /** farmer.json's second buy entry rolls 2..6 a day; each one sold makes the rest dearer. */
+    @GameTest(template = ARENA)
+    public static void buyingMakesTheRestDearer(GameTestHelper helper) {
+        Villager farmer = VillagerInteractionGameTests.farmer(helper);
+        ServerPlayer player = survivalPlayer(helper);
+        player.getInventory().setItem(3, new ItemStack(TradeItems.COIN_GOLD_REGAL.get(), 1));
+        VillagerInteractionMenu menu = TradingGameTests.open(helper, player, farmer);
+        if (menu == null) return;
+        int base = TradingGameTests.entry(menu, BUY, 1).price(); // a full day's stock: the base price
+
+        menu.clickMenuButton(player, VillagerInteractionMenu.tradeButton(BUY, 1));
+
+        long expected = base + DailySettlement.percent(base, Math.min(Config.SCARCITY_PERCENT_PER_SALE.get(), Config.SCARCITY_MAX_PERCENT.get()));
+        assertCount(helper, "the price after one sale", expected, TradingGameTests.entry(menu, BUY, 1).price());
+        helper.succeed();
+    }
+
+    @GameTest(template = ARENA)
+    public static void aShortTillPaysLess(GameTestHelper helper) {
+        Villager farmer = VillagerInteractionGameTests.farmer(helper);
+        long starting = VillagerBalance.starting(farmer);
+        VillagerBalance.set(farmer, starting / 2);
+        VillagerInteractionMenu menu = TradingGameTests.open(helper, survivalPlayer(helper), farmer);
+        if (menu == null) return;
+
+        long expected = Pricing.shortOfMoney(100, starting / 2, starting, Config.SHORT_TILL_FLOOR_PERCENT.get());
+        assertCount(helper, "what it pays for wheat", expected, TradingGameTests.entry(menu, SELL, WHEAT).price());
+        if (Config.SHORT_TILL_FLOOR_PERCENT.get() < 100 && expected >= 100) helper.fail("a half-empty till should pay less");
+        helper.succeed();
+    }
+
+    /** Money for money: the banker's rates hold whatever its till or stock. */
+    @GameTest(template = ARENA)
+    public static void theBankersRatesDoNotFloat(GameTestHelper helper) {
+        Villager banker = banker(helper);
+        VillagerBalance.set(banker, 10);
+        ServerPlayer player = survivalPlayer(helper);
+        player.getInventory().setItem(3, new ItemStack(TradeItems.COIN_SILVER_CROWN.get(), 5));
+        VillagerInteractionMenu menu = TradingGameTests.open(helper, player, banker);
+        if (menu == null) return;
+
+        menu.clickMenuButton(player, VillagerInteractionMenu.tradeButton(BUY, GOLD_MARK));
+
+        assertCount(helper, "a gold mark, after one sold", 500, TradingGameTests.entry(menu, BUY, GOLD_MARK).price());
+        assertCount(helper, "a copper bit, to a short till", 1, TradingGameTests.entry(menu, SELL, COPPER_BIT).price());
         helper.succeed();
     }
 

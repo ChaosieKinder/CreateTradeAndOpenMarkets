@@ -105,6 +105,9 @@ On `feature/npc-interactions` (the trader overhaul, in progress):
 - [ ] **`/erranttrade money`** lists players, villagers and treasuries with their money, and what
       has been created and destroyed. Trading leaves its total alone; meeting a new villager adds
       its starting balance to both the total and *created*.
+- [ ] **Prices move.** Buying the farmer's second bread line raises its price 5% per loaf (to at
+      most +50%); it is back to normal the next day. Selling wheat until the farmer's till is low
+      makes each bundle pay less. The banker's coins always cost exactly their value.
 - [ ] **A vanilla villager** (say a toolsmith) shows its own offers priced at $1.00 per emerald. A
       librarian's book trade asks for the book as well. Using an offer up shows stock 0; the
       villager restocks at its workstation.
