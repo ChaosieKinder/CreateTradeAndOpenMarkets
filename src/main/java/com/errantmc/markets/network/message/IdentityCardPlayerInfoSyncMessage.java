@@ -66,7 +66,7 @@ public class IdentityCardPlayerInfoSyncMessage implements CustomPacketPayload {
     public static void handle(IdentityCardPlayerInfoSyncMessage message, IPayloadContext context) {
         context.enqueueWork(() -> {
             if (FMLEnvironment.dist == Dist.CLIENT) {
-                com.errantmc.markets.item.idcard.client.IdentityCardClientCache.updateAll(message.snapshots);
+                com.errantmc.markets.item.idcard.client.IdentityCardClientCache.replaceAll(message.snapshots);
             }
         });
     }

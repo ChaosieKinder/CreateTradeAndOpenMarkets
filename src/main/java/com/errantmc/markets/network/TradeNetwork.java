@@ -2,7 +2,6 @@ package com.errantmc.markets.network;
 
 import com.errantmc.markets.network.message.IdentityCardPlayerInfoSyncMessage;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
@@ -24,12 +23,6 @@ public final class TradeNetwork {
                 IdentityCardPlayerInfoSyncMessage.STREAM_CODEC,
                 IdentityCardPlayerInfoSyncMessage::handle
         );
-    }
-
-    public static void sendToAll(MinecraftServer server, CustomPacketPayload message) {
-        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-            sendTo(player, message);
-        }
     }
 
     /**

@@ -6,6 +6,8 @@ import net.neoforged.fml.ModList;
 import top.theillusivec4.curios.api.CuriosApi;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Predicate;
 
 /**
@@ -17,6 +19,20 @@ public final class CuriosCompat {
 
     public static boolean isLoaded() {
         return ModList.get().isLoaded("curios");
+    }
+
+    /** Every non-empty stack the player wears as a curio. Call only when {@link #isLoaded()}. */
+    public static List<ItemStack> allCurios(Player player) {
+        List<ItemStack> out = new ArrayList<>();
+        CuriosApi.getCuriosInventory(player).ifPresent(inv -> {
+            for (var handler : inv.getCurios().values()) {
+                var stacks = handler.getStacks();
+                for (int i = 0; i < stacks.getSlots(); i++) {
+                    if (!stacks.getStackInSlot(i).isEmpty()) out.add(stacks.getStackInSlot(i));
+                }
+            }
+        });
+        return out;
     }
 
     /** The first curio slot holding a matching stack, or null. Call only when {@link #isLoaded()}. */

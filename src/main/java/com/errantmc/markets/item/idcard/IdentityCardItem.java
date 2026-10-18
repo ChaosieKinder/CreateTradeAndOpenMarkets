@@ -12,12 +12,9 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.inventory.tooltip.TooltipComponent;
 import net.minecraft.world.level.Level;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 
 import java.time.Instant;
 import java.time.ZoneId;
@@ -63,6 +60,7 @@ public class IdentityCardItem extends Item {
         IdentityCardComponent.set(stack, data);
         player.displayClientMessage(Component.translatable("item.erranttrade.id_card.bound", data.playerName()), true);
         level.playSound(null, player.blockPosition(), SoundEvents.BOOK_PAGE_TURN, SoundSource.PLAYERS, 0.6F, 1.1F);
+        if (player instanceof ServerPlayer serverPlayer) IdentityCardDataSyncHandler.sendTo(serverPlayer); // fill the new card now
         return InteractionResultHolder.sidedSuccess(stack, false);
     }
 

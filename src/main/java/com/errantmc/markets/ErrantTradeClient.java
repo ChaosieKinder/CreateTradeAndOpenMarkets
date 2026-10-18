@@ -18,6 +18,7 @@ import com.errantmc.markets.screen.wallet.WalletScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.neoforged.fml.config.ModConfig;
+import com.errantmc.markets.item.idcard.client.IdentityCardClientCache;
 import net.minecraft.client.gui.screens.inventory.MerchantScreen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
@@ -99,6 +100,11 @@ public class ErrantTradeClient {
                     ResourceLocation.fromNamespaceAndPath(ErrantTrade.MOD_ID, "stack_tier"),
                     (stack, level, entity, seed) -> CoinStackItem.tier(stack));
         });
+    }
+
+    @SubscribeEvent
+    public static void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
+        IdentityCardClientCache.clear();
     }
 
     @SubscribeEvent

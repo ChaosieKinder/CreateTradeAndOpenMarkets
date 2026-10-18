@@ -24,9 +24,16 @@ public final class IdentityCardClientCache {
         return Optional.ofNullable(CACHE.get(playerId));
     }
 
-    public static void updateAll(Collection<IdentityCardPlayerSnapshot> snapshots) {
+    /** Each sync is the whole set the server allows this client to see, so it replaces the cache. */
+    public static void replaceAll(Collection<IdentityCardPlayerSnapshot> snapshots) {
+        CACHE.clear();
         for (IdentityCardPlayerSnapshot snapshot : snapshots) {
             CACHE.put(snapshot.playerId(), snapshot);
         }
+    }
+
+    /** On leaving a server: nothing from it may show on the next. */
+    public static void clear() {
+        CACHE.clear();
     }
 }
