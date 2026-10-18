@@ -2,7 +2,7 @@
   "replace": false,
   "values": [
     {
-      "id": "tradeandopenmarkets:banker_poi",
+      "id": "erranttrade:banker_poi",
       "required": false
     }
   ]

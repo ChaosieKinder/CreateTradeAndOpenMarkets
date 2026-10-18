@@ -1,0 +1,377 @@
+package com.errantmc.markets.item.idcard;
+
+import com.mojang.authlib.GameProfile;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.logging.LogUtils;
+import com.errantmc.markets.lib.renderer.NoopModel;
+import com.errantmc.markets.ErrantTrade;
+import com.errantmc.markets.component.IdentityCardComponent;
+import com.errantmc.markets.component.IdentityCardData;
+import com.errantmc.markets.item.idcard.client.IdentityCardClientCache;
+import net.minecraft.client.Camera;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.renderer.*;
+import net.minecraft.client.renderer.block.model.ItemTransform;
+import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
+import net.minecraft.client.renderer.entity.ItemRenderer;
+import net.minecraft.client.renderer.entity.player.PlayerRenderer;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.client.resources.model.ModelManager;
+import net.minecraft.client.resources.model.ModelResourceLocation;
+import net.minecraft.resources.ResourceLocation;
+import com.mojang.math.Axis;
+import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.ResolvableProfile;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.levelgen.WorldDimensions;
+import net.minecraft.world.phys.Vec3;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import org.joml.Matrix4f;
+import org.slf4j.Logger;
+
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.TimeZone;
+
+@OnlyIn(Dist.CLIENT)
+public class IdentityCardItemRenderer extends BlockEntityWithoutLevelRenderer {
+    public static final Logger LOG = LogUtils.getLogger();
+    public static final ModelResourceLocation CARD_MODEL_LOCATION = ModelResourceLocation.standalone(ResourceLocation.fromNamespaceAndPath(ErrantTrade.MOD_ID, "item/id_card_base"));
+    private final Minecraft minecraft;
+    private final ItemRenderer itemRenderer;
+    private final Font textRenderer;
+    // face + hat (8x8 each) from a 64x64 skin
+    private static final int TEX_W = 64, TEX_H = 64;
+    private static final int FACE_U = 8,  FACE_V = 8,  FACE_SIZE = 8;
+    private static final int HAT_U  = 40, HAT_V  = 8,  HAT_SIZE  = 8;
+
+    public IdentityCardItemRenderer() {
+        super(Minecraft.getInstance().getBlockEntityRenderDispatcher(), Minecraft.getInstance().getEntityModels());
+        this.minecraft = Minecraft.getInstance();
+        this.itemRenderer = minecraft.getItemRenderer();
+        this.textRenderer = minecraft.font;
+    }
+
+    @Override
+    public void renderByItem(ItemStack itemStack, ItemDisplayContext displayContext, PoseStack poseStack, MultiBufferSource buffer, int packedLight, int packedOverlay) {
+        BakedModel model = minecraft.getModelManager().getModel(CARD_MODEL_LOCATION);
+
+        boolean isFirstPerson = switch (displayContext) {
+            case FIRST_PERSON_LEFT_HAND, FIRST_PERSON_RIGHT_HAND -> true;
+            default -> false;
+        };
+        boolean isLeftHand = switch (displayContext) {
+            case FIRST_PERSON_LEFT_HAND, THIRD_PERSON_LEFT_HAND -> true;
+            default -> false;
+        };
+
+        // Conditionally render player hands only if we're in first person
+        if (isFirstPerson) {
+            // Draw player hand
+            poseStack.pushPose();
+            poseStack.mulPose(Axis.XN.rotationDegrees(90.0f));
+            poseStack.scale(2f, 2f, 2f);
+            if(isLeftHand) {
+                poseStack.translate(-0.8f, 0.2f, -0.3f);
+            } else {
+                poseStack.translate(1.4f, 0.2f, -0.3f);
+            }
+            renderPlayerHand(poseStack, buffer, packedLight, isLeftHand);
+            ItemTransform transform = model.getTransforms().getTransform(displayContext);
+            if (!transform.equals(ItemTransform.NO_TRANSFORM)) {
+                transform.apply(isLeftHand, poseStack);
+            }
+
+            poseStack.popPose();
+        }
+
+        poseStack.pushPose();
+        switch (displayContext) {
+            case FIRST_PERSON_RIGHT_HAND:
+            case FIRST_PERSON_LEFT_HAND:
+                // Any First person
+                poseStack.translate(0f, 1.25f, 0.75f); // y=2 was too high
+                poseStack.mulPose(Axis.XN.rotationDegrees(180.0f));
+                break;
+            case GROUND:
+            case THIRD_PERSON_RIGHT_HAND:
+            case THIRD_PERSON_LEFT_HAND:
+                // Any third-person renderer
+                poseStack.scale(0.25f, 0.25f, 0.25f);
+                if(isLeftHand) {
+                    poseStack.mulPose(Axis.YP.rotationDegrees(90.0f));
+                    poseStack.translate(-2.0f, 2f, 2.5f); // Y is forwards/backwards
+                }
+                else {
+                    poseStack.mulPose(Axis.YN.rotationDegrees(90.0f));
+                    poseStack.translate(1.0f, 2f, -1.5f); // Y is forwards/backwards
+                }
+                poseStack.mulPose(Axis.XN.rotationDegrees(180.0f));
+                break;
+            case GUI:// GUI
+                poseStack.translate(0f, 1, 0); // y=2 was too high
+                poseStack.mulPose(Axis.XN.rotationDegrees(180.0f));
+                break;
+            case FIXED:
+                poseStack.scale(1.25f, 1.25f, 0.5f);
+                poseStack.mulPose(Axis.ZP.rotationDegrees(180.0f));
+                poseStack.translate(-0.9f, -0.9, 0.5f); // Z=0.75 is too deep into the frame
+            case HEAD:
+            default:
+                break;
+        }
+
+        // Render the card itself
+        for (RenderType renderType : model.getRenderTypes(itemStack, false)) {
+            itemRenderer.renderModelLists(
+                    model,
+                    itemStack,
+                    packedLight,
+                    packedOverlay,
+                    poseStack,
+                    ItemRenderer.getFoilBufferDirect(buffer, renderType, true, itemStack.hasFoil())
+            );
+        }
+
+        var data = IdentityCardComponent.get(itemStack).orElse(null);
+        if(data != null) {
+            poseStack.pushPose();
+            // Initial alignment
+            if(displayContext == ItemDisplayContext.GUI) {
+                poseStack.translate(0.25f, 0.25f, 0.45f);
+                // Draw player picture
+                renderFlatFaceQuad(poseStack, displayContext, buffer, data.toProfile(), 0.5f, 0.5f, packedLight, packedOverlay); // was .5/.5
+            } else {
+                poseStack.translate(0.05f, 0.25f, 0.45f); //y=0.3 is too low
+                // Draw player picture
+                renderFlatFaceQuad(poseStack, displayContext, buffer, data.toProfile(), 0.3f, 0.3f, packedLight, packedOverlay);
+                _drawIdCardText(poseStack, buffer, data, packedLight, packedOverlay);
+            }
+            poseStack.popPose();
+        }
+        poseStack.popPose();
+    }
+
+    private void renderPlayerHand(PoseStack poseStack, MultiBufferSource buffer, int packedLight, boolean isLeftHand) {
+        LocalPlayer player = minecraft.player;
+        if (player == null) {
+            return;
+        }
+
+        EntityRenderDispatcher dispatcher = minecraft.getEntityRenderDispatcher();
+        if (!(dispatcher.getRenderer(player) instanceof PlayerRenderer playerRenderer)) {
+            return;
+        }
+
+        poseStack.pushPose();
+        if (isLeftHand) {
+            playerRenderer.renderLeftHand(poseStack, buffer, packedLight, player);
+        } else {
+            playerRenderer.renderRightHand(poseStack, buffer, packedLight, player);
+        }
+        poseStack.popPose();
+    }
+
+    private void _drawIdCardText(PoseStack poseStack, MultiBufferSource buffer, IdentityCardData data, int packedLight, int packedOverlay) {
+        IdentityCardPlayerSnapshot snapshot = IdentityCardClientCache.get(data.playerId()).orElse(null);
+
+        int fontColor = 0x000000;
+
+        if(snapshot != null) {
+            // Player Xp Bar
+            poseStack.pushPose();
+            poseStack.translate(0.150f, 0.31f, 0); // was 0.150f, 0.3f, 0, which put us directly under the head
+            renderXpBarBillboard(buffer, poseStack, 0, 0, 0, snapshot.experienceProgress(), 0.3f, 0.14f, packedLight);
+            poseStack.popPose();
+
+            // Player Level
+            poseStack.pushPose();
+            poseStack.scale(0.005f, 0.005f, 1f);
+            poseStack.translate(0.150f, 0.58f, -0.004);
+            String levelText = String.valueOf(snapshot.level());
+            textRenderer.drawInBatch(levelText,
+                    30f - textRenderer.width(levelText)/2.0f,
+                    66f, // 65 is barely too high 70 is too low
+                    0xFF22CC22, // xp green = 0xFF55FF55
+                    false, poseStack.last().pose(), buffer,
+                    Font.DisplayMode.NORMAL, 0, LightTexture.FULL_BRIGHT);
+            poseStack.popPose();
+        }
+
+        // Player Name
+        poseStack.pushPose();
+        poseStack.scale(0.01f, 0.01f, 1f);
+        textRenderer.drawInBatch(data.playerName(),
+                0f,
+                38f,
+                fontColor, false, poseStack.last().pose(), buffer,
+                Font.DisplayMode.NORMAL, 0, /*light*/ 0xF000F0);
+        poseStack.popPose();
+        // Creation Date
+        poseStack.pushPose();
+        poseStack.scale(0.004f, 0.004f, 1f);
+
+        Date date = new Date(data.createdAtMillis());
+        DateFormat formatter = new SimpleDateFormat("yyyy/MM/dd");
+        formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
+        String dateFormatted = formatter.format(date);
+        textRenderer.drawInBatch("Issued: " + dateFormatted,
+                80,
+                0,
+                fontColor, false, poseStack.last().pose(), buffer,
+                Font.DisplayMode.NORMAL, 0, /*light*/ 0xF000F0);
+
+        // Dynamic player information is available here for rendering when needed.
+        // It may not be available and should be skipped if it is not.
+        if (snapshot != null) {
+            // Players Age (time on server)
+            if(snapshot.timePlayedDays() > 0) {
+                textRenderer.drawInBatch("Age: " + snapshot.timePlayedDays() + "d " + (Math.floor(snapshot.timePlayedHours() * 100f/24f) / 100f) + "h",
+                        80,
+                        10,
+                        fontColor, false, poseStack.last().pose(), buffer,
+                        Font.DisplayMode.NORMAL, 0, /*light*/ 0xF000F0);
+            } else {
+                textRenderer.drawInBatch("Age: " + (Math.floor(snapshot.timePlayedHours() * 100f/24f) / 100f) + "h",
+                        80,
+                        10,
+                        fontColor, false, poseStack.last().pose(), buffer,
+                        Font.DisplayMode.NORMAL, 0, /*light*/ 0xF000F0);
+            }
+
+            var spawnLocation = snapshot.spawnLocation();
+            var spawnLocationText = spawnLocation.isPresent()
+                    ? spawnLocation.get().x() + ", " + spawnLocation.get().y() +  ", " + spawnLocation.get().z()
+                    : "world spawn";
+            textRenderer.drawInBatch(spawnLocationText,
+                    80,
+                    30,
+                    fontColor, false, poseStack.last().pose(), buffer,
+                    Font.DisplayMode.NORMAL, 0, /*light*/ 0xF000F0);
+            textRenderer.drawInBatch(snapshot.spawnDimension(),
+                    80,
+                    40,
+                    fontColor, false, poseStack.last().pose(), buffer,
+                    Font.DisplayMode.NORMAL, 0, /*light*/ 0xF000F0);
+
+            textRenderer.drawInBatch("height: " + snapshot.height(),
+                    80,
+                    74,
+                    fontColor, false, poseStack.last().pose(), buffer,
+                    Font.DisplayMode.NORMAL, 0, /*light*/ 0xF000F0);
+        } else {
+            // perhaps some of the random cycling text can be put in its place?
+        }
+
+        // Player Id
+        textRenderer.drawInBatch("ID: " + data.playerId().toString(),
+                -4,
+                115,
+                fontColor, false, poseStack.last().pose(), buffer,
+                Font.DisplayMode.NORMAL, 0, /*light*/ 0xF000F0);
+
+        poseStack.popPose();
+
+
+    }
+
+    public static void renderFlatFaceQuad(PoseStack ps, ItemDisplayContext displayContext,  MultiBufferSource buffers, GameProfile profile,
+                                          float width, float height, int light, int overlay) {
+        Minecraft mc = Minecraft.getInstance();
+        var skin = mc.getSkinManager().getInsecureSkin(profile);
+        ResourceLocation tex = skin.texture();
+
+        // Quad in local space: (0,0) to (width,height). Z = 0 plane.
+        // Convert sub-UVs to 0..1:
+        float u0 = 8f / 64f, v0 = 8f / 64f, u1 = 16f / 64f, v1 = 16f / 64f;       // face
+        float hu0 = 40f/64f, hv0 = 8f/64f,  hu1 = 48f/64f, hv1 = 16f/64f;         // hat
+
+        // Choose an entity cutout layer (respects alpha)
+        VertexConsumer vc = buffers.getBuffer(RenderType.entityCutout(tex));
+        Matrix4f mat = ps.last().pose();
+
+        ps.pushPose();
+        if(displayContext == ItemDisplayContext.GUI)
+            ps.scale(0.6f, 0.6f, 0.6f);
+
+        // Draw base face quad
+        putQuad(vc, mat, 0, 0, width, height, u0, v0, u1, v1, light, overlay);
+
+        // Draw hat overlay on top (same quad, different UVs)
+        VertexConsumer vcHat = buffers.getBuffer(RenderType.entityTranslucent(tex));
+        putQuad(vcHat, mat, 0, 0, width, height, hu0, hv0, hu1, hv1, light, overlay);
+        ps.popPose();
+    }
+
+    private static void putQuad(VertexConsumer vc, Matrix4f mat,
+                                float x, float y, float w, float h,
+                                float u0, float v0, float u1, float v1,
+                                int light, int overlay) {
+        // clockwise two triangles
+        vc.addVertex(mat, x,     y,     0).setColor(255,255,255,255).setUv(u0, v0).setOverlay(overlay).setLight(light).setNormal(0,0,1);
+        vc.addVertex(mat, x,     y + h, 0).setColor(255,255,255,255).setUv(u0, v1).setOverlay(overlay).setLight(light).setNormal(0,0,1);
+        vc.addVertex(mat, x + w, y + h, 0).setColor(255,255,255,255).setUv(u1, v1).setOverlay(overlay).setLight(light).setNormal(0,0,1);
+        vc.addVertex(mat, x + w, y,     0).setColor(255,255,255,255).setUv(u1, v0).setOverlay(overlay).setLight(light).setNormal(0,0,1);
+    }
+
+    private static void renderXpBarBillboard(MultiBufferSource buffers,PoseStack ps,
+                                             double x, double y, double z,
+                                             float fill01,
+                                             float width, float height, int packedLight) {
+        // Position relative to camera
+        ps.pushPose();
+
+        // Slight forward nudge to avoid z-fighting with the surface behind
+        ps.translate(0, 0, -0.001f);
+
+        // World-space size → scale the unit quad
+        // We’ll render a unit quad from (−0.5..+0.5) in X, (0..1) in Y, then scale to width/height
+        ps.scale(width, height, 1f);
+
+        // Fullbright + no overlay (so it’s readable regardless of light)
+        int overlay = OverlayTexture.NO_OVERLAY;
+
+        // Choose a GUI-ish render type that respects transparency & ignores lighting
+        VertexConsumer vc = buffers.getBuffer(RenderType.gui());
+
+        // Colors (ARGB)
+        int bg = 0xAA000000;    // semi-opaque black
+        int border = 0xFF2A2A2A;
+        int fill = 0xFF55FF55;  // XP green
+
+        // Draw order: border -> background -> fill
+        rect(vc, ps, -0.52f, -0.04f, 0, 1.04f, 0.18f, border, packedLight, overlay);  // border slightly larger
+        rect(vc, ps, -0.5f,   0.00f, -0.0001f,  1.00f, 0.12f, bg,     packedLight, overlay);  // background
+        rect(vc, ps, -0.5f,   0.00f, -0.0002f,  fill01, 0.12f, fill,  packedLight, overlay);  // filled portion
+
+        ps.popPose();
+    }
+    private static void rect(VertexConsumer vc, PoseStack ps,
+                             float x, float y, float z, float w, float h,
+                             int argb, int light, int overlay) {
+        float x0 = x,    y0 = y;
+        float x1 = x + w, y1 = y + h;
+        int a = (argb >>> 24) & 0xFF;
+        int r = (argb >>> 16) & 0xFF;
+        int g = (argb >>>  8) & 0xFF;
+        int b = (argb       ) & 0xFF;
+
+        Matrix4f mat = ps.last().pose();
+
+        vc.addVertex(mat, x0, y0, z).setColor(r,g,b,a).setUv(0, 0).setOverlay(overlay).setLight(light).setNormal(0,0,1);
+        vc.addVertex(mat, x0, y1, z).setColor(r,g,b,a).setUv(0, 1).setOverlay(overlay).setLight(light).setNormal(0,0,1);
+        vc.addVertex(mat, x1, y1, z).setColor(r,g,b,a).setUv(1, 1).setOverlay(overlay).setLight(light).setNormal(0,0,1);
+        vc.addVertex(mat, x1, y0, z).setColor(r,g,b,a).setUv(1, 0).setOverlay(overlay).setLight(light).setNormal(0,0,1);
+
+    }
+
+}

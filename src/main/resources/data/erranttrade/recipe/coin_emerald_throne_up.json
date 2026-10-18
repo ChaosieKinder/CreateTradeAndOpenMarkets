@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "erranttrade:coin_emerald_sun"
+    },
+    {
+      "item": "erranttrade:coin_emerald_sun"
+    },
+    {
+      "item": "erranttrade:coin_emerald_sun"
+    },
+    {
+      "item": "erranttrade:coin_emerald_sun"
+    },
+    {
+      "item": "erranttrade:coin_emerald_sun"
+    }
+  ],
+  "result": {
+    "count": 1,
+    "id": "erranttrade:coin_emerald_throne"
+  }
+}

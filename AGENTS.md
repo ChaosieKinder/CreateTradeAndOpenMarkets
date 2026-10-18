@@ -1,6 +1,6 @@
 # Working agreement for agents
 
-Trade and Open Markets (TAOM): a NeoForge mod for Minecraft 1.21.1 that replaces the emerald
+Errant Trade and Markets (mod id `erranttrade`; formerly "Trade and Open Markets", TAOM): a NeoForge mod for Minecraft 1.21.1 that replaces the emerald
 economy with multi-denomination coins, a wallet, coin piles you can place in the world, a safe,
 identity cards, and a reskinned villager trading screen. [README](README.md) has the player-facing
 feature list and the roadmap.
@@ -36,10 +36,9 @@ Single-project Gradle build from the NeoForge MDK template.
 ```
 CreateTradeAndOpenMarkets/
 ├─ build.gradle / gradle.properties   versions live in gradle.properties
-├─ src/main/java/net/errantchaosie/
-│  ├─ tradeandopenmarkets/            the mod (mod id `tradeandopenmarkets`)
-│  │  ├─ TradeAndOpenMarketsMod       common entrypoint: every DeferredRegister + game-bus listeners
-│  │  ├─ TradeAndOpenMarketsModClient client entrypoint (@Mod dist=CLIENT): renderers, screens, tooltips
+├─ src/main/java/com/errantmc/markets/   the mod (mod id `erranttrade`)
+│  │  ├─ ErrantTrade                  common entrypoint: every DeferredRegister + game-bus listeners
+│  │  ├─ ErrantTradeClient            client entrypoint (@Mod dist=CLIENT): renderers, screens, tooltips
 │  │  ├─ data/CoinDenomination        the denomination enum: value in copper bits, lang key, colour
 │  │  ├─ component/                   data components: CurrencyData, IdentityCardData, WalletBalance helpers
 │  │  ├─ item/                        coins, coin stack, wallet/, idcard/
@@ -49,7 +48,7 @@ CreateTradeAndOpenMarkets/
 │  │  ├─ registry/                    creative tab, sounds
 │  │  ├─ villager/                    banker profession + POI (job block: the safe)
 │  │  └─ Config                       COMMON config; still carries the MDK's example entries
-│  └─ errantlib/                      small shared helpers (UI, codecs, noop model) meant to become a library
+│  └─ lib/                            small shared helpers (UI, codecs, noop model), formerly `errantlib`
 ├─ src/main/resources/                hand-written JSON: models, blockstates, recipes, tags, lang, curios
 ├─ src/main/templates/META-INF/       neoforge.mods.toml, expanded from gradle.properties
 └─ resource_src/                      art sources (.xcf, .bbmodel), not shipped
@@ -80,10 +79,16 @@ are correct. Do not port 26.x idioms into this code.
 
 Facts that matter when writing code here:
 
+- **Every package in this jar must be unique to this mod.** NeoForge loads mods as JPMS modules,
+  and two mod jars that contain the same package refuse to load together. errant-metalworks also
+  lives under `com.errantmc`, so everything here stays under `com.errantmc.markets`, including the
+  helpers in `lib/`. Sharing code between the two means a real library jar (Jar-in-Jar), not
+  copying classes into a common package.
+
 - **Curios is `compileOnly`.** Any class that touches `top.theillusivec4.curios` must only reach
   it behind `ModList.get().isLoaded("curios")`, and preferably in a separate class so the JVM never
   links it when Curios is absent. `WalletAutoDeposit` currently inlines it; see BACKLOG.
-- **Client-only code lives under `TradeAndOpenMarketsModClient` or classes only it references.**
+- **Client-only code lives under `ErrantTradeClient` or classes only it references.**
   Renderers, screens, tooltip clients, `IdentityCardClientCache`. A common class that imports
   `net.minecraft.client` crashes a dedicated server. Run `runServer` after touching anything
   near that line.
@@ -91,7 +96,7 @@ Facts that matter when writing code here:
   (`ScreenEvent.Opening`). The server still runs vanilla's `MerchantMenu`, so every trade the
   shop screen performs has to go through the vanilla menu's own slots and packets. A client-side
   shortcut there does nothing, or desyncs.
-- **Registry objects are not available in plain unit tests.** Touching `TAOMItems`, `ItemStack`,
+- **Registry objects are not available in plain unit tests.** Touching `TradeItems`, `ItemStack`,
   or a `DeferredHolder.get()` outside a running game fails in static init. Keep logic you want
   unit-tested free of those. `CurrencyData` is close: only `add(ItemStack)` and `getFrom(ItemStack)`
   tie it to the game.
@@ -136,8 +141,8 @@ the author, not a refactor.
 
 What the code already does, and what to converge on during cleanup:
 
-- **Registration** is one `TAOM*` class per registry (`TAOMItems`, `TAOMBlocks`, `TAOMBlockEntities`,
-  `TAOMComponents`, `TAOMMenus`, `TAOMSounds`, `TAOMVillagers`, `TAOMCreativeModeTabs`), each with a
+- **Registration** is one `Trade*` class per registry (`TradeItems`, `TradeBlocks`, `TradeBlockEntities`,
+  `TradeComponents`, `TradeMenus`, `TradeSounds`, `TradeVillagers`, `TradeCreativeModeTabs`), each with a
   `register(IEventBus)` called from the mod constructor. A new registry follows the same shape.
 - **Item state is a `DataComponentType` with a `Codec` and a `StreamCodec`.** `CurrencyData` is the
   worked example.
@@ -162,7 +167,7 @@ There are no tests. The plan, in [BACKLOG §Testing](docs/BACKLOG.md#testing), i
    `build.gradle`. MDG's `neoForge.unitTest` can boot FML for tests that need registries, but
    prefer extracting the logic so it doesn't need them.
 2. **NeoForge gametests** (1.21.1: `@GameTestHolder(MOD_ID)` + `@GameTest`, templates under
-   `data/tradeandopenmarkets/structure/`) for in-world behaviour: coin block insert, withdraw,
+   `data/erranttrade/structure/`) for in-world behaviour: coin block insert, withdraw,
    break and drop, wallet auto-deposit, safe drops. `runGameTestServer` becomes the CI check once
    at least one exists.
 

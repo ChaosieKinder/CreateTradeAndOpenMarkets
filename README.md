@@ -1,6 +1,6 @@
-# Trade and Open Markets (TAOM)
+# Errant Trade and Markets
 
-**Trade and Open Markets** is a NeoForge mod that overhauls the entire Minecraft economy.  
+**Errant Trade and Markets** is a NeoForge mod that overhauls the entire Minecraft economy.  
 The vanilla emerald economy is removed and replaced with a **multi-denomination coin system**, a wallet for storing currency, coin blocks for stacking and trading, and future systems for banking, trading, and server integrations.
 
 ---

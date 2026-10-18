@@ -11,12 +11,12 @@ Ordered by severity. **Coin loss or duplication comes first.**
 ### Coin conservation
 
 1. **Sneak double-tap on a coin block destroys the coins it deposits.**
-   [CoinBlock.java:342](../src/main/java/net/errantchaosie/tradeandopenmarkets/block/CoinBlock.java#L342)
+   [CoinBlock.java:342](../src/main/java/com/errantmc/markets/block/CoinBlock.java#L342)
    `dumpAllCoinsFromInventory` adds every stack to the same original `c`, never the running total,
    so each `setCurrency` overwrites the last. Line 367 then writes the original `c` back. The
    player's coins are shrunk and the pile ends up unchanged.
 2. **"Deposit all" in the wallet moves the wrong slots.**
-   [WalletMenu.java:213](../src/main/java/net/errantchaosie/tradeandopenmarkets/screen/wallet/WalletMenu.java#L213)
+   [WalletMenu.java:213](../src/main/java/com/errantmc/markets/screen/wallet/WalletMenu.java#L213)
    For non-coin wallet items it calls `quickMoveStack(player, i)` with an *inventory* index, but
    `quickMoveStack` takes a *menu slot* index. Inventory 0–8 are wallet slots 0–8 in this menu,
    so the hotbar sweep moves wallet contents out. The offhand loop at line 226 passes offhand
@@ -28,17 +28,17 @@ Ordered by severity. **Coin loss or duplication comes first.**
 4. **`CurrencyData.totalCount()` overflows.** It sums `int`s before the result widens to `long`.
    The same pattern appears in `CoinItem.appendHoverText` (`int total = count * value`).
 5. **Placing a coin overwrites whatever is above the clicked block.**
-   [CoinItem.java:57](../src/main/java/net/errantchaosie/tradeandopenmarkets/item/CoinItem.java#L57)
+   [CoinItem.java:57](../src/main/java/com/errantmc/markets/item/CoinItem.java#L57)
    `useOn` always targets `pos.above()`, whatever face was clicked, and calls `setBlock` without
    checking `canBeReplaced` or `canSurvive`. Clicking the side of a block that has something on
    top replaces that thing with a coin pile.
 6. **The coin stack item can place a pile where it cannot survive.**
-   [CoinStackItem.java:46](../src/main/java/net/errantchaosie/tradeandopenmarkets/item/CoinStackItem.java#L46)
+   [CoinStackItem.java:46](../src/main/java/com/errantmc/markets/item/CoinStackItem.java#L46)
    It checks `canBeReplaced` but not `canSurvive`, so a pile placed against a wall or on another
    pile sits unsupported until the next neighbour update drops its whole balance. Also,
    `ctx.getPlayer()` can be null (dispensers, fake players).
 7. **`SafeBlockEntity.clearContents` clears slot 0 twenty-five times.**
-   [SafeBlockEntity.java:41](../src/main/java/net/errantchaosie/tradeandopenmarkets/block/entity/SafeBlockEntity.java#L41)
+   [SafeBlockEntity.java:41](../src/main/java/com/errantmc/markets/block/entity/SafeBlockEntity.java#L41)
    Not called anywhere yet, which is why it hasn't mattered.
 
 ### Robustness
@@ -94,12 +94,12 @@ Do these after their area has tests.
 - [ ] Replace `CoinBlockEntity`'s `System.err` with the logger; use `resultOrPartial(LOG::error)`.
 - [ ] Remove the MDK example config entries (`logDirtBlock`, `magicNumber` …) and the unused
       `validateItemName`. **This changes the config file**, so mention it in the changelog.
-- [ ] Remove dead code: `TAOMComponents.register(String, …)` (unused), commented-out blocks in
+- [ ] Remove dead code: `TradeComponents.register(String, …)` (unused), commented-out blocks in
       the mod constructor, `if(false && …)` in `SafeBlock.useItemOn`, the unused `org.jline` import.
 - [ ] Locale-independent money formatting (AGENTS §6).
 - [ ] Literal strings to translation keys: coin stack tooltip, safe title.
 - [ ] Fix the spelling of `getHighestDenomonation` / `denomonation` (public API, so rename in one change).
 - [ ] Consider datagen for recipes, tags, lang and models once the coverage tests exist. It is
       already wired in `build.gradle`.
-- [ ] Decide `errantlib`'s future: keep it in-tree, or extract it as a shared library with
+- [ ] Decide the future of `com.errantmc.markets.lib` (formerly `errantlib`): keep it in-tree, or extract it as a shared library with
       errant-metalworks' `errant-core`. Ask the author.

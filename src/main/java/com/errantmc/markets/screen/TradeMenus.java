@@ -1,0 +1,38 @@
+package com.errantmc.markets.screen;
+
+import com.errantmc.markets.ErrantTrade;
+import com.errantmc.markets.screen.safe.SafeMenu;
+import com.errantmc.markets.screen.shop.ShopMenu;
+import com.errantmc.markets.screen.wallet.WalletMenu;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.MenuType;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
+import net.neoforged.neoforge.network.IContainerFactory;
+import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.registries.DeferredRegister;
+
+public class TradeMenus {
+
+    public static final DeferredRegister<MenuType<?>> MENUS =
+            DeferredRegister.create(Registries.MENU, ErrantTrade.MOD_ID);
+
+    public static final DeferredHolder<MenuType<?>, MenuType<SafeMenu>> SAFE_MENU =
+            registerMenuType("safe_menu", SafeMenu::new);
+
+    public static final DeferredHolder<MenuType<?>, MenuType<WalletMenu>> WALLET_MENU =
+            registerMenuType("wallet_menu", WalletMenu::new);
+
+    public static final DeferredHolder<MenuType<?>, MenuType<ShopMenu>> SHOP_MENU =
+            MENUS.register("shop_menu", () -> IMenuTypeExtension.create(ShopMenu::new));
+
+    private static <T extends AbstractContainerMenu>DeferredHolder<MenuType<?>, MenuType<T>> registerMenuType(String name,
+        IContainerFactory<T> factory) {
+        return MENUS.register(name, () -> IMenuTypeExtension.create(factory));
+    }
+
+    public static void register(IEventBus eventBus) {
+        MENUS.register(eventBus);
+    }
+}
